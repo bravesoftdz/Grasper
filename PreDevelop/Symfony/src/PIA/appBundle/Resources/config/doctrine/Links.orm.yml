@@ -1,0 +1,63 @@
+PIA\appBundle\Entity\Links:
+    type: entity
+    table: links
+    indexes:
+        job_id:
+            columns:
+                - job_id
+                - handled
+        IDX_D182A118BE04EA9:
+            columns:
+                - job_id
+    uniqueConstraints:
+        link_unq:
+            columns:
+                - job_id
+                - link_hash
+                - level
+    id:
+        id:
+            type: integer
+            nullable: false
+            unsigned: false
+            id: true
+            column: Id
+            generator:
+                strategy: IDENTITY
+    fields:
+        level:
+            type: integer
+            nullable: false
+            unsigned: false
+            default: '0'
+        num:
+            type: integer
+            nullable: false
+            unsigned: false
+            default: '0'
+        link:
+            type: text
+            nullable: false
+            length: 65535
+            fixed: false
+        linkHash:
+            type: string
+            nullable: false
+            length: 255
+            fixed: false
+            default: ''
+            column: link_hash
+        handled:
+            type: boolean
+            nullable: true
+    manyToOne:
+        job:
+            targetEntity: Jobs
+            cascade: {  }
+            mappedBy: null
+            inversedBy: null
+            joinColumns:
+                job_id:
+                    referencedColumnName: Id
+            orphanRemoval: false
+    lifecycleCallbacks: {  }

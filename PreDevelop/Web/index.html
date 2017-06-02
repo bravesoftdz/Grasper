@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Parse It All!</title>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="styles.css">
+        <script type="text/javascript" src="jquery-3.1.1.js"></script>
+        <script type="text/javascript" src="app.js"></script>
+    </head>
+    <body>
+        <div class="panel">
+            www <input id="panel-edit" type="text"> <input id="btn" type="button" value="go">
+        </div>
+        <iframe id="frame" src="proxy.php"></iframe>
+        <div class="panel-command">
+          <textarea id="elText"></textarea>
+          <textarea id="elHTML"></textarea>
+          <input id="up" type="button" value="&#9650;">
+          <input id="down" type="button" value="&#9660;"><br>
+          <input type="radio" name="el_type">data <input type="text"><br>
+          <input type="radio" name="el_type">link <input type="text"> 
+          <textarea id="xpath"></textarea>
+          <input id="apply" type="button" value="apply">
+          <div id="jsonrule">fdgdfgdfd</div>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,46 @@
+PIA\appBundle\Entity\JobRegexp:
+    type: entity
+    table: job_regexp
+    indexes:
+        job_rule_id:
+            columns:
+                - job_rule_id
+        type_refid:
+            columns:
+                - type_refid
+    id:
+        id:
+            type: integer
+            nullable: false
+            unsigned: false
+            id: true
+            column: Id
+            generator:
+                strategy: IDENTITY
+    fields:
+        regexp:
+            type: string
+            nullable: false
+            length: 255
+            fixed: false
+            default: ''
+    manyToOne:
+        jobRule:
+            targetEntity: JobRules
+            cascade: {  }
+            mappedBy: null
+            inversedBy: null
+            joinColumns:
+                job_rule_id:
+                    referencedColumnName: Id
+            orphanRemoval: false
+        typeRefid:
+            targetEntity: JobRegexpTypeRef
+            cascade: {  }
+            mappedBy: null
+            inversedBy: null
+            joinColumns:
+                type_refid:
+                    referencedColumnName: Id
+            orphanRemoval: false
+    lifecycleCallbacks: {  }

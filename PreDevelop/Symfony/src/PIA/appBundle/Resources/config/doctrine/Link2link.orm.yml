@@ -1,0 +1,39 @@
+PIA\appBundle\Entity\Link2link:
+    type: entity
+    table: link2link
+    indexes:
+        master_link_id:
+            columns:
+                - master_link_id
+        slave_link_id:
+            columns:
+                - slave_link_id
+    id:
+        id:
+            type: integer
+            nullable: false
+            unsigned: false
+            id: true
+            column: Id
+            generator:
+                strategy: IDENTITY
+    manyToOne:
+        masterLink:
+            targetEntity: Links
+            cascade: {  }
+            mappedBy: null
+            inversedBy: null
+            joinColumns:
+                master_link_id:
+                    referencedColumnName: Id
+            orphanRemoval: false
+        slaveLink:
+            targetEntity: Links
+            cascade: {  }
+            mappedBy: null
+            inversedBy: null
+            joinColumns:
+                slave_link_id:
+                    referencedColumnName: Id
+            orphanRemoval: false
+    lifecycleCallbacks: {  }

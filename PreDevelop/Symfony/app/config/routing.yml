@@ -1,0 +1,7 @@
+pia:
+    resource: "@PIABundle/Resources/config/routing.yml"
+    prefix:   /
+
+
+
+
