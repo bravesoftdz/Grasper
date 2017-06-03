@@ -343,7 +343,6 @@ begin
   if aMsg = 'ViewRulesClosed' then
     begin
       FObjData.Items['Job'].Free;
-      //FObjData.
     end;
 
   if aMsg = 'ShowViewLogin' then CallView(TViewLogin);
