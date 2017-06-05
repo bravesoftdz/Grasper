@@ -6,8 +6,6 @@ uses
   API_MVC_DB;
 
 type
-  {$M+}
-
   TModelJobs = class(TModelDB)
   published
     procedure GetJob;

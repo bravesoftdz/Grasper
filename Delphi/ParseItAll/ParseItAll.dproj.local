@@ -1,14 +1,19 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <BorlandProject>
 	<Transactions>
-    <Transaction>1899.12.30 00:00:00.000.072,D:\Git\ParseItAll\Delphi\ParseItAll\AdminManager.dproj=D:\Git\ParseItAll\Delphi\ParseItAll\ParseItAll.dproj</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.895,=D:\Git\Libraries\Delphi\API_DB.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.266,=D:\Git\Libraries\Delphi\API_Files.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.171,=D:\Git\Libraries\Delphi\API_DB_MySQL.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.686,=D:\Git\Libraries\Delphi\API_MVC_Bind.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.263,=D:\Git\Libraries\Delphi\API_ORM_Cntrls.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.870,=D:\Git\Libraries\Delphi\API_ORM.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.248,=D:\Git\Libraries\Delphi\API_MVC_DB.pas</Transaction>
-    <Transaction>1899.12.30 00:00:00.000.490,=D:\Git\Libraries\Delphi\API_MVC.pas</Transaction>
+    <Transaction>1899/12/30 00:00:00.000.895,=D:\Git\Libraries\Delphi\API_DB.pas</Transaction>
+    <Transaction>1899/12/30 00:00:00.000.686,=D:\Git\Libraries\Delphi\API_MVC_Bind.pas</Transaction>
+    <Transaction>1899/12/30 00:00:00.000.490,=D:\Git\Libraries\Delphi\API_MVC.pas</Transaction>
+    <Transaction>1899/12/30 00:00:00.000.266,=D:\Git\Libraries\Delphi\API_Files.pas</Transaction>
+    <Transaction>1899/12/30 00:00:00.000.171,=D:\Git\Libraries\Delphi\API_DB_MySQL.pas</Transaction>
+    <Transaction>1899/12/30 00:00:00.000.072,D:\Git\ParseItAll\Delphi\ParseItAll\AdminManager.dproj=D:\Git\ParseItAll\Delphi\ParseItAll\ParseItAll.dproj</Transaction>
+    <Transaction>1899/12/30 00:00:00.000.870,=D:\Git\Libraries\Delphi\API_ORM.pas</Transaction>
+    <Transaction>1899/12/30 00:00:00.000.263,=D:\Git\Libraries\Delphi\API_ORM_Cntrls.pas</Transaction>
+    <Transaction>1899/12/30 00:00:00.000.248,=D:\Git\Libraries\Delphi\API_MVC_DB.pas</Transaction>
+    <Transaction>2017/06/05 10:59:26.000.709,D:\Git\ParseItAll\Delphi\ParseItAll\mRules.pas=</Transaction>
+    <Transaction>2017/06/05 11:02:54.000.155,=D:\Git\ParseItAll\Delphi\ParseItAll\Unit1.pas</Transaction>
+    <Transaction>2017/06/05 11:04:36.000.052,D:\Git\ParseItAll\Delphi\ParseItAll\Unit1.pas=D:\Git\ParseItAll\Delphi\ParseItAll\mParser.pas</Transaction>
+    <Transaction>2017/06/05 11:05:39.000.937,=D:\Git\ParseItAll\PreDevelop\Delphi\Model.pas</Transaction>
+    <Transaction>2017/06/05 11:27:29.000.310,D:\Git\ParseItAll\PreDevelop\Delphi\Model.pas=</Transaction>
   </Transactions>
 </BorlandProject>

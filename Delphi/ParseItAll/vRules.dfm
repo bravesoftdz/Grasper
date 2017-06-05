@@ -24,14 +24,33 @@ object ViewRules: TViewRules
     Anchors = [akLeft, akTop, akRight, akBottom]
     Caption = 'pnlBrowser'
     TabOrder = 0
+    object Splitter: TSplitter
+      Left = 1
+      Top = 221
+      Width = 439
+      Height = 2
+      Cursor = crVSplit
+      Align = alBottom
+      Visible = False
+      ExplicitTop = 213
+    end
     object chrmBrowser: TChromium
       Left = 1
       Top = 1
       Width = 439
-      Height = 403
+      Height = 220
       Align = alClient
       DefaultUrl = 'about:blank'
       TabOrder = 0
+      ExplicitHeight = 222
+    end
+    object chdtDevTools: TChromiumDevTools
+      Left = 1
+      Top = 223
+      Width = 439
+      Height = 181
+      Align = alBottom
+      Visible = False
     end
   end
   object pnlControls: TPanel
@@ -203,7 +222,7 @@ object ViewRules: TViewRules
     Left = 32
     Top = 32
     Bitmap = {
-      494C010103005C00940010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C010103005C00980010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -341,5 +360,14 @@ object ViewRules: TViewRules
       0000000000000000000080010000000000008001C00300000000C003C0030000
       FF80E007C0030000FFFFF81FFC3F000000000000000000000000000000000000
       000000000000}
+  end
+  object ActionList: TActionList
+    Left = 88
+    Top = 32
+    object acDevToolsActivate: TAction
+      Caption = 'acDevToolsActivate'
+      ShortCut = 123
+      OnExecute = DevToolsActivate
+    end
   end
 end

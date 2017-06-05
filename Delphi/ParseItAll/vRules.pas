@@ -8,7 +8,7 @@ uses
   Vcl.ImgList,
   API_MVC,
   API_ORM_Cntrls,
-  eEntities, System.ImageList;
+  eEntities, System.ImageList, System.Actions, Vcl.ActnList;
 
 type
   TEntityPanel = class(TEntityPanelAbstract)
@@ -39,6 +39,10 @@ type
     btnDR: TBitBtn;
     pnlXPath: TPanel;
     btnSelectHTML: TBitBtn;
+    chdtDevTools: TChromiumDevTools;
+    Splitter: TSplitter;
+    ActionList: TActionList;
+    acDevToolsActivate: TAction;
     procedure btnAGClick(Sender: TObject);
     procedure btnCancelClick(Sender: TObject);
     procedure btnApplyClick(Sender: TObject);
@@ -50,8 +54,10 @@ type
     procedure btnARClick(Sender: TObject);
     procedure btnDRClick(Sender: TObject);
     procedure btnSelectHTMLClick(Sender: TObject);
+    procedure DevToolsActivate(Sender: Tobject);
   private
     { Private declarations }
+    FDevToolsEnabled: Boolean;
     function GetUpperNode(aLevelBreak: Integer): TTreeNode;
     function GetGroupIndex: integer;
     function GetRuleIndex: Integer;
@@ -213,6 +219,26 @@ end;
 procedure TViewRules.FormCreate(Sender: TObject);
 begin
   pnlEntityFields := TEntityPanel.Create(pnlFields);
+end;
+
+procedure TViewRules.DevToolsActivate(Sender: Tobject);
+begin
+  if FDevToolsEnabled then
+    begin
+      chdtDevTools.CloseDevTools(chrmBrowser.Browser);
+      Splitter.Visible := False;
+      chdtDevTools.Visible := False;
+
+      FDevToolsEnabled := False;
+    end
+  else
+    begin
+      chdtDevTools.Visible := True;
+      Splitter.Visible := True;
+      chdtDevTools.ShowDevTools(chrmBrowser.Browser);
+
+      FDevToolsEnabled := True;
+    end;
 end;
 
 procedure TViewRules.InitView;

@@ -27,7 +27,7 @@ $(document).find('body').click(function (e) {
     e.preventDefault();
 
     var xpath = getXPathJSON(e.target);
-    app.databack(xpath);
+    app.selectdataback(xpath);
 
     return false;
 });

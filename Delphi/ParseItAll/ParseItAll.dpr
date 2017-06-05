@@ -13,7 +13,6 @@ uses
   ceflib,
   mJobs in 'mJobs.pas',
   vRules in 'vRules.pas' {ViewRules},
-  mRules in 'mRules.pas',
   API_MVC in '..\..\..\Libraries\Delphi\API_MVC.pas',
   API_MVC_Bind in '..\..\..\Libraries\Delphi\API_MVC_Bind.pas',
   API_ORM in '..\..\..\Libraries\Delphi\API_ORM.pas',
@@ -21,7 +20,8 @@ uses
   API_MVC_DB in '..\..\..\Libraries\Delphi\API_MVC_DB.pas',
   API_DB_MySQL in '..\..\..\Libraries\Delphi\API_DB_MySQL.pas',
   API_Files in '..\..\..\Libraries\Delphi\API_Files.pas',
-  API_ORM_Cntrls in '..\..\..\Libraries\Delphi\API_ORM_Cntrls.pas';
+  API_ORM_Cntrls in '..\..\..\Libraries\Delphi\API_ORM_Cntrls.pas',
+  mParser in 'mParser.pas';
 
 {$R *.res}
 

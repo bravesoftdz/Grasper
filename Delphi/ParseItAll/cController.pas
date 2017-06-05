@@ -12,7 +12,8 @@ uses
 
 type
   TJSExtension = class
-    class procedure databack(const data: string);
+    class procedure selectdataback(const data: string);
+    class procedure parsedataback(const data: string);
   end;
 
   TCustomRenderProcessHandler = class(TCefRenderProcessHandlerOwn)
@@ -22,6 +23,7 @@ type
 
   TController = class(TControllerDB)
   private
+    FJSScript: string;
     procedure crmProcessMessageReceived(Sender: TObject;
             const browser: ICefBrowser; sourceProcess: TCefProcessId;
             const message: ICefProcessMessage; out Result: Boolean);
@@ -76,7 +78,7 @@ uses
   vRules,
   mLogin,
   mJobs,
-  mRules;
+  mParser;
 
 function TController.GetSelectedRule: TJobRule;
 begin
@@ -151,7 +153,8 @@ procedure TController.crmProcessMessageReceived(Sender: TObject;
         const browser: ICefBrowser; sourceProcess: TCefProcessId;
         const message: ICefProcessMessage; out Result: Boolean);
 begin
-  if message.Name = 'databack' then CreateNodes(message.ArgumentList.GetString(0));
+  if message.Name = 'selectdataback' then CreateNodes(message.ArgumentList.GetString(0));
+  if message.Name = 'parsedataback' then ShowMessage(message.ArgumentList.GetString(0));
 end;
 
 procedure TController.SelectHTMLNode;
@@ -250,7 +253,12 @@ begin
   with ViewRules do
     begin
       case tvTree.Selected.Level of
-        0:  Entity := GetSelectedGroup;
+        0:  begin
+              FObjData.AddOrSetValue('Group', GetSelectedGroup);
+              FData.AddOrSetValue('JSScript', FJSScript);
+              CallModel(TModelJS, 'PrepareJSScriptForGroup');
+              Entity := GetSelectedGroup;
+            end;
 
         1:  begin
               if GetSelectedLink <> nil then
@@ -321,6 +329,9 @@ var
   JobList: TJobList;
   i: Integer;
 begin
+  if aEventMsg = 'AfterJSScriptPrepared' then
+    ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(FData.Items['JSScript'], 'about:blank', 0);
+
   if aEventMsg = 'LoginDone' then
     begin
       ViewLogin.Close;
@@ -377,6 +388,8 @@ begin
   FConnectOnCreate := True;
   FConnectParams := Self.GetConnectParams('Settings\MySQL.ini');
   FDBEngineClass := TMySQLEngine;
+
+  FJSScript := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\DOMParser.js');
 end;
 
 { TCustomRenderProcessHandler }
@@ -386,11 +399,20 @@ begin
 end;
 
 { TTestExtension }
-class procedure TJSExtension.databack(const data: string);
+class procedure TJSExtension.selectdataback(const data: string);
 var
   msg: ICefProcessMessage;
 begin
-  msg := TCefProcessMessageRef.New('databack');
+  msg := TCefProcessMessageRef.New('selectdataback');
+  msg.ArgumentList.SetString(0, data);
+  TCefv8ContextRef.Current.Browser.SendProcessMessage(PID_BROWSER, msg);
+end;
+
+class procedure TJSExtension.parsedataback(const data: string);
+var
+  msg: ICefProcessMessage;
+begin
+  msg := TCefProcessMessageRef.New('parsedataback');
   msg.ArgumentList.SetString(0, data);
   TCefv8ContextRef.Current.Browser.SendProcessMessage(PID_BROWSER, msg);
 end;

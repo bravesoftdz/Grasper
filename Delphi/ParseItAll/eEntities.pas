@@ -57,6 +57,7 @@ type
     function GetNodeList: TNodeList;
   //////////////////
   public
+    function GetContainerInsideNodes: TNodeList;
     property GroupID: Integer read GetGroupID write SetGroupID;
     property Description: string read GetDescription write SetDescription;
     property ContainerOffset: Integer read GetContainerOffset write SetContainerOffset;
@@ -117,6 +118,7 @@ type
     FRecords: TRecordList;
   public
     class function GetEntityStruct: TEntityStruct; override;
+    function GetContainerNodes: TNodeList;
     property LevelID: Integer read GetLevelID write SetLevelID;
     property Notes: string read GetNotes write SetNotes;
     property Links: TLinkList read GetLinkList;
@@ -174,6 +176,45 @@ implementation
 
 uses
   System.SysUtils;
+
+function TJobRule.GetContainerInsideNodes: TNodeList;
+var
+  Node: TJobNode;
+  i: Integer;
+begin
+  Result := TNodeList.Create(False);
+  i := 0;
+  for Node in Self.Nodes do
+    begin
+      Inc(i);
+      if i > Nodes.Count - Self.ContainerOffset then
+        Result.Add(Node);
+    end;
+end;
+
+function TJobGroup.GetContainerNodes: TNodeList;
+var
+  i: integer;
+  Nodes: TNodeList;
+begin
+  Result := TNodeList.Create(False);
+
+  if Self.Links.Count > 0 then
+    begin
+      Nodes := Self.Links[0].Rule.Nodes;
+      for i := 0 to Nodes.Count - 1 do
+        if i < Nodes.Count - Self.Links[0].Rule.ContainerOffset then
+          Result.Add(Nodes[i]);
+    end;
+
+  if (Result.Count = 0) and (Self.Records.Count > 0) then
+    begin
+      Nodes := Self.Records[0].Rule.Nodes;
+      for i := 0 to Nodes.Count - 1 do
+        if i < Nodes.Count - Self.Records[0].Rule.ContainerOffset then
+          Result.Add(Nodes[i]);
+    end;
+end;
 
 function TJobNode.GetName: string;
 begin
