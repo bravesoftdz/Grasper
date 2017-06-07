@@ -4,6 +4,7 @@ interface
 
 uses
   System.Generics.Collections,
+  System.UITypes,
   Data.DB,
   API_ORM;
 
@@ -54,6 +55,8 @@ type
     procedure SetContainerOffset(aValue: integer);
     function GetCriticalType: integer;
     procedure SetCriticalType(aValue: integer);
+    function GetVisualColor: TColor;
+    procedure SetVisualColor(aValue: TColor);
     function GetNodeList: TNodeList;
   //////////////////
   public
@@ -62,6 +65,7 @@ type
     property Description: string read GetDescription write SetDescription;
     property ContainerOffset: Integer read GetContainerOffset write SetContainerOffset;
     property CriticalType: Integer read GetCriticalType write SetCriticalType;
+    property VisualColor: TColor read GetVisualColor write SetVisualColor;
     property Nodes: TNodeList read GetNodeList;
   end;
 
@@ -176,6 +180,16 @@ implementation
 
 uses
   System.SysUtils;
+
+function TJobRule.GetVisualColor: TColor;
+begin
+  Result := FData.Items['VISUAL_COLOR'];
+end;
+
+procedure TJobRule.SetVisualColor(aValue: TColor);
+begin
+  FData.AddOrSetValue('VISUAL_COLOR', aValue);
+end;
 
 function TJobRule.GetContainerInsideNodes: TNodeList;
 var
@@ -385,6 +399,7 @@ begin
   AddField(Result.FieldList, 'DESCRIPTION', ftString);
   AddField(Result.FieldList, 'CONTAINER_OFFSET', ftInteger);
   AddField(Result.FieldList, 'CRITICAL_TYPE', ftInteger);
+  AddField(Result.FieldList, 'VISUAL_COLOR', ftInteger);
 end;
 
 destructor TJobGroup.Destroy;

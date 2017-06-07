@@ -42,7 +42,6 @@ object ViewRules: TViewRules
       Align = alClient
       DefaultUrl = 'about:blank'
       TabOrder = 0
-      ExplicitHeight = 222
     end
     object chdtDevTools: TChromiumDevTools
       Left = 1
@@ -60,9 +59,6 @@ object ViewRules: TViewRules
     Height = 405
     Align = alClient
     TabOrder = 1
-    DesignSize = (
-      250
-      405)
     object pnlLevel: TPanel
       Left = 1
       Top = 1
@@ -171,49 +167,73 @@ object ViewRules: TViewRules
     end
     object pnlFields: TPanel
       Left = 1
-      Top = 289
+      Top = 265
       Width = 248
-      Height = 115
+      Height = 98
       Align = alClient
       TabOrder = 2
-    end
-    object btnApply: TButton
-      Left = 16
-      Top = 372
-      Width = 75
-      Height = 25
-      Anchors = [akLeft, akBottom]
-      Caption = 'btnApply'
-      TabOrder = 3
-      OnClick = btnApplyClick
-    end
-    object btnCancel: TButton
-      Left = 160
-      Top = 372
-      Width = 75
-      Height = 25
-      Anchors = [akLeft, akBottom]
-      Caption = 'btnCancel'
-      TabOrder = 4
-      OnClick = btnCancelClick
+      ExplicitTop = 289
+      ExplicitHeight = 77
     end
     object pnlXPath: TPanel
       Left = 1
       Top = 201
       Width = 248
-      Height = 88
+      Height = 64
       Align = alTop
       Caption = 'pnlXPath'
-      TabOrder = 5
+      TabOrder = 3
       Visible = False
       object btnSelectHTML: TBitBtn
-        Left = 8
-        Top = 32
+        Left = 15
+        Top = 20
         Width = 75
         Height = 25
         Caption = 'btnSelectHTML'
         TabOrder = 0
         OnClick = btnSelectHTMLClick
+      end
+      object udContainerStep: TUpDown
+        Left = 157
+        Top = 10
+        Width = 17
+        Height = 43
+        TabOrder = 1
+        OnChangingEx = udContainerStepChangingEx
+      end
+    end
+    object pnlButtons: TPanel
+      Left = 1
+      Top = 363
+      Width = 248
+      Height = 41
+      Align = alBottom
+      TabOrder = 4
+      ExplicitLeft = 32
+      ExplicitTop = 372
+      ExplicitWidth = 185
+      DesignSize = (
+        248
+        41)
+      object btnCancel: TButton
+        Left = 152
+        Top = 9
+        Width = 75
+        Height = 25
+        Anchors = [akLeft, akBottom]
+        Caption = 'btnCancel'
+        TabOrder = 0
+        OnClick = btnCancelClick
+      end
+      object btnApply: TButton
+        Left = 16
+        Top = 9
+        Width = 75
+        Height = 25
+        Anchors = [akLeft, akBottom]
+        Caption = 'btnApply'
+        TabOrder = 1
+        OnClick = btnApplyClick
       end
     end
   end
@@ -222,7 +242,7 @@ object ViewRules: TViewRules
     Left = 32
     Top = 32
     Bitmap = {
-      494C010103005C00980010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C010103005C009C0010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

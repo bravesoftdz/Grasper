@@ -14,7 +14,6 @@ type
   TEntityPanel = class(TEntityPanelAbstract)
   protected
     procedure InitPanel; override;
-    procedure AfterEditChange(aEdit: TEdit);
   end;
 
   TViewRules = class(TViewAbstract)
@@ -31,8 +30,6 @@ type
     btnAG: TBitBtn;
     ilIcons: TImageList;
     btnAL: TBitBtn;
-    btnApply: TButton;
-    btnCancel: TButton;
     btnDG: TBitBtn;
     btnDL: TBitBtn;
     btnAR: TBitBtn;
@@ -43,6 +40,10 @@ type
     Splitter: TSplitter;
     ActionList: TActionList;
     acDevToolsActivate: TAction;
+    pnlButtons: TPanel;
+    btnCancel: TButton;
+    btnApply: TButton;
+    udContainerStep: TUpDown;
     procedure btnAGClick(Sender: TObject);
     procedure btnCancelClick(Sender: TObject);
     procedure btnApplyClick(Sender: TObject);
@@ -55,6 +56,9 @@ type
     procedure btnDRClick(Sender: TObject);
     procedure btnSelectHTMLClick(Sender: TObject);
     procedure DevToolsActivate(Sender: Tobject);
+    procedure AfterEntityPanelChange(aControl: TControl);
+    procedure udContainerStepChangingEx(Sender: TObject;
+      var AllowChange: Boolean; NewValue: Integer; Direction: TUpDownDirection);
   private
     { Private declarations }
     FDevToolsEnabled: Boolean;
@@ -86,6 +90,15 @@ uses
   System.UITypes,
   API_MVC_Bind;
 
+procedure TViewRules.AfterEntityPanelChange(aControl: TControl);
+begin
+  if aControl.Name = 'cntrlVISUAL_COLOR' then
+    SendMessage('TreeNodeSelected');
+
+  if aControl.Name = 'cntrlNOTES' then
+    tvTree.Selected.Text := (aControl as TEdit).Text;
+end;
+
 function TViewRules.GetUpperNode(aLevelBreak: Integer): TTreeNode;
 var
   i: Integer;
@@ -107,14 +120,9 @@ begin
   Result := GetUpperNode(0).Index;
 end;
 
-procedure TEntityPanel.AfterEditChange(aEdit: TEdit);
-begin
-  ViewRules.tvTree.Selected.Text := aEdit.Text;
-end;
-
 procedure TEntityPanel.InitPanel;
 begin
-  OnAfterEditChange := AfterEditChange;
+  OnAfterEditChange := ViewRules.AfterEntityPanelChange;
 end;
 
 procedure TViewRules.SetControlTree(aJobGroupList: TGroupList);
@@ -168,6 +176,12 @@ end;
 procedure TViewRules.tvTreeChange(Sender: TObject; Node: TTreeNode);
 begin
   SendMessage('TreeNodeSelected');
+end;
+
+procedure TViewRules.udContainerStepChangingEx(Sender: TObject;
+  var AllowChange: Boolean; NewValue: Integer; Direction: TUpDownDirection);
+begin
+  SendMessage('ChangeContainerOffset');
 end;
 
 procedure TViewRules.btnAGClick(Sender: TObject);

@@ -23,7 +23,6 @@ function getXPathJSON(element) {
 }
 
 $(document).find('body').click(function (e) {
-
     e.preventDefault();
 
     var xpath = getXPathJSON(e.target);

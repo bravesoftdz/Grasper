@@ -4,16 +4,18 @@ interface
 
 uses
   System.JSON,
+  System.UITypes,
   API_MVC_DB,
   eEntities;
 
 type
   TModelJS = class(TModelDB)
   private
+    function ColorToHex(color: TColor): String;
     function EncodeNodesToJSON(aNodeList: TNodeList): TJSONArray;
   published
     procedure PrepareJSScriptForGroup;
-    procedure ExecuteRule(aRule: TJobRule);
+    procedure PrepareJSScriptForRule;
   end;
 
 implementation
@@ -21,6 +23,11 @@ implementation
 uses
   System.SysUtils,
   API_Files;
+
+function TModelJS.ColorToHex(color: TColor): String;
+begin
+  Result := Format('#%.2x%.2x%.2x', [byte(color), byte(color shr 8), byte(color shr 16)]);
+end;
 
 function TModelJS.EncodeNodesToJSON(aNodeList: TNodeList): TJSONArray;
 var
@@ -67,6 +74,7 @@ begin
         jsnRule := TJSONObject.Create;
         jsnRule.AddPair('id', TJSONNumber.Create(LinkRule.ID));
         jsnRule.AddPair('level', TJSONNumber.Create(LinkRule.Level));
+        jsnRule.AddPair('color', ColorToHex(LinkRule.Rule.VisualColor));
 
         ContainerInsideNodes := LinkRule.Rule.GetContainerInsideNodes;
         try
@@ -86,6 +94,7 @@ begin
         jsnRule := TJSONObject.Create;
         jsnRule.AddPair('id', TJSONNumber.Create(RecordRule.ID));
         jsnRule.AddPair('key', RecordRule.Key);
+        jsnRule.AddPair('color', ColorToHex(RecordRule.Rule.VisualColor));
         //jsnRule.AddPair('typeid', TJSONNumber.Create(JobRecordsRule.TypeRefID));
 
         ContainerInsideNodes := RecordRule.Rule.GetContainerInsideNodes;
@@ -112,9 +121,34 @@ begin
   end;
 end;
 
-procedure TModelJS.ExecuteRule(aRule: TJobRule);
+procedure TModelJS.PrepareJSScriptForRule;
+var
+  Group: TJobGroup;
+  LinkRule: TJobLink;
+  RecordRule: TJobRecord;
 begin
+  Group := TJobGroup.Create(FDBEngine, 0);
+  try
+    if Assigned(FObjData.Items['LinkRule']) then
+      begin
+        LinkRule := FObjData.Items['LinkRule'] as TJobLink;
+        Group.Links.Add(LinkRule);
+      end;
 
+    if Assigned(FObjData.Items['RecordRule']) then
+      begin
+        RecordRule := FObjData.Items['RecordRule'] as TJobRecord;
+        Group.Records.Add(RecordRule);
+      end;
+
+    FObjData.AddOrSetValue('Group', Group);
+    PrepareJSScriptForGroup;
+
+    if LinkRule <> nil then Group.Links.Extract(LinkRule);
+    if RecordRule <> nil then Group.Records.Extract(RecordRule);
+  finally
+    Group.Free;
+  end;
 end;
 
 end.

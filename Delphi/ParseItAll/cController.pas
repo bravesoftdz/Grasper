@@ -55,6 +55,8 @@ type
 
     procedure SelectHTMLNode;
 
+    procedure ChangeContainerOffset;
+
     procedure CreateNodes(aNodesData: string);
   end;
 
@@ -67,6 +69,7 @@ implementation
 
 uses
   Vcl.Dialogs,
+  Vcl.Controls,
   System.SysUtils,
   System.JSON,
   API_Files,
@@ -79,6 +82,12 @@ uses
   mLogin,
   mJobs,
   mParser;
+
+procedure TController.ChangeContainerOffset;
+begin
+  GetSelectedRule.ContainerOffset := ViewRules.udContainerStep.Position;
+  TreeNodeSelected;
+end;
 
 function TController.GetSelectedRule: TJobRule;
 begin
@@ -154,7 +163,7 @@ procedure TController.crmProcessMessageReceived(Sender: TObject;
         const message: ICefProcessMessage; out Result: Boolean);
 begin
   if message.Name = 'selectdataback' then CreateNodes(message.ArgumentList.GetString(0));
-  if message.Name = 'parsedataback' then ShowMessage(message.ArgumentList.GetString(0));
+  //if message.Name = 'parsedataback' then ShowMessage(message.ArgumentList.GetString(0));
 end;
 
 procedure TController.SelectHTMLNode;
@@ -252,19 +261,34 @@ begin
 
   with ViewRules do
     begin
+      FData.AddOrSetValue('JSScript', FJSScript);
+
       case tvTree.Selected.Level of
         0:  begin
               FObjData.AddOrSetValue('Group', GetSelectedGroup);
-              FData.AddOrSetValue('JSScript', FJSScript);
               CallModel(TModelJS, 'PrepareJSScriptForGroup');
               Entity := GetSelectedGroup;
             end;
 
         1:  begin
               if GetSelectedLink <> nil then
-                Entity := GetSelectedLink
+                begin
+                  Entity := GetSelectedLink;
+                  FObjData.AddOrSetValue('LinkRule', GetSelectedLink);
+                  FObjData.AddOrSetValue('RecordRule', nil);
+
+                  ViewRules.udContainerStep.Position := GetSelectedLink.Rule.ContainerOffset;
+                end
               else
-                Entity := GetSelectedRecord;
+                begin
+                  Entity := GetSelectedRecord;
+                  FObjData.AddOrSetValue('RecordRule',GetSelectedRecord);
+                  FObjData.AddOrSetValue('LinkRule', nil);
+
+                  ViewRules.udContainerStep.Position := GetSelectedRecord.Rule.ContainerOffset;
+                end;
+
+              CallModel(TModelJS, 'PrepareJSScriptForRule');
 
               ViewRules.pnlXPath.Visible := True;
             end;
