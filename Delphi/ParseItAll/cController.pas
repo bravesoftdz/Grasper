@@ -24,9 +24,12 @@ type
   TController = class(TControllerDB)
   private
     FJSScript: string;
+    FSelectNewLevelLink: Boolean;
+    procedure crmLoadEnd(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame; httpStatusCode: Integer);
     procedure crmProcessMessageReceived(Sender: TObject;
             const browser: ICefBrowser; sourceProcess: TCefProcessId;
             const message: ICefProcessMessage; out Result: Boolean);
+    function GetJob: TJob;
     function GetSelectedLevel: TJobLevel;
     function GetSelectedGroup: TJobGroup;
     function GetSelectedLink: TJobLink;
@@ -43,9 +46,10 @@ type
     procedure EditJobRules;
     procedure StoreJobRules;
 
+    procedure LevelSelected;
     procedure TreeNodeSelected;
 
-    procedure CreateLevel;
+    procedure CreateLevel(frame: ICefFrame);
 
     procedure CreateGroup;
     procedure DeleteGroup;
@@ -86,14 +90,54 @@ uses
   mJobs,
   mParser;
 
-function TController.CanAddLevel(aJobRule: TJobLink): Boolean;
+procedure TController.LevelSelected;
 begin
-
+  FObjData.AddOrSetValue('Level', GetJob.Levels[ViewRules.LevelIndex]);
+  ViewRules.chrmBrowser.Load(GetSelectedLevel.BaseLink);
+  ViewRules.SetControlTree(GetSelectedLevel.Groups);
+  ViewRules.pnlXPath.Visible := False;
+  ViewRules.pnlEntityFields.ClearControls;
 end;
 
-procedure TController.CreateLevel;
+procedure TController.crmLoadEnd(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame; httpStatusCode: Integer);
 begin
+  if FSelectNewLevelLink then
+    begin
+      CreateLevel(frame);
+      FSelectNewLevelLink := False;
+    end;
+end;
 
+function TController.GetJob: TJob;
+begin
+  Result := FObjData.Items['Job'] as TJob;
+end;
+
+function TController.CanAddLevel(aJobRule: TJobLink): Boolean;
+var
+  MaxLevel: Integer;
+  Level: TJobLevel;
+begin
+  MaxLevel := 0;
+  for Level in GetJob.Levels do
+    if Level.Level > MaxLevel then MaxLevel := Level.Level;
+
+  if aJobRule.Level > MaxLevel then
+    Result := True
+  else
+    Result := False;
+end;
+
+procedure TController.CreateLevel(frame: ICefFrame);
+var
+  Level: TJobLevel;
+begin
+  Level := TJobLevel.Create(FDBEngine, 0);
+  Level.Level := GetSelectedLink.Level;
+  Level.BaseLink := frame.Url;
+
+  GetJob.Levels.Add(Level);
+  ViewRules.SetLevels(GetJob.Levels, GetJob.Levels.Count - 1);
 end;
 
 procedure TController.ChangeContainerOffset;
@@ -169,6 +213,8 @@ begin
 
       Rule.Nodes.Add(Node);
     end;
+
+  TreeNodeSelected;
 end;
 
 procedure TController.crmProcessMessageReceived(Sender: TObject;
@@ -275,6 +321,7 @@ begin
   with ViewRules do
     begin
       FData.AddOrSetValue('JSScript', FJSScript);
+      btnAddLevel.Enabled := False;
 
       case tvTree.Selected.Level of
         0:  begin
@@ -290,8 +337,8 @@ begin
                   FObjData.AddOrSetValue('LinkRule', GetSelectedLink);
                   FObjData.AddOrSetValue('RecordRule', nil);
 
-                  ViewRules.btnAddLevel.Enabled := CanAddLevel(GetSelectedLink);
-                  ViewRules.udContainerStep.Position := GetSelectedLink.Rule.ContainerOffset;
+                  btnAddLevel.Enabled := CanAddLevel(GetSelectedLink);
+                  udContainerStep.Position := GetSelectedLink.Rule.ContainerOffset;
                 end
               else
                 begin
@@ -299,13 +346,12 @@ begin
                   FObjData.AddOrSetValue('RecordRule',GetSelectedRecord);
                   FObjData.AddOrSetValue('LinkRule', nil);
 
-                  ViewRules.btnAddLevel.Enabled := False;
-                  ViewRules.udContainerStep.Position := GetSelectedRecord.Rule.ContainerOffset;
+                  udContainerStep.Position := GetSelectedRecord.Rule.ContainerOffset;
                 end;
 
               CallModel(TModelJS, 'PrepareJSScriptForRule');
 
-              ViewRules.pnlXPath.Visible := True;
+              pnlXPath.Visible := True;
             end;
       end;
 
@@ -335,8 +381,8 @@ begin
 
   CallView(TViewRules);
   ViewRules.SetLevels(Levels);
-  ViewRules.SetControlTree(Levels[0].Groups);
   ViewRules.chrmBrowser.OnProcessMessageReceived := crmProcessMessageReceived;
+  ViewRules.chrmBrowser.OnLoadEnd := crmLoadEnd;
 end;
 
 procedure TController.StoreJobRules;
@@ -390,6 +436,9 @@ end;
 
 procedure TController.PerfomViewMessage(aMsg: string);
 begin
+  if aMsg = 'SelectNewLevelLink' then
+      FSelectNewLevelLink := True;
+
   if aMsg = 'ViewRulesClosed' then
     begin
       FObjData.Items['Job'].Free;

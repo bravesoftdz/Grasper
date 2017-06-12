@@ -1,4 +1,4 @@
-
+﻿
 var group = %s;
 
 function getElementResults(rule, elem, firstGroupResult) {
@@ -8,7 +8,8 @@ function getElementResults(rule, elem, firstGroupResult) {
 
     // paint selected elements
     $(elem).wrapAll('<b class="PIAColor"></b>');
-    $('.PIAColor').css('background', rule.color);  
+    $('.PIAColor').css('background-color', rule.color);  
+    $('.PIAColor').children().css('background-color', 'inherit'); 
     
     // пользовательская обработка
     //if (rule.custom_func !== undefined)

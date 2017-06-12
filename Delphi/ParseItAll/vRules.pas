@@ -59,21 +59,24 @@ type
     procedure AfterEntityPanelChange(aControl: TControl);
     procedure udContainerStepClick(Sender: TObject; Button: TUDBtnType);
     procedure btnAddLevelClick(Sender: TObject);
+    procedure cbbLevelChange(Sender: TObject);
   private
     { Private declarations }
     FDevToolsEnabled: Boolean;
     function GetUpperNode(aLevelBreak: Integer): TTreeNode;
     function GetGroupIndex: integer;
     function GetRuleIndex: Integer;
+    function GetLevelIndex: integer;
   protected
     procedure InitView; override;
   public
     { Public declarations }
     pnlEntityFields: TEntityPanel;
-    procedure SetLevels(aLevelList: TLevelList);
+    procedure SetLevels(aLevelList: TLevelList; aIndex: Integer = 0);
     procedure SetControlTree(aJobGroupList: TGroupList);
     property GroupIndex: Integer read GetGroupIndex;
     property RuleIndex: Integer read GetRuleIndex;
+    property LevelIndex: Integer read GetLevelIndex;
   end;
 
   // FBindData Item Keys
@@ -89,6 +92,11 @@ implementation
 uses
   System.UITypes,
   API_MVC_Bind;
+
+function TViewRules.GetLevelIndex: integer;
+begin
+  Result := cbbLevel.ItemIndex;
+end;
 
 procedure TViewRules.AfterEntityPanelChange(aControl: TControl);
 begin
@@ -132,7 +140,9 @@ var
   JobRecord: TJobRecord;
   GroupNode, LinkNode, RecordNode: TTreeNode;
 begin
+  ViewRules.tvTree.OnChange := nil;
   ViewRules.tvTree.Items.Clear;
+  ViewRules.tvTree.OnChange := tvTreeChange;
 
   for Group in aJobGroupList do
     begin
@@ -160,17 +170,19 @@ begin
   ViewRules.tvTree.FullExpand;
 end;
 
-procedure TViewRules.SetLevels(aLevelList: TLevelList);
+procedure TViewRules.SetLevels(aLevelList: TLevelList; aIndex: Integer = 0);
 var
   Level: TJobLevel;
 begin
+  cbbLevel.Items.Clear;
+
   for Level in aLevelList  do
     begin
       cbbLevel.Items.Add(Level.Level.ToString);
     end;
 
-  cbbLevel.ItemIndex := 0;
-  chrmBrowser.Load(Level.BaseLink);
+  cbbLevel.ItemIndex := aIndex;
+  SendMessage('LevelSelected');
 end;
 
 procedure TViewRules.tvTreeChange(Sender: TObject; Node: TTreeNode);
@@ -185,7 +197,7 @@ end;
 
 procedure TViewRules.btnAddLevelClick(Sender: TObject);
 begin
-  SendMessage('CreateLevel');
+  SendMessage('SelectNewLevelLink');
 end;
 
 procedure TViewRules.btnAGClick(Sender: TObject);
@@ -232,6 +244,11 @@ end;
 procedure TViewRules.btnSelectHTMLClick(Sender: TObject);
 begin
   SendMessage('SelectHTMLNode');
+end;
+
+procedure TViewRules.cbbLevelChange(Sender: TObject);
+begin
+  SendMessage('LevelSelected');
 end;
 
 procedure TViewRules.FormCreate(Sender: TObject);
