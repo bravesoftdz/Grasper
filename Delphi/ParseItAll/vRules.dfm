@@ -87,7 +87,9 @@ object ViewRules: TViewRules
         Width = 75
         Height = 25
         Caption = 'btnAddL'
+        Enabled = False
         TabOrder = 1
+        OnClick = btnAddLevelClick
       end
     end
     object pnlTree: TPanel
@@ -172,8 +174,6 @@ object ViewRules: TViewRules
       Height = 98
       Align = alClient
       TabOrder = 2
-      ExplicitTop = 289
-      ExplicitHeight = 77
     end
     object pnlXPath: TPanel
       Left = 1
@@ -199,7 +199,7 @@ object ViewRules: TViewRules
         Width = 17
         Height = 43
         TabOrder = 1
-        OnChangingEx = udContainerStepChangingEx
+        OnClick = udContainerStepClick
       end
     end
     object pnlButtons: TPanel
@@ -209,9 +209,6 @@ object ViewRules: TViewRules
       Height = 41
       Align = alBottom
       TabOrder = 4
-      ExplicitLeft = 32
-      ExplicitTop = 372
-      ExplicitWidth = 185
       DesignSize = (
         248
         41)
@@ -242,7 +239,7 @@ object ViewRules: TViewRules
     Left = 32
     Top = 32
     Bitmap = {
-      494C010103005C009C0010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C010103005C00A40010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

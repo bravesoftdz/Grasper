@@ -6,6 +6,7 @@ function getElementResults(rule, elem, firstGroupResult) {
     if (elem == null)
         return [getResultNoElementFind('NoMatchInRuleNodes', rule.id, rule.critical)];
 
+    // paint selected elements
     $(elem).wrapAll('<b class="PIAColor"></b>');
     $('.PIAColor').css('background', rule.color);  
     
@@ -66,15 +67,15 @@ function getElementResults(rule, elem, firstGroupResult) {
 
 function getElementsByNodes(baseElement, nodes) {
     var elements = [baseElement];
-    // List Each Node inside Base Element
+    // list each node inside base element
     nodes.map(function (node) {
         var matchElements = [];
         
         elements.map(function (element) {
             var collection = getCollectionByTag(element, node.tag);
-            // List Each Child Nodes - Search For Matching
+            // list each child nodes - search for matching
             collection.map(function (child, i) {
-                // Search Element
+                // search element
                 node.index = i + 1;
                 element = getElementByRuleNode(node, collection, false);
                 if (element === undefined)
@@ -213,7 +214,7 @@ function parseDOMbyGroup(group) {
     var resultsFromElements = [];
     var returnObj = {};
 
-    // Step down to DOM Tree - Get Container Collection
+    // step down to DOM tree - get container collection
     group.nodes.forEach(function (node) {
         if (element != null) {
 
@@ -228,7 +229,7 @@ function parseDOMbyGroup(group) {
         }
     });
     
-    // Step down to DOM Tree - Get Rule Collection  
+    // step down to DOM tree - get rule collection  
     if (element != null) {
         group.rules.map(function (rule, i) {
             var elements = getElementsByNodes(element, rule.nodes);
@@ -250,8 +251,9 @@ function parseDOMbyGroup(group) {
 
 }
 
-var t = $('.PIAColor').children().first();
-$(t).unwrap();
+// clear previous selection
+var paintedElements = $('.PIAColor').children();
+$(paintedElements).unwrap();
         
 app.parsedataback(parseDOMbyGroup(group));
 console.log('done');

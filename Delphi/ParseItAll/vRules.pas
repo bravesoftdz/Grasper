@@ -57,8 +57,8 @@ type
     procedure btnSelectHTMLClick(Sender: TObject);
     procedure DevToolsActivate(Sender: Tobject);
     procedure AfterEntityPanelChange(aControl: TControl);
-    procedure udContainerStepChangingEx(Sender: TObject;
-      var AllowChange: Boolean; NewValue: Integer; Direction: TUpDownDirection);
+    procedure udContainerStepClick(Sender: TObject; Button: TUDBtnType);
+    procedure btnAddLevelClick(Sender: TObject);
   private
     { Private declarations }
     FDevToolsEnabled: Boolean;
@@ -178,10 +178,14 @@ begin
   SendMessage('TreeNodeSelected');
 end;
 
-procedure TViewRules.udContainerStepChangingEx(Sender: TObject;
-  var AllowChange: Boolean; NewValue: Integer; Direction: TUpDownDirection);
+procedure TViewRules.udContainerStepClick(Sender: TObject; Button: TUDBtnType);
 begin
   SendMessage('ChangeContainerOffset');
+end;
+
+procedure TViewRules.btnAddLevelClick(Sender: TObject);
+begin
+  SendMessage('CreateLevel');
 end;
 
 procedure TViewRules.btnAGClick(Sender: TObject);

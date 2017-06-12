@@ -32,6 +32,7 @@ type
     function GetSelectedLink: TJobLink;
     function GetSelectedRecord: TJobRecord;
     function GetSelectedRule: TJobRule;
+    function CanAddLevel(aJobRule: TJobLink): Boolean;
   protected
     procedure InitDB; override;
     procedure PerfomViewMessage(aMsg: string); override;
@@ -43,6 +44,8 @@ type
     procedure StoreJobRules;
 
     procedure TreeNodeSelected;
+
+    procedure CreateLevel;
 
     procedure CreateGroup;
     procedure DeleteGroup;
@@ -82,6 +85,16 @@ uses
   mLogin,
   mJobs,
   mParser;
+
+function TController.CanAddLevel(aJobRule: TJobLink): Boolean;
+begin
+
+end;
+
+procedure TController.CreateLevel;
+begin
+
+end;
 
 procedure TController.ChangeContainerOffset;
 begin
@@ -277,6 +290,7 @@ begin
                   FObjData.AddOrSetValue('LinkRule', GetSelectedLink);
                   FObjData.AddOrSetValue('RecordRule', nil);
 
+                  ViewRules.btnAddLevel.Enabled := CanAddLevel(GetSelectedLink);
                   ViewRules.udContainerStep.Position := GetSelectedLink.Rule.ContainerOffset;
                 end
               else
@@ -285,6 +299,7 @@ begin
                   FObjData.AddOrSetValue('RecordRule',GetSelectedRecord);
                   FObjData.AddOrSetValue('LinkRule', nil);
 
+                  ViewRules.btnAddLevel.Enabled := False;
                   ViewRules.udContainerStep.Position := GetSelectedRecord.Rule.ContainerOffset;
                 end;
 
