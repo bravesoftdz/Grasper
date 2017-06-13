@@ -1,4 +1,4 @@
-﻿
+
 var group = %s;
 
 function getElementResults(rule, elem, firstGroupResult) {
@@ -234,14 +234,14 @@ function parseDOMbyGroup(group) {
     if (element != null) {
         group.rules.map(function (rule, i) {
             var elements = getElementsByNodes(element, rule.nodes);
-            if (i === 0)
+            //if (i === 0)
                 elements.map(function (elem) {
                     resultsFromElements.push(getElementResults(rule, elem));
                 });
-            else
-                resultsFromElements.map(function (elementResults, j) {
-                   elementResults.concat(getElementResults(rule, elements[j], elementResults[0]));
-                });
+            //else
+                //resultsFromElements.map(function (elementResults, j) {
+                //   elementResults.concat(getElementResults(rule, elements[j], elementResults[0]));
+            //});
         });
     }
 
