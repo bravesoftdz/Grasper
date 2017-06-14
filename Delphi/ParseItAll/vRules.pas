@@ -8,7 +8,7 @@ uses
   Vcl.ImgList,
   API_MVC,
   API_ORM_Cntrls,
-  eEntities, System.ImageList, System.Actions, Vcl.ActnList;
+  eEntities, System.ImageList, System.Actions, Vcl.ActnList, Vcl.Menus;
 
 type
   TEntityPanel = class(TEntityPanelAbstract)
@@ -44,6 +44,8 @@ type
     btnCancel: TButton;
     btnApply: TButton;
     udContainerStep: TUpDown;
+    pmTreeItemPopup: TPopupMenu;
+    mniAddXPathCut: TMenuItem;
     procedure btnAGClick(Sender: TObject);
     procedure btnCancelClick(Sender: TObject);
     procedure btnApplyClick(Sender: TObject);
@@ -60,6 +62,8 @@ type
     procedure udContainerStepClick(Sender: TObject; Button: TUDBtnType);
     procedure btnAddLevelClick(Sender: TObject);
     procedure cbbLevelChange(Sender: TObject);
+    procedure tvTreeDblClick(Sender: TObject);
+    procedure mniAddXPathCutClick(Sender: TObject);
   private
     { Private declarations }
     FDevToolsEnabled: Boolean;
@@ -190,6 +194,12 @@ begin
   SendMessage('TreeNodeSelected');
 end;
 
+procedure TViewRules.tvTreeDblClick(Sender: TObject);
+begin
+  if tvTree.Selected.Level = 1 then
+    SendMessage('ShowRuleResult');
+end;
+
 procedure TViewRules.udContainerStepClick(Sender: TObject; Button: TUDBtnType);
 begin
   SendMessage('ChangeContainerOffset');
@@ -279,6 +289,11 @@ end;
 procedure TViewRules.InitView;
 begin
   ViewRules := Self;
+end;
+
+procedure TViewRules.mniAddXPathCutClick(Sender: TObject);
+begin
+  SendMessage('CreateXPathCut');
 end;
 
 end.

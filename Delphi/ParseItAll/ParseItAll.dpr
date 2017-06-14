@@ -21,7 +21,8 @@ uses
   API_DB_MySQL in '..\..\..\Libraries\Delphi\API_DB_MySQL.pas',
   API_Files in '..\..\..\Libraries\Delphi\API_Files.pas',
   API_ORM_Cntrls in '..\..\..\Libraries\Delphi\API_ORM_Cntrls.pas',
-  mParser in 'mParser.pas';
+  mParser in 'mParser.pas',
+  vRuleResult in 'vRuleResult.pas' {ViewRuleResult};
 
 {$R *.res}
 

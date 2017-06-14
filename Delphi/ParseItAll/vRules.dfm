@@ -109,12 +109,14 @@ object ViewRules: TViewRules
         Align = alBottom
         Images = ilIcons
         Indent = 35
+        PopupMenu = pmTreeItemPopup
         ReadOnly = True
         TabOrder = 0
         OnChange = tvTreeChange
+        OnDblClick = tvTreeDblClick
       end
       object btnAG: TBitBtn
-        Left = 8
+        Left = 7
         Top = 4
         Width = 33
         Height = 25
@@ -132,7 +134,7 @@ object ViewRules: TViewRules
         OnClick = btnALClick
       end
       object btnDG: TBitBtn
-        Left = 44
+        Left = 43
         Top = 4
         Width = 33
         Height = 25
@@ -240,7 +242,7 @@ object ViewRules: TViewRules
     Left = 32
     Top = 32
     Bitmap = {
-      494C010103005C00A80010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C010103005C00B00010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -386,6 +388,14 @@ object ViewRules: TViewRules
       Caption = 'acDevToolsActivate'
       ShortCut = 123
       OnExecute = DevToolsActivate
+    end
+  end
+  object pmTreeItemPopup: TPopupMenu
+    Left = 554
+    Top = 113
+    object mniAddXPathCut: TMenuItem
+      Caption = 'Add XPath Cut'
+      OnClick = mniAddXPathCutClick
     end
   end
 end

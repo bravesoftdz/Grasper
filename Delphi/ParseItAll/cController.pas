@@ -3,6 +3,7 @@ unit cController;
 interface
 
 uses
+  System.JSON,
   API_MVC,
   API_MVC_DB,
   API_DB_MySQL,
@@ -24,6 +25,7 @@ type
   TController = class(TControllerDB)
   private
     FJSScript: string;
+    FLastParseResult: TJSONObject;
     FSelectNewLevelLink: Boolean;
     procedure crmLoadEnd(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame; httpStatusCode: Integer);
     procedure crmProcessMessageReceived(Sender: TObject;
@@ -65,6 +67,12 @@ type
     procedure ChangeContainerOffset;
 
     procedure CreateNodes(aNodesData: string);
+
+    procedure CreateXPathCut;
+
+    procedure ShowRuleResult;
+
+    procedure ParseDataReceived(aData: string);
   end;
 
   // FObjData Item Keys
@@ -78,7 +86,6 @@ uses
   Vcl.Dialogs,
   Vcl.Controls,
   System.SysUtils,
-  System.JSON,
   API_Files,
   API_ORM,
   API_MVC_Bind,
@@ -86,9 +93,48 @@ uses
   vLogin,
   vJob,
   vRules,
+  vRuleResult,
   mLogin,
   mJobs,
   mParser;
+
+procedure TController.CreateXPathCut;
+var
+  JobCut: TJobCut;
+begin
+  JobCut := TJobCut.Create(FDBEngine, 0);
+  JobCut.Notes := 'Наш первый CUT!';
+  JobCut.XPath.XPath := '123weqw';
+
+  GetSelectedRule.Cuts.Add(JobCut);
+end;
+
+procedure TController.ShowRuleResult;
+var
+  jsnResultArray: TJSONArray;
+  jsnGroupArray: TJSONArray;
+  jsnRuleObj: TJSONObject;
+  jsnGroupValue, jsnRuleValue: TJSONValue;
+begin
+  CallView(TViewRuleResult);
+
+  jsnResultArray := FLastParseResult.GetValue('result') as TJSONArray;
+
+  for jsnGroupValue in jsnResultArray do
+    begin
+      jsnGroupArray := jsnGroupValue as TJSONArray;
+      for jsnRuleValue in jsnGroupArray do
+        begin
+          jsnRuleObj := jsnRuleValue as TJSONObject;
+          ViewRuleResult.redtResults.Lines.Add(jsnRuleObj.GetValue('value').Value);
+        end;
+    end;
+end;
+
+procedure TController.ParseDataReceived(aData: string);
+begin
+  FLastParseResult := TJSONObject.ParseJSONValue(aData) as TJSONObject;
+end;
 
 procedure TController.LevelSelected;
 begin
@@ -222,7 +268,7 @@ procedure TController.crmProcessMessageReceived(Sender: TObject;
         const message: ICefProcessMessage; out Result: Boolean);
 begin
   if message.Name = 'selectdataback' then CreateNodes(message.ArgumentList.GetString(0));
-  //if message.Name = 'parsedataback' then ShowMessage(message.ArgumentList.GetString(0));
+  if message.Name = 'parsedataback' then ParseDataReceived(message.ArgumentList.GetString(0));
 end;
 
 procedure TController.SelectHTMLNode;

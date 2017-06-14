@@ -17,7 +17,7 @@ function getElementResults(rule, elem, firstGroupResult) {
 
     // тип контента
     //if (rule.typeid === 1)
-    //    var content = elem.innerText;
+        var content = elem.innerText;
     //if (rule.typeid === 2 || rule.typeid == null)
     //    content = elem.innerHTML;}
 
@@ -36,34 +36,37 @@ function getElementResults(rule, elem, firstGroupResult) {
     // Records
     if (rule.key != null)
         var isrecord = true;
-
-    var elementResults = [];
+  
     if (matches == null || checkOnly) {
         matches = [];
         if (islink)
             matches.push(elem.href);
         if (isrecord)
             matches.push(content);
-    }
+    }*/
 
+    var matches = [];
+    matches.push(content);
+    
+    var elementResults = [];
     matches.forEach(function (value) {
         var elemRes = {};
         elemRes.id = rule.id;
 
-        if (islink) {
-            elemRes.level = rule.level;
-            elemRes.href = value;
-        }
+        //if (islink) {
+        //    elemRes.level = rule.level;
+        //    elemRes.href = value;
+        //}
 
-        if (isrecord) {
+        //if (isrecord) {
             elemRes.key = rule.key;
             elemRes.value = value;
-        }
+        //}
 
         elementResults.push(elemRes);
     });
 
-    return elementResults; */
+    return elementResults;
 }
 
 function getElementsByNodes(baseElement, nodes) {
@@ -234,14 +237,14 @@ function parseDOMbyGroup(group) {
     if (element != null) {
         group.rules.map(function (rule, i) {
             var elements = getElementsByNodes(element, rule.nodes);
-            //if (i === 0)
+            if (i === 0)
                 elements.map(function (elem) {
                     resultsFromElements.push(getElementResults(rule, elem));
                 });
-            //else
-                //resultsFromElements.map(function (elementResults, j) {
-                //   elementResults.concat(getElementResults(rule, elements[j], elementResults[0]));
-            //});
+            else
+                resultsFromElements.map(function (elementResults, j) {
+                   elementResults.concat(getElementResults(rule, elements[j], elementResults[0]));
+                });
         });
     }
 

@@ -9,6 +9,38 @@ uses
   API_ORM;
 
 type
+  TCutXPath = class(TEntityAbstract)
+  // overrides
+  public
+    class function GetEntityStruct: TEntityStruct; override;
+  ////////////////////
+  private
+  // Getters Setters
+    function GetXPath: string;
+    procedure SetXPath(aValue: string);
+  ////////////////////
+  public
+    property XPath: string read GetXPath write SetXPath;
+  end;
+
+  TJobCut = class(TEntityAbstract)
+  // overrides
+  public
+    class function GetEntityStruct: TEntityStruct; override;
+  ////////////////////
+  private
+  // Getters Setters
+    function GetNotes: string;
+    procedure SetNotes(aValue: string);
+    function GetXPath: TCutXPath;
+  ////////////////////
+  public
+    property Notes: string read GetNotes write SetNotes;
+    property XPath: TCutXPath read GetXPath;
+  end;
+
+  TCutList = TEntityList<TJobCut>;
+
   TJobNode = class(TEntityAbstract)
   // overrides
   public
@@ -46,11 +78,12 @@ type
   ////////////////////
   private
     FNodes: TNodeList;
+    FCuts:  TCutList;
   // Getters Setters
     function GetGroupID: Integer;
     procedure SetGroupID(aValue: integer);
-    function GetDescription: string;
-    procedure SetDescription(aValue: string);
+    function GetNotes: string;
+    procedure SetNotes(aValue: string);
     function GetContainerOffset: integer;
     procedure SetContainerOffset(aValue: integer);
     function GetCriticalType: integer;
@@ -58,15 +91,17 @@ type
     function GetVisualColor: TColor;
     procedure SetVisualColor(aValue: TColor);
     function GetNodeList: TNodeList;
+    function GetCutList: TCutList;
   //////////////////
   public
     function GetContainerInsideNodes: TNodeList;
     property GroupID: Integer read GetGroupID write SetGroupID;
-    property Description: string read GetDescription write SetDescription;
+    property Notes: string read GetNotes write SetNotes;
     property ContainerOffset: Integer read GetContainerOffset write SetContainerOffset;
     property CriticalType: Integer read GetCriticalType write SetCriticalType;
     property VisualColor: TColor read GetVisualColor write SetVisualColor;
     property Nodes: TNodeList read GetNodeList;
+    property Cuts: TCutList read GetCutList;
   end;
 
   TJobRecord = class(TEntityAbstract)
@@ -181,6 +216,56 @@ implementation
 uses
   System.SysUtils;
 
+function TCutXPath.GetXPath: string;
+begin
+  Result := FData.Items['XPATH'];
+end;
+
+procedure TCutXPath.SetXPath(aValue: string);
+begin
+  FData.AddOrSetValue('XPATH', aValue);
+end;
+
+function TJobCut.GetXPath: TCutXPath;
+begin
+  Result := FRelations.Items['JOB_CUT_XPATH'] as TCutXPath;
+end;
+
+class function TCutXPath.GetEntityStruct: TEntityStruct;
+begin
+  Result.TableName := 'JOB_CUT_XPATH';
+
+  AddField(Result.FieldList, 'JOB_CUT_ID', ftInteger);
+  AddField(Result.FieldList, 'XPATH', ftString);
+end;
+
+function TJobCut.GetNotes: string;
+begin
+  Result := FData.Items['NOTES'];
+end;
+
+procedure TJobCut.SetNotes(aValue: string);
+begin
+  FData.AddOrSetValue('NOTES', aValue);
+end;
+
+function TJobRule.GetCutList: TCutList;
+begin
+  if not Assigned(FCuts) then
+    FCuts := TCutList.Create(Self, 'JOB_RULE_ID', ID);
+
+  Result := FCuts;
+end;
+
+class function TJobCut.GetEntityStruct: TEntityStruct;
+begin
+  Result.TableName := 'JOB_CUTS';
+
+  AddField(Result.FieldList, 'JOB_RULE_ID', ftInteger);
+  AddField(Result.FieldList, 'NOTES', ftString);
+  AddRelation(Result.RelatedList, 'ID', 'JOB_CUT_ID', TCutXPath);
+end;
+
 function TJobRule.GetVisualColor: TColor;
 begin
   Result := FData.Items['VISUAL_COLOR'];
@@ -263,6 +348,7 @@ end;
 procedure TJobRule.SaveLists;
 begin
   if Assigned(FNodes) then FNodes.SaveList(ID);
+  if Assigned(FCuts) then FCuts.SaveList(ID);
 end;
 
 function TJobNode.GetIndex: integer;
@@ -396,7 +482,7 @@ class function TJobRule.GetEntityStruct: TEntityStruct;
 begin
   Result.TableName := 'JOB_RULES';
   AddField(Result.FieldList, 'GROUP_ID', ftInteger);
-  AddField(Result.FieldList, 'DESCRIPTION', ftString);
+  AddField(Result.FieldList, 'NOTES', ftString);
   AddField(Result.FieldList, 'CONTAINER_OFFSET', ftInteger);
   AddField(Result.FieldList, 'CRITICAL_TYPE', ftInteger);
   AddField(Result.FieldList, 'VISUAL_COLOR', ftInteger);
@@ -435,14 +521,14 @@ begin
   FData.AddOrSetValue('GROUP_ID', aValue);
 end;
 
-function TJobRule.GetDescription: string;
+function TJobRule.GetNotes: string;
 begin
-  Result := FData.Items['DESCRIPTION'];
+  Result := FData.Items['NOTES'];
 end;
 
-procedure TJobRule.SetDescription(aValue: string);
+procedure TJobRule.SetNotes(aValue: string);
 begin
-  FData.AddOrSetValue('DESCRIPTION', aValue);
+  FData.AddOrSetValue('NOTES', aValue);
 end;
 
 function TJobLevel.GetGroups: TGroupList;
