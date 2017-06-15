@@ -263,7 +263,7 @@ begin
 
   AddField(Result.FieldList, 'JOB_RULE_ID', ftInteger);
   AddField(Result.FieldList, 'NOTES', ftString);
-  AddRelation(Result.RelatedList, 'ID', 'JOB_CUT_ID', TCutXPath);
+  AddRelation(Result.RelatedList, 'JOB_CUT_ID', '', TCutXPath);
 end;
 
 function TJobRule.GetVisualColor: TColor;
