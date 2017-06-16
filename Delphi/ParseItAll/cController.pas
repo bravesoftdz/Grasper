@@ -32,11 +32,6 @@ type
             const browser: ICefBrowser; sourceProcess: TCefProcessId;
             const message: ICefProcessMessage; out Result: Boolean);
     function GetJob: TJob;
-    function GetSelectedLevel: TJobLevel;
-    function GetSelectedGroup: TJobGroup;
-    function GetSelectedLink: TJobLink;
-    function GetSelectedRecord: TJobRecord;
-    function GetSelectedRule: TJobRule;
     function CanAddLevel(aJobRule: TJobLink): Boolean;
   protected
     procedure InitDB; override;
@@ -49,7 +44,8 @@ type
     procedure StoreJobRules;
 
     procedure LevelSelected;
-    procedure TreeNodeSelected;
+    procedure GroupSelected;
+    procedure RuleSelected;
 
     procedure CreateLevel(frame: ICefFrame);
 
@@ -62,7 +58,10 @@ type
     procedure CreateRecord;
     procedure DeleteRecord;
 
+    procedure CreateCut;
+
     procedure SelectHTMLNode;
+    procedure SelectCutNode;
 
     procedure ChangeContainerOffset;
 
@@ -98,15 +97,40 @@ uses
   mJobs,
   mParser;
 
+procedure TController.RuleSelected;
+begin
+  FObjData.AddOrSetValue('Rule', ViewRules.GetSelectedRule);
+  CallModel(TModelJS, 'PrepareJSScriptForRule');
+end;
+
+procedure TController.GroupSelected;
+begin
+  FObjData.AddOrSetValue('Group', ViewRules.GetSelectedGroup);
+  CallModel(TModelJS, 'PrepareJSScriptForGroup');
+end;
+
+procedure TController.CreateCut;
+begin
+
+end;
+
+procedure TController.SelectCutNode;
+var
+  InjectJS: string;
+begin
+  InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\DOMSelector.js');
+  ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
+end;
+
 procedure TController.CreateXPathCut;
 var
   JobCut: TJobCut;
 begin
-  JobCut := TJobCut.Create(FDBEngine, 0);
-  JobCut.Notes := 'Наш первый CUT!';
-  JobCut.XPath.XPath := '123weqw';
+  //JobCut := TJobCut.Create(FDBEngine, 0);
+  //JobCut.Notes := 'Наш первый CUT!';
+  //JobCut.XPath.XPath := '123weqw';
 
-  GetSelectedRule.Cuts.Add(JobCut);
+  //GetSelectedRule.Cuts.Add(JobCut);
 end;
 
 procedure TController.ShowRuleResult;
@@ -138,7 +162,7 @@ end;
 
 procedure TController.LevelSelected;
 begin
-  FObjData.AddOrSetValue('Level', GetJob.Levels[ViewRules.LevelIndex]);
+  FObjData.AddOrSetValue('Level', ViewRules.GetSelectedLevel);
   ViewRules.chrmBrowser.Load(GetSelectedLevel.BaseLink);
   ViewRules.SetControlTree(GetSelectedLevel.Groups);
   ViewRules.pnlXPath.Visible := False;
@@ -178,52 +202,18 @@ procedure TController.CreateLevel(frame: ICefFrame);
 var
   Level: TJobLevel;
 begin
-  Level := TJobLevel.Create(FDBEngine, 0);
+  {Level := TJobLevel.Create(FDBEngine, 0);
   Level.Level := GetSelectedLink.Level;
   Level.BaseLink := frame.Url;
 
   GetJob.Levels.Add(Level);
-  ViewRules.SetLevels(GetJob.Levels, GetJob.Levels.Count - 1);
+  ViewRules.SetLevels(GetJob.Levels, GetJob.Levels.Count - 1);}
 end;
 
 procedure TController.ChangeContainerOffset;
 begin
   GetSelectedRule.ContainerOffset := ViewRules.udContainerStep.Position;
   TreeNodeSelected;
-end;
-
-function TController.GetSelectedRule: TJobRule;
-begin
-  if GetSelectedLink <> nil then
-    Result := GetSelectedLink.Rule
-  else
-    Result := GetSelectedRecord.Rule;
-end;
-
-function TController.GetSelectedRecord: TJobRecord;
-begin
-  Result := nil;
-
-  if ViewRules.RuleIndex >= GetSelectedGroup.Links.Count then
-    Result := GetSelectedGroup.Records.Items[ViewRules.RuleIndex - GetSelectedGroup.Links.Count];
-end;
-
-function TController.GetSelectedLink: TJobLink;
-begin
-  Result := nil;
-
-  if ViewRules.RuleIndex < GetSelectedGroup.Links.Count then
-    Result := GetSelectedGroup.Links.Items[ViewRules.RuleIndex];
-end;
-
-function TController.GetSelectedLevel: TJobLevel;
-begin
-  Result := FObjData.Items['Level'] as TJobLevel;
-end;
-
-function TController.GetSelectedGroup: TJobGroup;
-begin
-  Result := GetSelectedLevel.Groups.Items[ViewRules.GroupIndex];
 end;
 
 procedure TController.CreateNodes(aNodesData: string);
@@ -358,54 +348,6 @@ begin
   ViewRules.pnlEntityFields.ClearControls;
 end;
 
-procedure TController.TreeNodeSelected;
-var
-  Entity: TEntityAbstract;
-begin
-  ViewRules.pnlXPath.Visible := False;
-
-  with ViewRules do
-    begin
-      FData.AddOrSetValue('JSScript', FJSScript);
-      btnAddLevel.Enabled := False;
-
-      case tvTree.Selected.Level of
-        0:  begin
-              FObjData.AddOrSetValue('Group', GetSelectedGroup);
-              CallModel(TModelJS, 'PrepareJSScriptForGroup');
-              Entity := GetSelectedGroup;
-            end;
-
-        1:  begin
-              if GetSelectedLink <> nil then
-                begin
-                  Entity := GetSelectedLink;
-                  FObjData.AddOrSetValue('LinkRule', GetSelectedLink);
-                  FObjData.AddOrSetValue('RecordRule', nil);
-
-                  btnAddLevel.Enabled := CanAddLevel(GetSelectedLink);
-                  udContainerStep.Position := GetSelectedLink.Rule.ContainerOffset;
-                end
-              else
-                begin
-                  Entity := GetSelectedRecord;
-                  FObjData.AddOrSetValue('RecordRule',GetSelectedRecord);
-                  FObjData.AddOrSetValue('LinkRule', nil);
-
-                  udContainerStep.Position := GetSelectedRecord.Rule.ContainerOffset;
-                end;
-
-              CallModel(TModelJS, 'PrepareJSScriptForRule');
-
-              pnlXPath.Visible := True;
-            end;
-      end;
-
-      pnlEntityFields.ClearControls;
-      pnlEntityFields.BuildControls(Entity);
-    end;
-end;
-
 procedure TController.EditJobRules;
 var
   Job: TJob;
@@ -524,6 +466,7 @@ begin
   FDBEngineClass := TMySQLEngine;
 
   FJSScript := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\DOMParser.js');
+  FData.AddOrSetValue('JSScript', FJSScript);
 end;
 
 { TCustomRenderProcessHandler }

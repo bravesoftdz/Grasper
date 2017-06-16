@@ -8,9 +8,15 @@ BEGIN
 	delete from job_rules where id = old.job_rule_id;
 END;
 
-
 CREATE DEFINER=`root`@`localhost` TRIGGER `pia-dev`.`DeleteRecRule`
   AFTER DELETE ON `pia-dev`.`job_rule_records`
+  FOR EACH ROW
+BEGIN
+	delete from job_rules where id = old.job_rule_id;
+END;
+
+CREATE DEFINER=`root`@`localhost` TRIGGER `pia-dev`.`DeleteCutRule`
+  AFTER DELETE ON `pia-dev`.`job_rule_cuts`
   FOR EACH ROW
 BEGIN
 	delete from job_rules where id = old.job_rule_id;

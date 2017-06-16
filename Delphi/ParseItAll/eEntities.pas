@@ -9,38 +9,6 @@ uses
   API_ORM;
 
 type
-  TCutXPath = class(TEntityAbstract)
-  // overrides
-  public
-    class function GetEntityStruct: TEntityStruct; override;
-  ////////////////////
-  private
-  // Getters Setters
-    function GetXPath: string;
-    procedure SetXPath(aValue: string);
-  ////////////////////
-  public
-    property XPath: string read GetXPath write SetXPath;
-  end;
-
-  TJobCut = class(TEntityAbstract)
-  // overrides
-  public
-    class function GetEntityStruct: TEntityStruct; override;
-  ////////////////////
-  private
-  // Getters Setters
-    function GetNotes: string;
-    procedure SetNotes(aValue: string);
-    function GetXPath: TCutXPath;
-  ////////////////////
-  public
-    property Notes: string read GetNotes write SetNotes;
-    property XPath: TCutXPath read GetXPath;
-  end;
-
-  TCutList = TEntityList<TJobCut>;
-
   TJobNode = class(TEntityAbstract)
   // overrides
   public
@@ -69,40 +37,21 @@ type
 
   TNodeList = TEntityList<TJobNode>;
 
-  TJobRule = class(TEntityAbstract)
+  TJobCut = class(TEntityAbstract)
   // overrides
   public
     class function GetEntityStruct: TEntityStruct; override;
-  protected
-    procedure SaveLists; override;
   ////////////////////
   private
-    FNodes: TNodeList;
-    FCuts:  TCutList;
   // Getters Setters
-    function GetGroupID: Integer;
-    procedure SetGroupID(aValue: integer);
     function GetNotes: string;
     procedure SetNotes(aValue: string);
-    function GetContainerOffset: integer;
-    procedure SetContainerOffset(aValue: integer);
-    function GetCriticalType: integer;
-    procedure SetCriticalType(aValue: integer);
-    function GetVisualColor: TColor;
-    procedure SetVisualColor(aValue: TColor);
-    function GetNodeList: TNodeList;
-    function GetCutList: TCutList;
-  //////////////////
+  ////////////////////
   public
-    function GetContainerInsideNodes: TNodeList;
-    property GroupID: Integer read GetGroupID write SetGroupID;
     property Notes: string read GetNotes write SetNotes;
-    property ContainerOffset: Integer read GetContainerOffset write SetContainerOffset;
-    property CriticalType: Integer read GetCriticalType write SetCriticalType;
-    property VisualColor: TColor read GetVisualColor write SetVisualColor;
-    property Nodes: TNodeList read GetNodeList;
-    property Cuts: TCutList read GetCutList;
   end;
+
+  TCutList = TEntityList<TJobCut>;
 
   TJobRecord = class(TEntityAbstract)
   // overrides
@@ -113,11 +62,9 @@ type
   // Getters Setters
     function GetKey: string;
     procedure SetKey(aValue: string);
-    function GetRule: TJobRule;
   //////////////////
   public
     property Key: string read GetKey write SetKey;
-    property Rule: TJobRule read GetRule;
   end;
 
   TRecordList = TEntityList<TJobRecord>;
@@ -131,14 +78,55 @@ type
   // Getters Setters
     function GetLevel: integer;
     procedure SetLevel(aValue: integer);
-    function GetRule: TJobRule;
   //////////////////
   public
     property Level: Integer read GetLevel write SetLevel;
-    property Rule: TJobRule read GetRule;
   end;
 
   TLinkList = TEntityList<TJobLink>;
+
+  TJobRule = class(TEntityAbstract)
+  // overrides
+  public
+    class function GetEntityStruct: TEntityStruct; override;
+  protected
+    procedure SaveLists; override;
+  ////////////////////
+  private
+    FNodes: TNodeList;
+  // Getters Setters
+    function GetGroupID: Integer;
+    procedure SetGroupID(aValue: integer);
+    function GetNotes: string;
+    procedure SetNotes(aValue: string);
+    function GetContainerOffset: integer;
+    procedure SetContainerOffset(aValue: integer);
+    function GetCriticalType: integer;
+    procedure SetCriticalType(aValue: integer);
+    function GetVisualColor: TColor;
+    procedure SetVisualColor(aValue: TColor);
+    function GetOrderNum: Integer;
+    procedure SetOrderNum(aValue: Integer);
+    function GetNodeList: TNodeList;
+    function GetLink: TJobLink;
+    function GetRec: TJobRecord;
+    function GetCut: TJobCut;
+  //////////////////
+  public
+    function GetContainerInsideNodes: TNodeList;
+    property GroupID: Integer read GetGroupID write SetGroupID;
+    property Notes: string read GetNotes write SetNotes;
+    property ContainerOffset: Integer read GetContainerOffset write SetContainerOffset;
+    property CriticalType: Integer read GetCriticalType write SetCriticalType;
+    property VisualColor: TColor read GetVisualColor write SetVisualColor;
+    property OrderNum: Integer read GetOrderNum write SetOrderNum;
+    property Link: TJobLink read GetLink;
+    property Rec: TJobRecord read GetRec;
+    property Cut: TJobCut read GetCut;
+    property Nodes: TNodeList read GetNodeList;
+  end;
+
+  TRuleList = TEntityList<TJobRule>;
 
   TJobGroup = class(TEntityAbstract)
   private
@@ -147,21 +135,27 @@ type
     procedure SetLevelID(aValue: integer);
     function GetNotes: string;
     procedure SetNotes(aValue: string);
+    function GetRuleList: TRuleList;
     function GetLinkList: TLinkList;
     function GetRecordList: TRecordList;
+    function GetCutList: TCutList;
     //////////////////
   protected
     procedure SaveLists; override;
   private
+    FRules: TRuleList;
     FLinks: TLinkList;
     FRecords: TRecordList;
+    FCuts: TCutList;
   public
     class function GetEntityStruct: TEntityStruct; override;
     function GetContainerNodes: TNodeList;
     property LevelID: Integer read GetLevelID write SetLevelID;
     property Notes: string read GetNotes write SetNotes;
+    property Rules: TRuleList read GetRuleList;
     property Links: TLinkList read GetLinkList;
     property Records: TRecordList read GetRecordList;
+    property Cuts: TCutList read GetCutList;
     destructor Destroy; override;
   end;
 
@@ -216,27 +210,45 @@ implementation
 uses
   System.SysUtils;
 
-function TCutXPath.GetXPath: string;
+function TJobRule.GetCut: TJobCut;
 begin
-  Result := FData.Items['XPATH'];
+  Result := FRelations.Items['JOB_RULE_CUTS'] as TJobCut;
 end;
 
-procedure TCutXPath.SetXPath(aValue: string);
+function TJobRule.GetRec: TJobRecord;
 begin
-  FData.AddOrSetValue('XPATH', aValue);
+  Result := FRelations.Items['JOB_RULE_RECORDS'] as TJobRecord;
 end;
 
-function TJobCut.GetXPath: TCutXPath;
+function TJobRule.GetLink: TJobLink;
 begin
-  Result := FRelations.Items['JOB_CUT_XPATH'] as TCutXPath;
+  Result := FRelations.Items['JOB_RULE_LINKS'] as TJobLink;
 end;
 
-class function TCutXPath.GetEntityStruct: TEntityStruct;
+function TJobGroup.GetRuleList: TRuleList;
 begin
-  Result.TableName := 'JOB_CUT_XPATH';
+  if not Assigned(FRules) then
+    FRules := TRuleList.Create(Self, 'GROUP_ID', ID, 'ORDER_NUM');
 
-  AddField(Result.FieldList, 'JOB_CUT_ID', ftInteger);
-  AddField(Result.FieldList, 'XPATH', ftString);
+  Result := FRules;
+end;
+
+function TJobRule.GetOrderNum: Integer;
+begin
+  Result := FData.Items['ORDER_NUM'];
+end;
+
+procedure TJobRule.SetOrderNum(aValue: Integer);
+begin
+  FData.AddOrSetValue('ORDER_NUM', aValue);
+end;
+
+function TJobGroup.GetCutList: TCutList;
+begin
+  if not Assigned(FCuts) then
+    FCuts := TCutList.Create(Self, 'GROUP_ID', ID);
+
+  Result := FCuts;
 end;
 
 function TJobCut.GetNotes: string;
@@ -249,21 +261,12 @@ begin
   FData.AddOrSetValue('NOTES', aValue);
 end;
 
-function TJobRule.GetCutList: TCutList;
-begin
-  if not Assigned(FCuts) then
-    FCuts := TCutList.Create(Self, 'JOB_RULE_ID', ID);
-
-  Result := FCuts;
-end;
-
 class function TJobCut.GetEntityStruct: TEntityStruct;
 begin
-  Result.TableName := 'JOB_CUTS';
+  Result.TableName := 'JOB_RULE_CUTS';
 
   AddField(Result.FieldList, 'JOB_RULE_ID', ftInteger);
   AddField(Result.FieldList, 'NOTES', ftString);
-  AddRelation(Result.RelatedList, 'JOB_CUT_ID', '', TCutXPath);
 end;
 
 function TJobRule.GetVisualColor: TColor;
@@ -298,19 +301,11 @@ var
 begin
   Result := TNodeList.Create(False);
 
-  if Self.Links.Count > 0 then
+  if Self.Rules.Count > 0 then
     begin
-      Nodes := Self.Links[0].Rule.Nodes;
+      Nodes := Self.Rules[0].Nodes;
       for i := 0 to Nodes.Count - 1 do
-        if i < Nodes.Count - Self.Links[0].Rule.ContainerOffset then
-          Result.Add(Nodes[i]);
-    end;
-
-  if (Result.Count = 0) and (Self.Records.Count > 0) then
-    begin
-      Nodes := Self.Records[0].Rule.Nodes;
-      for i := 0 to Nodes.Count - 1 do
-        if i < Nodes.Count - Self.Records[0].Rule.ContainerOffset then
+        if i < Nodes.Count - Self.Rules[0].ContainerOffset then
           Result.Add(Nodes[i]);
     end;
 end;
@@ -348,7 +343,6 @@ end;
 procedure TJobRule.SaveLists;
 begin
   if Assigned(FNodes) then FNodes.SaveList(ID);
-  if Assigned(FCuts) then FCuts.SaveList(ID);
 end;
 
 function TJobNode.GetIndex: integer;
@@ -390,16 +384,6 @@ begin
   AddField(Result.FieldList, 'NAME', ftString);
 end;
 
-function TJobRecord.GetRule: TJobRule;
-begin
-  Result := FRelations.Items['JOB_RULES'] as TJobRule;
-end;
-
-function TJobLink.GetRule: TJobRule;
-begin
-  Result := FRelations.Items['JOB_RULES'] as TJobRule;
-end;
-
 function TJobGroup.GetRecordList: TRecordList;
 begin
   if not Assigned(FRecords) then
@@ -423,13 +407,13 @@ begin
   Result.TableName := 'JOB_RULE_RECORDS';
   AddField(Result.FieldList, 'JOB_RULE_ID', ftInteger);
   AddField(Result.FieldList, 'KEY', ftString);
-  AddRelation(Result.RelatedList, 'ID', 'JOB_RULE_ID', TJobRule);
 end;
 
 procedure TJobGroup.SaveLists;
 begin
   if Assigned(FLinks) then FLinks.SaveList(ID);
   if Assigned(FRecords) then FRecords.SaveList(ID);
+  if Assigned(FCuts) then FCuts.SaveList(ID);
 end;
 
 function TJobGroup.GetLinkList: TLinkList;
@@ -455,7 +439,6 @@ begin
   Result.TableName := 'JOB_RULE_LINKS';
   AddField(Result.FieldList, 'JOB_RULE_ID', ftInteger);
   AddField(Result.FieldList, 'LEVEL', ftInteger);
-  AddRelation(Result.RelatedList, 'ID', 'JOB_RULE_ID', TJobRule);
 end;
 
 function TJobRule.GetContainerOffset: integer;
@@ -486,6 +469,11 @@ begin
   AddField(Result.FieldList, 'CONTAINER_OFFSET', ftInteger);
   AddField(Result.FieldList, 'CRITICAL_TYPE', ftInteger);
   AddField(Result.FieldList, 'VISUAL_COLOR', ftInteger);
+  AddField(Result.FieldList, 'ORDER_NUM', ftInteger);
+
+  AddRelation(Result.RelatedList, 'JOB_RULE_ID', '', TJobLink);
+  AddRelation(Result.RelatedList, 'JOB_RULE_ID', '', TJobRecord);
+  AddRelation(Result.RelatedList, 'JOB_RULE_ID', '', TJobCut);
 end;
 
 destructor TJobGroup.Destroy;

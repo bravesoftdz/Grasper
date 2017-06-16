@@ -69,7 +69,7 @@ begin
   try
     jsnGroup.AddPair('nodes', EncodeNodesToJSON(ContainerNodeList));
 
-    for LinkRule in Group.Links do
+    {for LinkRule in Group.Links do
       begin
         jsnRule := TJSONObject.Create;
         jsnRule.AddPair('id', TJSONNumber.Create(LinkRule.ID));
@@ -108,7 +108,7 @@ begin
         //jsnRule.AddPair('custom_func', CustomJS.JSFunc);
         //jsnRule.AddPair('critical', TJSONNumber.Create(JobRecordsRule.CriticalType));
         jsnRules.AddElement(jsnRule);
-      end;
+      end;  }
 
     jsnGroup.AddPair('rules', jsnRules);
 
@@ -124,29 +124,17 @@ end;
 procedure TModelJS.PrepareJSScriptForRule;
 var
   Group: TJobGroup;
-  LinkRule: TJobLink;
-  RecordRule: TJobRecord;
+  Rule: TJobRule;
 begin
   Group := TJobGroup.Create(FDBEngine, 0);
   try
-    if Assigned(FObjData.Items['LinkRule']) then
-      begin
-        LinkRule := FObjData.Items['LinkRule'] as TJobLink;
-        Group.Links.Add(LinkRule);
-      end;
-
-    if Assigned(FObjData.Items['RecordRule']) then
-      begin
-        RecordRule := FObjData.Items['RecordRule'] as TJobRecord;
-        Group.Records.Add(RecordRule);
-      end;
+    Rule := FObjData.Items['Rule'] as TJobRule;
+    Group.Rules.Add(Rule);
 
     FObjData.AddOrSetValue('Group', Group);
     PrepareJSScriptForGroup;
-
-    if LinkRule <> nil then Group.Links.Extract(LinkRule);
-    if RecordRule <> nil then Group.Records.Extract(RecordRule);
   finally
+    Group.Rules.Extract(Rule);
     Group.Free;
   end;
 end;

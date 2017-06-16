@@ -45,7 +45,7 @@ type
     btnApply: TButton;
     udContainerStep: TUpDown;
     pmTreeItemPopup: TPopupMenu;
-    mniAddXPathCut: TMenuItem;
+    mniAddCut: TMenuItem;
     procedure btnAGClick(Sender: TObject);
     procedure btnCancelClick(Sender: TObject);
     procedure btnApplyClick(Sender: TObject);
@@ -63,7 +63,7 @@ type
     procedure btnAddLevelClick(Sender: TObject);
     procedure cbbLevelChange(Sender: TObject);
     procedure tvTreeDblClick(Sender: TObject);
-    procedure mniAddXPathCutClick(Sender: TObject);
+    procedure mniAddCutClick(Sender: TObject);
   private
     { Private declarations }
     FDevToolsEnabled: Boolean;
@@ -76,15 +76,14 @@ type
   public
     { Public declarations }
     pnlEntityFields: TEntityPanel;
+
+    function GetSelectedLevel: TJobLevel;
+    function GetSelectedGroup: TJobGroup;
+    function GetSelectedRule: TJobRule;
+
     procedure SetLevels(aLevelList: TLevelList; aIndex: Integer = 0);
     procedure SetControlTree(aJobGroupList: TGroupList);
-    property GroupIndex: Integer read GetGroupIndex;
-    property RuleIndex: Integer read GetRuleIndex;
-    property LevelIndex: Integer read GetLevelIndex;
   end;
-
-  // FBindData Item Keys
-  // GroupNodes
 
 var
   ViewRules: TViewRules;
@@ -95,7 +94,23 @@ implementation
 
 uses
   System.UITypes,
+  API_ORM,
   API_MVC_Bind;
+
+function TViewRules.GetSelectedRule: TJobRule;
+begin
+  Result := GetSelectedGroup.Rules[GetRuleIndex];
+end;
+
+function TViewRules.GetSelectedGroup: TJobGroup;
+begin
+  Result := GetSelectedLevel.Groups.Items[GetGroupIndex];
+end;
+
+function TViewRules.GetSelectedLevel: TJobLevel;
+begin
+  Result := FController.ObjData.Items['Level'] as TJobLevel;
+end;
 
 function TViewRules.GetLevelIndex: integer;
 begin
@@ -140,9 +155,8 @@ end;
 procedure TViewRules.SetControlTree(aJobGroupList: TGroupList);
 var
   Group: TJobGroup;
-  Link: TJobLink;
-  JobRecord: TJobRecord;
-  GroupNode, LinkNode, RecordNode: TTreeNode;
+  JobRule: TJobRule;
+  GroupNode, RuleNode: TTreeNode;
 begin
   ViewRules.tvTree.OnChange := nil;
   ViewRules.tvTree.Items.Clear;
@@ -154,21 +168,29 @@ begin
       GroupNode.ImageIndex := 0;
       GroupNode.SelectedIndex := 0;
 
-      for Link in Group.Links do
+      for JobRule in Group.Rules do
         begin
-          LinkNode := tvTree.Items.AddChild(GroupNode, Link.Level.ToString);
-          LinkNode.ImageIndex := 1;
-          LinkNode.SelectedIndex := 1;
-        end;
+          if JobRule.Link <> nil then
+            begin
+              RuleNode := tvTree.Items.AddChild(GroupNode, JobRule.Link.Level.ToString);
+              RuleNode.ImageIndex := 1;
+              RuleNode.SelectedIndex := 1;
+            end;
 
-      for JobRecord in Group.Records do
-        begin
-          RecordNode := tvTree.Items.AddChild(GroupNode, JobRecord.Key);
-          RecordNode.ImageIndex := 2;
-          RecordNode.SelectedIndex := 2;
-        end;
+          if JobRule.Rec <> nil then
+            begin
+              RuleNode := tvTree.Items.AddChild(GroupNode, JobRule.Notes);
+              RuleNode.ImageIndex := 2;
+              RuleNode.SelectedIndex := 2;
+            end;
 
-      //FBindData.AddBind('GroupNodes', TreeNodes.Count - 1, Group.ID);
+          if JobRule.Cut <> nil then
+            begin
+              RuleNode := tvTree.Items.AddChild(GroupNode, JobRule.Notes);
+              RuleNode.ImageIndex := 3;
+              RuleNode.SelectedIndex := 3;
+            end;
+        end;
     end;
 
   ViewRules.tvTree.FullExpand;
@@ -190,8 +212,28 @@ begin
 end;
 
 procedure TViewRules.tvTreeChange(Sender: TObject; Node: TTreeNode);
+var
+  Entity: TEntityAbstract;
 begin
-  SendMessage('TreeNodeSelected');
+  pnlXPath.Visible := False;
+  btnAddLevel.Enabled := False;
+
+  case Node.Level of
+    0:  begin
+          SendMessage('GroupSelected');
+          Entity := GetSelectedGroup;
+        end;
+
+    1:  begin
+          SendMessage('RuleSelected');
+          Entity := GetSelectedRule;
+
+          pnlXPath.Visible := True;
+        end;
+  end;
+
+  pnlEntityFields.ClearControls;
+  pnlEntityFields.BuildControls(Entity);
 end;
 
 procedure TViewRules.tvTreeDblClick(Sender: TObject);
@@ -291,9 +333,9 @@ begin
   ViewRules := Self;
 end;
 
-procedure TViewRules.mniAddXPathCutClick(Sender: TObject);
+procedure TViewRules.mniAddCutClick(Sender: TObject);
 begin
-  SendMessage('CreateXPathCut');
+  SendMessage('CreateCut');
 end;
 
 end.
