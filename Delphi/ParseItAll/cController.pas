@@ -97,6 +97,12 @@ uses
   mJobs,
   mParser;
 
+procedure TController.LevelSelected;
+begin
+  FObjData.AddOrSetValue('Level', ViewRules.GetSelectedLevel);
+  ViewRules.AfterLevelSelected;
+end;
+
 procedure TController.RuleSelected;
 begin
   FObjData.AddOrSetValue('Rule', ViewRules.GetSelectedRule);
@@ -160,15 +166,6 @@ begin
   FLastParseResult := TJSONObject.ParseJSONValue(aData) as TJSONObject;
 end;
 
-procedure TController.LevelSelected;
-begin
-  FObjData.AddOrSetValue('Level', ViewRules.GetSelectedLevel);
-  ViewRules.chrmBrowser.Load(GetSelectedLevel.BaseLink);
-  ViewRules.SetControlTree(GetSelectedLevel.Groups);
-  ViewRules.pnlXPath.Visible := False;
-  ViewRules.pnlEntityFields.ClearControls;
-end;
-
 procedure TController.crmLoadEnd(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame; httpStatusCode: Integer);
 begin
   if FSelectNewLevelLink then
@@ -212,8 +209,8 @@ end;
 
 procedure TController.ChangeContainerOffset;
 begin
-  GetSelectedRule.ContainerOffset := ViewRules.udContainerStep.Position;
-  TreeNodeSelected;
+  //GetSelectedRule.ContainerOffset := ViewRules.udContainerStep.Position;
+  //TreeNodeSelected;
 end;
 
 procedure TController.CreateNodes(aNodesData: string);
@@ -227,7 +224,7 @@ var
   sValue: string;
 begin
   jsnNodes:=TJSONObject.ParseJSONValue(aNodesData) as TJSONArray;
-  Rule := GetSelectedRule;
+  Rule := ViewRules.GetSelectedRule;
   Rule.Nodes.DeleteAll;
 
   for jsnValue in jsnNodes do
@@ -250,7 +247,7 @@ begin
       Rule.Nodes.Add(Node);
     end;
 
-  TreeNodeSelected;
+  //TreeNodeSelected;
 end;
 
 procedure TController.crmProcessMessageReceived(Sender: TObject;

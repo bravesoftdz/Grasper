@@ -83,6 +83,7 @@ type
 
     procedure SetLevels(aLevelList: TLevelList; aIndex: Integer = 0);
     procedure SetControlTree(aJobGroupList: TGroupList);
+    procedure AfterLevelSelected;
   end;
 
 var
@@ -96,6 +97,14 @@ uses
   System.UITypes,
   API_ORM,
   API_MVC_Bind;
+
+procedure TViewRules.AfterLevelSelected;
+begin
+  chrmBrowser.Load(GetSelectedLevel.BaseLink);
+  SetControlTree(GetSelectedLevel.Groups);
+  pnlXPath.Visible := False;
+  pnlEntityFields.ClearControls;
+end;
 
 function TViewRules.GetSelectedRule: TJobRule;
 begin
