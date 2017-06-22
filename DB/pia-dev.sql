@@ -1,5 +1,5 @@
 ﻿# Host: 127.0.0.1  (Version 5.7.18-log)
-# Date: 2017-06-16 17:27:35
+# Date: 2017-06-22 18:03:12
 # Generator: MySQL-Front 6.0  (Build 2.20)
 
 
@@ -126,7 +126,7 @@ CREATE TABLE `job_rule_cuts` (
 # Data for table "job_rule_cuts"
 #
 
-INSERT INTO `job_rule_cuts` VALUES (4,25,'first cut');
+INSERT INTO `job_rule_cuts` VALUES (4,26,'first cut');
 
 #
 # Structure for table "job_nodes"

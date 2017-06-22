@@ -118,7 +118,7 @@ end;
 
 function TViewRules.GetSelectedLevel: TJobLevel;
 begin
-  Result := FController.ObjData.Items['Level'] as TJobLevel;
+  Result := (FController.ObjData.Items['Job'] as TJob).Levels[GetLevelIndex];
 end;
 
 function TViewRules.GetLevelIndex: integer;
@@ -217,7 +217,7 @@ begin
     end;
 
   cbbLevel.ItemIndex := aIndex;
-  SendMessage('LevelSelected');
+  SendMessage('OnLevelSelected');
 end;
 
 procedure TViewRules.tvTreeChange(Sender: TObject; Node: TTreeNode);
@@ -309,7 +309,7 @@ end;
 
 procedure TViewRules.cbbLevelChange(Sender: TObject);
 begin
-  SendMessage('LevelSelected');
+  SendMessage('OnLevelSelected');
 end;
 
 procedure TViewRules.FormCreate(Sender: TObject);

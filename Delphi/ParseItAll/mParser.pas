@@ -55,9 +55,8 @@ var
   jsnRule: TJSONObject;
   jsnRules: TJSONArray;
   Group: TJobGroup;
+  Rule: TJobRule;
   ContainerNodeList, ContainerInsideNodes: TNodeList;
-  LinkRule: TJobLink;
-  RecordRule: TJobRecord;
   JSScript: string;
 begin
   Group := FObjData.Items['Group'] as TJobGroup;
@@ -69,46 +68,31 @@ begin
   try
     jsnGroup.AddPair('nodes', EncodeNodesToJSON(ContainerNodeList));
 
-    {for LinkRule in Group.Links do
+    for Rule in Group.Rules do
       begin
         jsnRule := TJSONObject.Create;
-        jsnRule.AddPair('id', TJSONNumber.Create(LinkRule.ID));
-        jsnRule.AddPair('level', TJSONNumber.Create(LinkRule.Level));
-        jsnRule.AddPair('color', ColorToHex(LinkRule.Rule.VisualColor));
+        jsnRule.AddPair('id', TJSONNumber.Create(Rule.ID));
 
-        ContainerInsideNodes := LinkRule.Rule.GetContainerInsideNodes;
+        if Rule.Link <> nil then
+          jsnRule.AddPair('level', TJSONNumber.Create(Rule.Link.Level));
+
+        if Rule.Rec <> nil then
+          jsnRule.AddPair('key', Rule.Rec.Key);
+
+        if Rule.Cut <> nil then
+          jsnRule.AddPair('cut', TJSONTrue.Create);
+
+        jsnRule.AddPair('color', ColorToHex(Rule.VisualColor));
+
+        ContainerInsideNodes := Rule.GetContainerInsideNodes;
         try
           jsnRule.AddPair('nodes', EncodeNodesToJSON(ContainerInsideNodes));
         finally
           ContainerInsideNodes.Free;
         end;
 
-        //jsnRule.AddPair('regexps', EncodeRegExpsToJSON(JobLinksRule.RegExps));
-        //jsnRule.AddPair('custom_func', CustomJS.JSFunc);
-        //jsnRule.AddPair('critical', TJSONNumber.Create(JobLinksRule.CriticalType));
         jsnRules.AddElement(jsnRule);
       end;
-
-    for RecordRule in Group.Records do
-      begin
-        jsnRule := TJSONObject.Create;
-        jsnRule.AddPair('id', TJSONNumber.Create(RecordRule.ID));
-        jsnRule.AddPair('key', RecordRule.Key);
-        jsnRule.AddPair('color', ColorToHex(RecordRule.Rule.VisualColor));
-        //jsnRule.AddPair('typeid', TJSONNumber.Create(JobRecordsRule.TypeRefID));
-
-        ContainerInsideNodes := RecordRule.Rule.GetContainerInsideNodes;
-        try
-          jsnRule.AddPair('nodes', EncodeNodesToJSON(ContainerInsideNodes));
-        finally
-          ContainerInsideNodes.Free;
-        end;
-
-        //jsnRule.AddPair('regexps', EncodeRegExpsToJSON(JobRecordsRule.RegExps));
-        //jsnRule.AddPair('custom_func', CustomJS.JSFunc);
-        //jsnRule.AddPair('critical', TJSONNumber.Create(JobRecordsRule.CriticalType));
-        jsnRules.AddElement(jsnRule);
-      end;  }
 
     jsnGroup.AddPair('rules', jsnRules);
 

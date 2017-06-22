@@ -43,7 +43,7 @@ type
     procedure EditJobRules;
     procedure StoreJobRules;
 
-    procedure LevelSelected;
+    procedure OnLevelSelected;
     procedure GroupSelected;
     procedure RuleSelected;
 
@@ -76,8 +76,6 @@ type
 
   // FObjData Item Keys
   // Job
-  // LevelList
-  // Level
 
 implementation
 
@@ -97,7 +95,7 @@ uses
   mJobs,
   mParser;
 
-procedure TController.LevelSelected;
+procedure TController.OnLevelSelected;
 begin
   FObjData.AddOrSetValue('Level', ViewRules.GetSelectedLevel);
   ViewRules.AfterLevelSelected;
@@ -106,12 +104,14 @@ end;
 procedure TController.RuleSelected;
 begin
   FObjData.AddOrSetValue('Rule', ViewRules.GetSelectedRule);
+  FData.AddOrSetValue('JSScript', FJSScript);
   CallModel(TModelJS, 'PrepareJSScriptForRule');
 end;
 
 procedure TController.GroupSelected;
 begin
   FObjData.AddOrSetValue('Group', ViewRules.GetSelectedGroup);
+  FData.AddOrSetValue('JSScript', FJSScript);
   CallModel(TModelJS, 'PrepareJSScriptForGroup');
 end;
 
@@ -362,7 +362,6 @@ begin
       Level.BaseLink := Job.ZeroLink;
       Levels.Add(Level);
     end;
-  FObjData.AddOrSetValue('Level', Levels[0]);
 
   CallView(TViewRules);
   ViewRules.SetLevels(Levels);
