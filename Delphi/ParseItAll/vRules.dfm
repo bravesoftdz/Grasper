@@ -67,16 +67,16 @@ object ViewRules: TViewRules
       Align = alTop
       TabOrder = 0
       object lbllevel: TLabel
-        Left = 119
-        Top = 12
+        Left = 133
+        Top = 13
         Width = 25
         Height = 13
         Caption = 'Level'
       end
       object cbbLevel: TComboBox
-        Left = 152
-        Top = 8
-        Width = 81
+        Left = 164
+        Top = 9
+        Width = 69
         Height = 21
         Style = csDropDownList
         TabOrder = 0
@@ -84,13 +84,22 @@ object ViewRules: TViewRules
       end
       object btnAddLevel: TBitBtn
         Left = 15
-        Top = 6
-        Width = 75
+        Top = 7
+        Width = 50
         Height = 25
         Caption = 'btnAddL'
         Enabled = False
         TabOrder = 1
         OnClick = btnAddLevelClick
+      end
+      object btnDLv: TBitBtn
+        Left = 71
+        Top = 9
+        Width = 50
+        Height = 22
+        Caption = 'btnDLv'
+        TabOrder = 2
+        OnClick = btnDLvClick
       end
     end
     object pnlTree: TPanel
@@ -242,7 +251,7 @@ object ViewRules: TViewRules
     Left = 32
     Top = 32
     Bitmap = {
-      494C010104005C00C00010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C010104005C00CC0010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000002000000001002000000000000020
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

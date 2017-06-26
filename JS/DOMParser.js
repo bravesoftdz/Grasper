@@ -7,8 +7,8 @@ function getElementResults(rule, elem, firstGroupResult) {
         return [getResultNoElementFind('NoMatchInRuleNodes', rule.id, rule.critical)];
 
     // paint selected elements
-    $(elem).wrapAll('<b class="PIAColor"></b>');
-    $('.PIAColor').css('background-color', rule.color);  
+    $(elem).addClass('PIAColor');
+    $(elem).css('background-color', rule.color);  
     $('.PIAColor').children().css('background-color', 'inherit'); 
     
     // пользовательская обработка
@@ -256,8 +256,9 @@ function parseDOMbyGroup(group) {
 }
 
 // clear previous selection
-var paintedElements = $('.PIAColor').children();
-$(paintedElements).unwrap();
+var paintedElements = $('.PIAColor');
+paintedElements.css('background-color', '');
+paintedElements.removeClass('PIAColor');
         
 app.parsedataback(parseDOMbyGroup(group));
 console.log('done');

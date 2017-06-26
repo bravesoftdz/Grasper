@@ -136,26 +136,17 @@ type
     function GetNotes: string;
     procedure SetNotes(aValue: string);
     function GetRuleList: TRuleList;
-    function GetLinkList: TLinkList;
-    function GetRecordList: TRecordList;
-    function GetCutList: TCutList;
     //////////////////
   protected
     procedure SaveLists; override;
   private
     FRules: TRuleList;
-    FLinks: TLinkList;
-    FRecords: TRecordList;
-    FCuts: TCutList;
   public
     class function GetEntityStruct: TEntityStruct; override;
     function GetContainerNodes: TNodeList;
     property LevelID: Integer read GetLevelID write SetLevelID;
     property Notes: string read GetNotes write SetNotes;
     property Rules: TRuleList read GetRuleList;
-    property Links: TLinkList read GetLinkList;
-    property Records: TRecordList read GetRecordList;
-    property Cuts: TCutList read GetCutList;
     destructor Destroy; override;
   end;
 
@@ -241,14 +232,6 @@ end;
 procedure TJobRule.SetOrderNum(aValue: Integer);
 begin
   FData.AddOrSetValue('ORDER_NUM', aValue);
-end;
-
-function TJobGroup.GetCutList: TCutList;
-begin
-  if not Assigned(FCuts) then
-    FCuts := TCutList.Create(Self, 'GROUP_ID', ID);
-
-  Result := FCuts;
 end;
 
 function TJobCut.GetNotes: string;
@@ -384,14 +367,6 @@ begin
   AddField(Result.FieldList, 'NAME', ftString);
 end;
 
-function TJobGroup.GetRecordList: TRecordList;
-begin
-  if not Assigned(FRecords) then
-    FRecords := TRecordList.Create(Self, 'GROUP_ID', ID);
-
-  Result := FRecords;
-end;
-
 procedure TJobRecord.SetKey(aValue: string);
 begin
   FData.AddOrSetValue('KEY', aValue);
@@ -411,17 +386,7 @@ end;
 
 procedure TJobGroup.SaveLists;
 begin
-  if Assigned(FLinks) then FLinks.SaveList(ID);
-  if Assigned(FRecords) then FRecords.SaveList(ID);
-  if Assigned(FCuts) then FCuts.SaveList(ID);
-end;
-
-function TJobGroup.GetLinkList: TLinkList;
-begin
-  if not Assigned(FLinks) then
-    FLinks := TLinkList.Create(Self, 'GROUP_ID', ID);
-
-  Result := FLinks;
+  if Assigned(FRules) then FRules.SaveList(ID);
 end;
 
 function TJobLink.GetLevel: integer;

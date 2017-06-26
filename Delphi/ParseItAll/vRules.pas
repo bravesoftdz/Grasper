@@ -46,6 +46,7 @@ type
     udContainerStep: TUpDown;
     pmTreeItemPopup: TPopupMenu;
     mniAddCut: TMenuItem;
+    btnDLv: TBitBtn;
     procedure btnAGClick(Sender: TObject);
     procedure btnCancelClick(Sender: TObject);
     procedure btnApplyClick(Sender: TObject);
@@ -64,18 +65,20 @@ type
     procedure cbbLevelChange(Sender: TObject);
     procedure tvTreeDblClick(Sender: TObject);
     procedure mniAddCutClick(Sender: TObject);
+    procedure btnDLvClick(Sender: TObject);
   private
     { Private declarations }
     FDevToolsEnabled: Boolean;
     function GetUpperNode(aLevelBreak: Integer): TTreeNode;
-    function GetGroupIndex: integer;
-    function GetRuleIndex: Integer;
-    function GetLevelIndex: integer;
   protected
     procedure InitView; override;
   public
     { Public declarations }
     pnlEntityFields: TEntityPanel;
+
+    function GetGroupIndex: integer;
+    function GetRuleIndex: Integer;
+    function GetLevelIndex: integer;
 
     function GetSelectedLevel: TJobLevel;
     function GetSelectedGroup: TJobGroup;
@@ -295,6 +298,11 @@ end;
 procedure TViewRules.btnDLClick(Sender: TObject);
 begin
   SendMessage('DeleteLink');
+end;
+
+procedure TViewRules.btnDLvClick(Sender: TObject);
+begin
+  SendMessage('DeleteLevel');
 end;
 
 procedure TViewRules.btnDRClick(Sender: TObject);

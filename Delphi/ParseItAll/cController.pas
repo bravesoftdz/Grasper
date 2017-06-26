@@ -31,8 +31,8 @@ type
     procedure crmProcessMessageReceived(Sender: TObject;
             const browser: ICefBrowser; sourceProcess: TCefProcessId;
             const message: ICefProcessMessage; out Result: Boolean);
-    function GetJob: TJob;
     function CanAddLevel(aJobRule: TJobLink): Boolean;
+    function GetJob: TJob;
   protected
     procedure InitDB; override;
     procedure PerfomViewMessage(aMsg: string); override;
@@ -48,6 +48,7 @@ type
     procedure RuleSelected;
 
     procedure CreateLevel(frame: ICefFrame);
+    procedure DeleteLevel;
 
     procedure CreateGroup;
     procedure DeleteGroup;
@@ -94,6 +95,12 @@ uses
   mLogin,
   mJobs,
   mParser;
+
+procedure TController.DeleteLevel;
+begin
+  GetJob.Levels.DeleteByIndex(ViewRules.GetLevelIndex);
+  ViewRules.SetLevels(GetJob.Levels);
+end;
 
 procedure TController.OnLevelSelected;
 begin
@@ -276,7 +283,7 @@ begin
   Group := Level.Groups[ViewRules.tvTree.Selected.Index];
 
   JobRecord := TJobRecord.Create(FDBEngine);
-  Group.Records.Add(JobRecord);
+  //Group.Records.Add(JobRecord);
 
   ViewRules.SetControlTree(Level.Groups);
 end;
@@ -289,7 +296,7 @@ begin
   Level := FObjData.Items['Level'] as TJobLevel;
   Group := Level.Groups[ViewRules.tvTree.Selected.Parent.Index];
 
-  Group.Records.DeleteByIndex(ViewRules.tvTree.Selected.Index - Group.Links.Count);
+  //Group.Records.DeleteByIndex(ViewRules.tvTree.Selected.Index - Group.Links.Count);
   ViewRules.SetControlTree(Level.Groups);
   ViewRules.pnlEntityFields.ClearControls;
 end;
@@ -302,7 +309,7 @@ begin
   Level := FObjData.Items['Level'] as TJobLevel;
   Group := Level.Groups[ViewRules.tvTree.Selected.Parent.Index];
 
-  Group.Links.DeleteByIndex(ViewRules.tvTree.Selected.Index);
+  //Group.Links.DeleteByIndex(ViewRules.tvTree.Selected.Index);
   ViewRules.SetControlTree(Level.Groups);
   ViewRules.pnlEntityFields.ClearControls;
 end;
@@ -317,7 +324,7 @@ begin
   Group := Level.Groups[ViewRules.tvTree.Selected.Index];
 
   Link := TJobLink.Create(FDBEngine);
-  Group.Links.Add(Link);
+  //Group.Links.Add(Link);
 
   ViewRules.SetControlTree(Level.Groups);
 end;
@@ -364,9 +371,9 @@ begin
     end;
 
   CallView(TViewRules);
-  ViewRules.SetLevels(Levels);
   ViewRules.chrmBrowser.OnProcessMessageReceived := crmProcessMessageReceived;
   ViewRules.chrmBrowser.OnLoadEnd := crmLoadEnd;
+  ViewRules.SetLevels(GetJob.Levels);
 end;
 
 procedure TController.StoreJobRules;
