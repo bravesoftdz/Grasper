@@ -43,7 +43,7 @@ type
     procedure EditJobRules;
     procedure StoreJobRules;
 
-    procedure OnLevelSelected;
+    procedure LevelSelected;
     procedure GroupSelected;
     procedure RuleSelected;
 
@@ -64,11 +64,7 @@ type
     procedure SelectHTMLNode;
     procedure SelectCutNode;
 
-    procedure ChangeContainerOffset;
-
     procedure CreateNodes(aNodesData: string);
-
-    procedure CreateXPathCut;
 
     procedure ShowRuleResult;
 
@@ -102,7 +98,7 @@ begin
   ViewRules.SetLevels(GetJob.Levels);
 end;
 
-procedure TController.OnLevelSelected;
+procedure TController.LevelSelected;
 begin
   FObjData.AddOrSetValue('Level', ViewRules.GetSelectedLevel);
   ViewRules.AfterLevelSelected;
@@ -112,6 +108,7 @@ procedure TController.RuleSelected;
 begin
   FObjData.AddOrSetValue('Rule', ViewRules.GetSelectedRule);
   FData.AddOrSetValue('JSScript', FJSScript);
+  FData.AddOrSetValue('CanAddLevel', CanAddLevel(ViewRules.GetSelectedRule.Link));
   CallModel(TModelJS, 'PrepareJSScriptForRule');
 end;
 
@@ -123,8 +120,14 @@ begin
 end;
 
 procedure TController.CreateCut;
+var
+  Rule: TJobRule;
 begin
+  Rule := TJobRule.Create(FDBEngine);
+  Rule.Cut := TJobCut.Create(FDBEngine);
 
+  ViewRules.GetSelectedGroup.Rules.Add(Rule);
+  ViewRules.SetControlTree(ViewRules.GetSelectedLevel.Groups);
 end;
 
 procedure TController.SelectCutNode;
@@ -133,17 +136,6 @@ var
 begin
   InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\DOMSelector.js');
   ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
-end;
-
-procedure TController.CreateXPathCut;
-var
-  JobCut: TJobCut;
-begin
-  //JobCut := TJobCut.Create(FDBEngine, 0);
-  //JobCut.Notes := 'Наш первый CUT!';
-  //JobCut.XPath.XPath := '123weqw';
-
-  //GetSelectedRule.Cuts.Add(JobCut);
 end;
 
 procedure TController.ShowRuleResult;
@@ -192,6 +184,8 @@ var
   MaxLevel: Integer;
   Level: TJobLevel;
 begin
+  if aJobRule = nil then Exit(False);
+
   MaxLevel := 0;
   for Level in GetJob.Levels do
     if Level.Level > MaxLevel then MaxLevel := Level.Level;
@@ -206,18 +200,12 @@ procedure TController.CreateLevel(frame: ICefFrame);
 var
   Level: TJobLevel;
 begin
-  {Level := TJobLevel.Create(FDBEngine, 0);
-  Level.Level := GetSelectedLink.Level;
+  Level := TJobLevel.Create(FDBEngine, 0);
+  Level.Level := ViewRules.GetSelectedRule.Link.Level;
   Level.BaseLink := frame.Url;
 
   GetJob.Levels.Add(Level);
-  ViewRules.SetLevels(GetJob.Levels, GetJob.Levels.Count - 1);}
-end;
-
-procedure TController.ChangeContainerOffset;
-begin
-  //GetSelectedRule.ContainerOffset := ViewRules.udContainerStep.Position;
-  //TreeNodeSelected;
+  ViewRules.SetLevels(GetJob.Levels, GetJob.Levels.Count - 1);
 end;
 
 procedure TController.CreateNodes(aNodesData: string);
@@ -254,7 +242,7 @@ begin
       Rule.Nodes.Add(Node);
     end;
 
-  //TreeNodeSelected;
+  RuleSelected;
 end;
 
 procedure TController.crmProcessMessageReceived(Sender: TObject;
@@ -271,21 +259,18 @@ var
 begin
   InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\DOMSelector.js');
   ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
+  RuleSelected;
 end;
 
 procedure TController.CreateRecord;
 var
-  Level: TJobLevel;
-  Group: TJobGroup;
-  JobRecord: TJobRecord;
+  Rule: TJobRule;
 begin
-  Level := FObjData.Items['Level'] as TJobLevel;
-  Group := Level.Groups[ViewRules.tvTree.Selected.Index];
+  Rule := TJobRule.Create(FDBEngine);
+  Rule.Rec := TJobRecord.Create(FDBEngine);
 
-  JobRecord := TJobRecord.Create(FDBEngine);
-  //Group.Records.Add(JobRecord);
-
-  ViewRules.SetControlTree(Level.Groups);
+  ViewRules.GetSelectedGroup.Rules.Add(Rule);
+  ViewRules.SetControlTree(ViewRules.GetSelectedLevel.Groups);
 end;
 
 procedure TController.DeleteRecord;
@@ -316,17 +301,13 @@ end;
 
 procedure TController.CreateLink;
 var
-  Level: TJobLevel;
-  Group: TJobGroup;
-  Link: TJobLink;
+  Rule: TJobRule;
 begin
-  Level := FObjData.Items['Level'] as TJobLevel;
-  Group := Level.Groups[ViewRules.tvTree.Selected.Index];
+  Rule := TJobRule.Create(FDBEngine);
+  Rule.Link := TJobLink.Create(FDBEngine);
 
-  Link := TJobLink.Create(FDBEngine);
-  //Group.Links.Add(Link);
-
-  ViewRules.SetControlTree(Level.Groups);
+  ViewRules.GetSelectedGroup.Rules.Add(Rule);
+  ViewRules.SetControlTree(ViewRules.GetSelectedLevel.Groups);
 end;
 
 procedure TController.GetJobList;

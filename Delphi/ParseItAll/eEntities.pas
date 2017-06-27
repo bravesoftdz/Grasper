@@ -109,8 +109,11 @@ type
     procedure SetOrderNum(aValue: Integer);
     function GetNodeList: TNodeList;
     function GetLink: TJobLink;
+    procedure SetLink(aValue: TJobLink);
     function GetRec: TJobRecord;
+    procedure SetRec(aValue: TJobRecord);
     function GetCut: TJobCut;
+    procedure SetCut(aValue: TJobCut);
   //////////////////
   public
     function GetContainerInsideNodes: TNodeList;
@@ -120,9 +123,9 @@ type
     property CriticalType: Integer read GetCriticalType write SetCriticalType;
     property VisualColor: TColor read GetVisualColor write SetVisualColor;
     property OrderNum: Integer read GetOrderNum write SetOrderNum;
-    property Link: TJobLink read GetLink;
-    property Rec: TJobRecord read GetRec;
-    property Cut: TJobCut read GetCut;
+    property Link: TJobLink read GetLink write SetLink;
+    property Rec: TJobRecord read GetRec write SetRec;
+    property Cut: TJobCut read GetCut write SetCut;
     property Nodes: TNodeList read GetNodeList;
   end;
 
@@ -201,6 +204,11 @@ implementation
 uses
   System.SysUtils;
 
+procedure TJobRule.SetCut(aValue: TJobCut);
+begin
+  FRelations.AddOrSetValue('JOB_RULE_CUTS', aValue);
+end;
+
 function TJobRule.GetCut: TJobCut;
 begin
   Result := FRelations.Items['JOB_RULE_CUTS'] as TJobCut;
@@ -211,9 +219,19 @@ begin
   Result := FRelations.Items['JOB_RULE_RECORDS'] as TJobRecord;
 end;
 
+procedure TJobRule.SetRec(aValue: TJobRecord);
+begin
+  FRelations.AddOrSetValue('JOB_RULE_RECORDS', aValue);
+end;
+
 function TJobRule.GetLink: TJobLink;
 begin
   Result := FRelations.Items['JOB_RULE_LINKS'] as TJobLink;
+end;
+
+procedure TJobRule.SetLink(aValue: TJobLink);
+begin
+  FRelations.AddOrSetValue('JOB_RULE_LINKS', aValue);
 end;
 
 function TJobGroup.GetRuleList: TRuleList;

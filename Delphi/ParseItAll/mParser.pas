@@ -58,6 +58,7 @@ var
   Rule: TJobRule;
   ContainerNodeList, ContainerInsideNodes: TNodeList;
   JSScript: string;
+  i: Integer;
 begin
   Group := FObjData.Items['Group'] as TJobGroup;
   JSScript := FData.Items['JSScript'];
@@ -84,8 +85,16 @@ begin
 
         jsnRule.AddPair('color', ColorToHex(Rule.VisualColor));
 
-        ContainerInsideNodes := Rule.GetContainerInsideNodes;
         try
+          if Rule.ContainerOffset = 0 then
+            begin
+              ContainerInsideNodes := TNodeList.Create(False);
+              for i := ContainerNodeList.Count to Rule.Nodes.Count - 1 do
+                ContainerInsideNodes.Add(Rule.Nodes[i]);
+            end
+          else
+            ContainerInsideNodes := Rule.GetContainerInsideNodes;
+
           jsnRule.AddPair('nodes', EncodeNodesToJSON(ContainerInsideNodes));
         finally
           ContainerInsideNodes.Free;

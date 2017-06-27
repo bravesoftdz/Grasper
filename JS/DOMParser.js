@@ -235,8 +235,15 @@ function parseDOMbyGroup(group) {
     
     // step down to DOM tree - get rule collection  
     if (element != null) {
-        group.rules.map(function (rule, i) {
+        group.rules.map(function (rule, i) {            
+            
             var elements = getElementsByNodes(element, rule.nodes);
+            
+            if (rule.cut) {
+                $(elements).addClass('PIAHide');
+                $('.PIAHide').css('display', 'none');
+            }
+            
             if (i === 0)
                 elements.map(function (elem) {
                     resultsFromElements.push(getElementResults(rule, elem));
@@ -259,6 +266,11 @@ function parseDOMbyGroup(group) {
 var paintedElements = $('.PIAColor');
 paintedElements.css('background-color', '');
 paintedElements.removeClass('PIAColor');
+
+// clear previous hidding 
+var hiddenElements = $('.PIAHide');
+hiddenElements.css('display', '');
+hiddenElements.removeClass('PIAHide');
         
 app.parsedataback(parseDOMbyGroup(group));
 console.log('done');

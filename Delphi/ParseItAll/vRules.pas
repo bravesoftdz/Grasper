@@ -47,6 +47,7 @@ type
     pmTreeItemPopup: TPopupMenu;
     mniAddCut: TMenuItem;
     btnDLv: TBitBtn;
+    udChildStep: TUpDown;
     procedure btnAGClick(Sender: TObject);
     procedure btnCancelClick(Sender: TObject);
     procedure btnApplyClick(Sender: TObject);
@@ -103,10 +104,16 @@ uses
 
 procedure TViewRules.AfterLevelSelected;
 begin
-  chrmBrowser.Load(GetSelectedLevel.BaseLink);
-  SetControlTree(GetSelectedLevel.Groups);
-  pnlXPath.Visible := False;
   pnlEntityFields.ClearControls;
+  pnlXPath.Visible := False;
+
+  if GetSelectedLevel <> nil then
+    begin
+      chrmBrowser.Load(GetSelectedLevel.BaseLink);
+      SetControlTree(GetSelectedLevel.Groups);
+    end
+  else
+    tvTree.Items.Clear;
 end;
 
 function TViewRules.GetSelectedRule: TJobRule;
@@ -121,7 +128,10 @@ end;
 
 function TViewRules.GetSelectedLevel: TJobLevel;
 begin
-  Result := (FController.ObjData.Items['Job'] as TJob).Levels[GetLevelIndex];
+  if GetLevelIndex >= 0 then
+    Result := (FController.ObjData.Items['Job'] as TJob).Levels[GetLevelIndex]
+  else
+    Result := nil;
 end;
 
 function TViewRules.GetLevelIndex: integer;
@@ -170,9 +180,9 @@ var
   JobRule: TJobRule;
   GroupNode, RuleNode: TTreeNode;
 begin
-  ViewRules.tvTree.OnChange := nil;
-  ViewRules.tvTree.Items.Clear;
-  ViewRules.tvTree.OnChange := tvTreeChange;
+  tvTree.Items.Clear;
+  tvTree.OnChange := nil;
+  tvTree.OnChange := tvTreeChange;
 
   for Group in aJobGroupList do
     begin
@@ -220,7 +230,7 @@ begin
     end;
 
   cbbLevel.ItemIndex := aIndex;
-  SendMessage('OnLevelSelected');
+  SendMessage('LevelSelected');
 end;
 
 procedure TViewRules.tvTreeChange(Sender: TObject; Node: TTreeNode);
@@ -241,6 +251,7 @@ begin
           Entity := GetSelectedRule;
 
           pnlXPath.Visible := True;
+          btnAddLevel.Enabled := FController.Data.Items['CanAddLevel'];
         end;
   end;
 
@@ -256,7 +267,16 @@ end;
 
 procedure TViewRules.udContainerStepClick(Sender: TObject; Button: TUDBtnType);
 begin
-  SendMessage('ChangeContainerOffset');
+  if Button = btNext then
+    GetSelectedRule.ContainerOffset := GetSelectedRule.ContainerOffset + 1
+  else
+    if GetSelectedRule.ContainerOffset > 0 then
+      GetSelectedRule.ContainerOffset := GetSelectedRule.ContainerOffset - 1;
+
+  pnlEntityFields.ClearControls;
+  pnlEntityFields.BuildControls(GetSelectedRule);
+
+  SendMessage('RuleSelected');
 end;
 
 procedure TViewRules.btnAddLevelClick(Sender: TObject);
@@ -317,7 +337,7 @@ end;
 
 procedure TViewRules.cbbLevelChange(Sender: TObject);
 begin
-  SendMessage('OnLevelSelected');
+  SendMessage('LevelSelected');
 end;
 
 procedure TViewRules.FormCreate(Sender: TObject);

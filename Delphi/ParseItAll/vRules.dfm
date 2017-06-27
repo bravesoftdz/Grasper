@@ -98,6 +98,7 @@ object ViewRules: TViewRules
         Width = 50
         Height = 22
         Caption = 'btnDLv'
+        Enabled = False
         TabOrder = 2
         OnClick = btnDLvClick
       end
@@ -125,7 +126,7 @@ object ViewRules: TViewRules
         OnDblClick = tvTreeDblClick
       end
       object btnAG: TBitBtn
-        Left = 7
+        Left = 6
         Top = 4
         Width = 33
         Height = 25
@@ -196,6 +197,7 @@ object ViewRules: TViewRules
       Caption = 'pnlXPath'
       TabOrder = 3
       Visible = False
+      ExplicitTop = 171
       object btnSelectHTML: TBitBtn
         Left = 15
         Top = 20
@@ -207,11 +209,19 @@ object ViewRules: TViewRules
       end
       object udContainerStep: TUpDown
         Left = 157
-        Top = 10
+        Top = 9
         Width = 17
-        Height = 43
+        Height = 46
         TabOrder = 1
         OnClick = udContainerStepClick
+      end
+      object udChildStep: TUpDown
+        Left = 180
+        Top = 24
+        Width = 57
+        Height = 17
+        Orientation = udHorizontal
+        TabOrder = 2
       end
     end
     object pnlButtons: TPanel
@@ -251,7 +261,7 @@ object ViewRules: TViewRules
     Left = 32
     Top = 32
     Bitmap = {
-      494C010104005C00CC0010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C010104005C00D00010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000002000000001002000000000000020
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
