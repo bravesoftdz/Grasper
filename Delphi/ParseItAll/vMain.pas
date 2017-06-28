@@ -7,7 +7,7 @@ uses
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ComCtrls, Vcl.ExtCtrls, Vcl.Grids, Vcl.StdCtrls,
   Vcl.Buttons,
   API_MVC,
-  eEntities;
+  eEntities, cefvcl;
 
 type
   TViewMain = class(TViewAbstract)
@@ -18,10 +18,13 @@ type
     btnNewJob: TBitBtn;
     btnEditJob: TBitBtn;
     btnEditRules: TBitBtn;
+    btnGo: TBitBtn;
+    chrmBrowser: TChromium;
     procedure btnNewJobClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure btnEditJobClick(Sender: TObject);
     procedure btnEditRulesClick(Sender: TObject);
+    procedure btnGoClick(Sender: TObject);
   private
     { Private declarations }
     function GetSelectedJobID: integer;
@@ -83,6 +86,11 @@ end;
 procedure TViewMain.btnEditRulesClick(Sender: TObject);
 begin
   SendMessage('EditJobRules');
+end;
+
+procedure TViewMain.btnGoClick(Sender: TObject);
+begin
+  SendMessage('StartJob');
 end;
 
 procedure TViewMain.btnNewJobClick(Sender: TObject);

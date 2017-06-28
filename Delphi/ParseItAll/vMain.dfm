@@ -45,8 +45,8 @@ object ViewMain: TViewMain
       Left = 1
       Top = 1
       Width = 552
-      Height = 228
-      Align = alClient
+      Height = 128
+      Align = alTop
       ColCount = 3
       DefaultRowHeight = 18
       FixedCols = 0
@@ -60,6 +60,17 @@ object ViewMain: TViewMain
       RowHeights = (
         18
         18)
+    end
+    object chrmBrowser: TChromium
+      Left = 1
+      Top = 129
+      Width = 552
+      Height = 100
+      Align = alClient
+      DefaultUrl = 'about:blank'
+      TabOrder = 1
+      ExplicitTop = 135
+      ExplicitHeight = 94
     end
   end
   object pnlButtons: TPanel
@@ -95,6 +106,15 @@ object ViewMain: TViewMain
       Caption = 'btnEditRules'
       TabOrder = 2
       OnClick = btnEditRulesClick
+    end
+    object btnGo: TBitBtn
+      Left = 296
+      Top = 8
+      Width = 75
+      Height = 25
+      Caption = 'btnGo'
+      TabOrder = 3
+      OnClick = btnGoClick
     end
   end
 end

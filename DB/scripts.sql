@@ -21,3 +21,10 @@ CREATE DEFINER=`root`@`localhost` TRIGGER `pia-dev`.`DeleteCutRule`
 BEGIN
 	delete from job_rules where id = old.job_rule_id;
 END;
+
+CREATE DEFINER=`root`@`localhost` TRIGGER `pia-dev`.`HashWritter`
+  BEFORE INSERT ON `pia-dev`.`links`
+  FOR EACH ROW
+BEGIN
+  SET NEW.link_hash = md5(NEW.link);
+END;

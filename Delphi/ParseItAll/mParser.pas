@@ -5,6 +5,8 @@ interface
 uses
   System.JSON,
   System.UITypes,
+  cefvcl,
+  cefLib,
   API_MVC_DB,
   eEntities;
 
@@ -18,11 +20,145 @@ type
     procedure PrepareJSScriptForRule;
   end;
 
+  TModelParser = class(TModelDB)
+  private
+    FJob: TJob;
+    FCurrLink: Tlink;
+    FChromium: TChromium;
+    procedure ProcessNextLink;
+    procedure crmLoadEnd(Sender: TObject; const browser: ICefBrowser;
+        const frame: ICefFrame; httpStatusCode: Integer);
+    procedure ProcessJSOnFrame(aFrame: ICefFrame);
+    procedure crmProcessMessageReceived(Sender: TObject;
+            const browser: ICefBrowser; sourceProcess: TCefProcessId;
+            const message: ICefProcessMessage; out Result: Boolean);
+    procedure ProcessDataReceived(aData: string);
+    function GetNextlink: TLink;
+  published
+    procedure StartJob;
+  end;
+
 implementation
 
 uses
   System.SysUtils,
+  System.Generics.Collections,
+  FireDAC.Comp.Client,
   API_Files;
+
+procedure TModelParser.ProcessDataReceived(aData: string);
+begin
+
+end;
+
+procedure TModelParser.crmProcessMessageReceived(Sender: TObject;
+        const browser: ICefBrowser; sourceProcess: TCefProcessId;
+        const message: ICefProcessMessage; out Result: Boolean);
+begin
+  if message.Name = 'parsedataback' then ProcessDataReceived(message.ArgumentList.GetString(0));
+end;
+
+procedure TModelParser.ProcessJSOnFrame(aFrame: ICefFrame);
+var
+  Level: TJobLevel;
+  Group: TJobGroup;
+  ModelJS: TModelJS;
+  ObjData: TObjectDictionary<string, TObject>;
+  Data: TDictionary<string, variant>;
+  JSScript: string;
+begin
+  ObjData := TObjectDictionary<string, TObject>.Create;
+  Data := TDictionary<string, variant>.Create;
+  try
+    ObjData.AddOrSetValue('DBEngine', FDBEngine);
+    Data.AddOrSetValue('JSScript', FData.Items['JSScript']);
+    Level := FJob.GetLevel(FCurrLink.Level);
+
+    for Group in Level.Groups do
+      begin
+        ObjData.AddOrSetValue('Group', Group);
+
+        ModelJS := TModelJS.Create(Data, ObjData);
+        try
+          ModelJS.PrepareJSScriptForGroup;
+          JSScript := Data.Items['JSScript'];
+          aFrame.ExecuteJavaScript(JSScript, 'about:blank', 0);
+        finally
+          ModelJS.Free;
+        end;
+      end;
+  finally
+    ObjData.Free;
+    Data.Free;
+  end;
+end;
+
+procedure TModelParser.crmLoadEnd(Sender: TObject; const browser: ICefBrowser;
+    const frame: ICefFrame; httpStatusCode: Integer);
+begin
+  if frame.Url = FCurrLink.Link then ProcessJSOnFrame(frame);
+end;
+
+function TModelParser.GetNextlink: TLink;
+var
+  SQL: string;
+  dsQuery: TFDQuery;
+  Link: TLink;
+begin
+  SQL := 'select  '#13#10 +
+         '  links.*, '#13#10 +
+         '  (select count(*) from links t where t.job_id = links.job_id) links_count '#13#10 +
+         'from links '#13#10 +
+         'where job_id = :JobID '#13#10 +
+         'and handled = 0 '#13#10 +
+         'order by level desc, id '#13#10 +
+         'limit 1';
+
+  dsQuery := TFDQuery.Create(nil);
+  try
+    dsQuery.SQL.Text := SQL;
+    dsQuery.ParamByName('JobID').AsInteger := FJob.ID;
+    FDBEngine.OpenQuery(dsQuery);
+
+    // first start - no links else
+    if dsQuery.FieldByName('links_count').AsInteger = 0 then
+      begin
+        // add start link
+        Link := TLink.Create(FDBEngine);
+        try
+          Link.JobID := FJob.ID;
+          Link.Level := 1;
+          Link.Num := 1;
+          Link.Link := FJob.ZeroLink;
+          Link.SaveEntity;
+        finally
+          Link.Free;
+        end;
+
+        Exit(GetNextlink);
+      end;
+
+    Result := TLink.Create(FDBEngine, dsQuery.FieldByName('Id').AsInteger);
+  finally
+    dsQuery.Free;
+  end;
+end;
+
+procedure TModelParser.ProcessNextLink;
+begin
+  FCurrLink := GetNextlink;
+  FChromium.Load(FCurrLink.Link);
+end;
+
+procedure TModelParser.StartJob;
+begin
+  FChromium := FObjData.Items['Chromium'] as TChromium;
+  FChromium.OnLoadEnd := crmLoadEnd;
+  FChromium.OnProcessMessageReceived := crmProcessMessageReceived;
+
+  FJob := TJob.Create(FDBEngine, FData.Items['JobID']);
+  ProcessNextLink;
+end;
 
 function TModelJS.ColorToHex(color: TColor): String;
 begin

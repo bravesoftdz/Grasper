@@ -441,6 +441,14 @@ begin
       ViewJob.CRUDPanel.Entity.SaveEntity;
       CallModel(TModelJobs, 'GetJobList');
     end;
+
+  if aMsg = 'StartJob' then
+    begin
+      FData.AddOrSetValue('JobID', ViewMain.SelectedJobID);
+      FData.AddOrSetValue('JSScript', FJSScript);
+      FObjData.AddOrSetValue('Chromium', ViewMain.chrmBrowser);
+      CallModel(TModelParser, 'StartJob');
+    end;
 end;
 
 procedure TController.InitDB;

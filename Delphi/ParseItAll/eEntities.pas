@@ -9,6 +9,29 @@ uses
   API_ORM;
 
 type
+  TLink = class(TEntityAbstract)
+  // overrides
+  public
+    class function GetEntityStruct: TEntityStruct; override;
+  ////////////////////
+  private
+  // Getters Setters
+    function GetJobID: Integer;
+    procedure SetJobID(aValue: Integer);
+    function GetLevel: Integer;
+    procedure SetLevel(aValue: Integer);
+    function GetNum: Integer;
+    procedure SetNum(aValue: Integer);
+    function GetLink: string;
+    procedure SetLink(aValue: string);
+  ////////////////////
+  public
+    property JobID: Integer read GetJobID write SetJobID;
+    property Level: Integer read GetLevel write SetLevel;
+    property Num: Integer read GetNum write SetNum;
+    property Link: string read GetLink write SetLink;
+  end;
+
   TJobNode = class(TEntityAbstract)
   // overrides
   public
@@ -190,6 +213,7 @@ type
     procedure SaveLists; override;
   public
     class function GetEntityStruct: TEntityStruct; override;
+    function GetLevel(aLevel: integer): TJobLevel;
   published
     property Caption: string read GetCaption write SetCaption;
     property ZeroLink: string read GetZeroLink write SetZeroLink;
@@ -203,6 +227,68 @@ implementation
 
 uses
   System.SysUtils;
+
+function TJob.GetLevel(aLevel: integer): TJobLevel;
+var
+  Level: TJobLevel;
+begin
+  Result := nil;
+
+  for Level in Levels do
+    if Level.Level = aLevel then Exit(Level);
+end;
+
+function TLink.GetLink: string;
+begin
+  Result := FData.Items['LINK'];
+end;
+
+procedure TLink.SetLink(aValue: string);
+begin
+  FData.AddOrSetValue('LINK', aValue);
+end;
+
+function TLink.GetNum: Integer;
+begin
+  Result := FData.Items['NUM'];
+end;
+
+procedure TLink.SetNum(aValue: Integer);
+begin
+  FData.AddOrSetValue('NUM', aValue);
+end;
+
+function TLink.GetLevel: Integer;
+begin
+  Result := FData.Items['LEVEL'];
+end;
+
+procedure TLink.SetLevel(aValue: Integer);
+begin
+  FData.AddOrSetValue('LEVEL', aValue);
+end;
+
+function TLink.GetJobID: Integer;
+begin
+  Result := FData.Items['JOB_ID'];
+end;
+
+procedure TLink.SetJobID(aValue: Integer);
+begin
+  FData.AddOrSetValue('JOB_ID', aValue);
+end;
+
+class function TLink.GetEntityStruct: TEntityStruct;
+begin
+  Result.TableName := 'LINKS';
+
+  AddField(Result.FieldList, 'JOB_ID', ftInteger);
+  AddField(Result.FieldList, 'LEVEL', ftInteger);
+  AddField(Result.FieldList, 'NUM', ftInteger);
+  AddField(Result.FieldList, 'LINK', ftString);
+  AddField(Result.FieldList, 'LINK_HASH', ftString);
+  AddField(Result.FieldList, 'HANDLED', ftInteger);
+end;
 
 procedure TJobRule.SetCut(aValue: TJobCut);
 begin
