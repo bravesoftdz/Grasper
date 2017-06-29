@@ -23,7 +23,7 @@ type
   TModelParser = class(TModelDB)
   private
     FJob: TJob;
-    FCurrLink: Tlink;
+    FCurrLink: TLink;
     FChromium: TChromium;
     procedure ProcessNextLink;
     procedure crmLoadEnd(Sender: TObject; const browser: ICefBrowser;
@@ -33,7 +33,10 @@ type
             const browser: ICefBrowser; sourceProcess: TCefProcessId;
             const message: ICefProcessMessage; out Result: Boolean);
     procedure ProcessDataReceived(aData: string);
+    procedure SetCurrLinkHandle(aValue: Integer);
     function GetNextlink: TLink;
+    function AddLink(aLink: string; aMasterLinkID, aLevel: Integer; aNum: Integer = 1): Integer;
+    function AddRecord(aLinkId, aRecordNum: integer; aKey, aValue: string): integer;
   published
     procedure StartJob;
   end;
@@ -46,9 +49,105 @@ uses
   FireDAC.Comp.Client,
   API_Files;
 
-procedure TModelParser.ProcessDataReceived(aData: string);
+function TModelParser.AddRecord(aLinkId, aRecordNum: integer; aKey, aValue: string): integer;
+var
+  Rec: TRecord;
 begin
+  Rec := TRecord.Create(FDBEngine);
+  try
+    Rec.LinkID := aLinkId;
+    Rec.Num := aRecordNum;
+    Rec.Key := aKey;
+    Rec.Value := aValue;
 
+    Rec.SaveEntity;
+  finally
+    Rec.Free;
+  end;
+end;
+
+procedure TModelParser.SetCurrLinkHandle(aValue: Integer);
+begin
+  FCurrLink.Handled := aValue;
+  FCurrLink.SaveEntity;
+end;
+
+function TModelParser.AddLink(aLink: string; aMasterLinkID, aLevel: Integer; aNum: Integer = 1): Integer;
+var
+  Link: TLink;
+begin
+  Link := TLink.Create(FDBEngine);
+  try
+    Link.JobID := FJob.ID;
+    Link.Level := aLevel;
+    Link.Num := aNum;
+    Link.Link := aLink;
+
+    if aMasterLinkID > 0 then
+      begin
+        if Link.MasterRel = nil then Link.MasterRel := TLinkRel.Create(FDBEngine);
+        Link.MasterRel.MasterLinkID := aMasterLinkID;
+      end;
+
+    Link.SaveAll;
+
+    Result := Link.ID;
+  finally
+    Link.Free;
+  end;
+end;
+
+procedure TModelParser.ProcessDataReceived(aData: string);
+var
+  jsnData: TJSONObject;
+  jsnResult: TJSONArray;
+  jsnGroup: TJSONValue;
+  jsnGroupList: TJSONArray;
+  jsnRule: TJSONValue;
+  jsnRuleObj: TJSONObject;
+  Link: string;
+  Level: Integer;
+  Key, Value: string;
+  i: Integer;
+  IsLast: Boolean;
+begin
+  jsnData:=TJSONObject.ParseJSONValue(aData) as TJSONObject;
+  jsnResult:=jsnData.GetValue('result') as TJSONArray;
+
+  i := 0;
+  for jsnGroup in jsnResult do
+    begin
+      inc(i);
+      jsnGroupList := jsnGroup as TJSONArray;
+
+      for jsnRule in jsnGroupList do
+        begin
+          jsnRuleObj := jsnRule as TJSONObject;
+
+          if jsnRuleObj.GetValue('href') <> nil then
+            begin
+              Link := jsnRuleObj.GetValue('href').Value;
+              Level := (jsnRuleObj.GetValue('level') as TJSONNumber).AsInt;
+
+              AddLink(Link, FCurrLink.ID, Level, i);
+            end;
+
+          if jsnRuleObj.GetValue('key') <> nil then
+            begin
+              Key := jsnRuleObj.GetValue('key').Value;
+              Value := jsnRuleObj.GetValue('value').Value;
+
+              AddRecord(FCurrLink.ID, i, Key, Value);
+            end;
+        end;
+    end;
+
+  if jsnData.GetValue('islast') <> nil then
+    isLast:=True
+  else
+    isLast:=False;
+
+  if isLast then ProcessNextLink;
 end;
 
 procedure TModelParser.crmProcessMessageReceived(Sender: TObject;
@@ -66,16 +165,21 @@ var
   ObjData: TObjectDictionary<string, TObject>;
   Data: TDictionary<string, variant>;
   JSScript: string;
+  i: Integer;
 begin
   ObjData := TObjectDictionary<string, TObject>.Create;
   Data := TDictionary<string, variant>.Create;
   try
     ObjData.AddOrSetValue('DBEngine', FDBEngine);
-    Data.AddOrSetValue('JSScript', FData.Items['JSScript']);
     Level := FJob.GetLevel(FCurrLink.Level);
 
+    i := 0;
     for Group in Level.Groups do
       begin
+        Inc(i);
+        if i = Level.Groups.Count then
+          Data.AddOrSetValue('IsLastGroup', True);
+        Data.AddOrSetValue('JSScript', FData.Items['JSScript']);
         ObjData.AddOrSetValue('Group', Group);
 
         ModelJS := TModelJS.Create(Data, ObjData);
@@ -103,7 +207,6 @@ function TModelParser.GetNextlink: TLink;
 var
   SQL: string;
   dsQuery: TFDQuery;
-  Link: TLink;
 begin
   SQL := 'select  '#13#10 +
          '  links.*, '#13#10 +
@@ -123,18 +226,7 @@ begin
     // first start - no links else
     if dsQuery.FieldByName('links_count').AsInteger = 0 then
       begin
-        // add start link
-        Link := TLink.Create(FDBEngine);
-        try
-          Link.JobID := FJob.ID;
-          Link.Level := 1;
-          Link.Num := 1;
-          Link.Link := FJob.ZeroLink;
-          Link.SaveEntity;
-        finally
-          Link.Free;
-        end;
-
+        AddLink(FJob.ZeroLink, 0, 1);
         Exit(GetNextlink);
       end;
 
@@ -146,7 +238,9 @@ end;
 
 procedure TModelParser.ProcessNextLink;
 begin
+  if Assigned(FCurrLink) then SetCurrLinkHandle(2);
   FCurrLink := GetNextlink;
+  SetCurrLinkHandle(1);
   FChromium.Load(FCurrLink.Link);
 end;
 
@@ -195,6 +289,7 @@ var
   ContainerNodeList, ContainerInsideNodes: TNodeList;
   JSScript: string;
   i: Integer;
+  IsLast: Variant;
 begin
   Group := FObjData.Items['Group'] as TJobGroup;
   JSScript := FData.Items['JSScript'];
@@ -227,6 +322,8 @@ begin
               ContainerInsideNodes := TNodeList.Create(False);
               for i := ContainerNodeList.Count to Rule.Nodes.Count - 1 do
                 ContainerInsideNodes.Add(Rule.Nodes[i]);
+
+              jsnRule.AddPair('strict', TJSONTrue.Create);
             end
           else
             ContainerInsideNodes := Rule.GetContainerInsideNodes;
@@ -240,6 +337,9 @@ begin
       end;
 
     jsnGroup.AddPair('rules', jsnRules);
+
+    if FData.TryGetValue('IsLastGroup', IsLast) then
+      jsnGroup.AddPair('islast', TJSONNumber.Create(1));
 
     JSScript := Format(JSScript, [jsnGroup.ToJSON]);
     FData.AddOrSetValue('JSScript', JSScript);

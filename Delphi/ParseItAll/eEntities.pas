@@ -9,6 +9,43 @@ uses
   API_ORM;
 
 type
+  TRecord = class(TEntityAbstract)
+  // overrides
+  public
+    class function GetEntityStruct: TEntityStruct; override;
+  ////////////////////
+  private
+  // Getters Setters
+    function GetLinkID: Integer;
+    procedure SetLinkID(aValue: Integer);
+    function GetNum: Integer;
+    procedure SetNum(aValue: Integer);
+    function GetKey: String;
+    procedure SetKey(aValue: String);
+    function GetValue: String;
+    procedure SetValue(aValue: String);
+  ///////////////////////
+  public
+    property LinkID: Integer read GetLinkID write SetLinkID;
+    property Num: Integer read GetNum write SetNum;
+    property Key: string read GetKey write SetKey;
+    property Value: string read GetValue write SetValue;
+  end;
+
+  TLinkRel = class(TEntityAbstract)
+  // overrides
+  public
+    class function GetEntityStruct: TEntityStruct; override;
+  ////////////////////
+  private
+  // Getters Setters
+    function GetMasterLinkID: Integer;
+    procedure SetMasterLinkID(aValue: Integer);
+  ////////////////////
+  public
+    property MasterLinkID: Integer read GetMasterLinkID write SetMasterLinkID;
+  end;
+
   TLink = class(TEntityAbstract)
   // overrides
   public
@@ -24,12 +61,18 @@ type
     procedure SetNum(aValue: Integer);
     function GetLink: string;
     procedure SetLink(aValue: string);
+    function GetMasterRel: TLinkRel;
+    procedure SetMasterRel(aValue: TLinkRel);
+    function GetHandled: Integer;
+    procedure SetHandled(aValue: Integer);
   ////////////////////
   public
     property JobID: Integer read GetJobID write SetJobID;
     property Level: Integer read GetLevel write SetLevel;
     property Num: Integer read GetNum write SetNum;
     property Link: string read GetLink write SetLink;
+    property MasterRel: TLinkRel read GetMasterRel write SetMasterRel;
+    property Handled: Integer read GetHandled write SetHandled;
   end;
 
   TJobNode = class(TEntityAbstract)
@@ -228,6 +271,94 @@ implementation
 uses
   System.SysUtils;
 
+function TRecord.GetNum: Integer;
+begin
+  Result := FData.Items['NUM'];
+end;
+
+procedure TRecord.SetNum(aValue: Integer);
+begin
+  FData.AddOrSetValue('NUM', aValue);
+end;
+
+function TRecord.GetKey: String;
+begin
+  Result := FData.Items['KEY'];
+end;
+
+procedure TRecord.SetKey(aValue: String);
+begin
+  FData.AddOrSetValue('KEY', aValue);
+end;
+
+function TRecord.GetValue: String;
+begin
+  Result := FData.Items['VALUE'];
+end;
+
+procedure TRecord.SetValue(aValue: String);
+begin
+  FData.AddOrSetValue('VALUE', aValue);
+end;
+
+function TRecord.GetLinkID: Integer;
+begin
+  Result := FData.Items['LINK_ID'];
+end;
+
+procedure TRecord.SetLinkID(aValue: Integer);
+begin
+  FData.AddOrSetValue('LINK_ID', aValue);
+end;
+
+class function TRecord.GetEntityStruct: TEntityStruct;
+begin
+  Result.TableName := 'RECORDS';
+
+  AddField(Result.FieldList, 'LINK_ID', ftInteger);
+  AddField(Result.FieldList, 'NUM', ftInteger);
+  AddField(Result.FieldList, 'KEY', ftString);
+  AddField(Result.FieldList, 'VALUE', ftString);
+end;
+
+function TLink.GetHandled: Integer;
+begin
+  Result := FData.Items['HANDLED'];
+end;
+
+procedure TLink.SetHandled(aValue: Integer);
+begin
+  FData.AddOrSetValue('HANDLED', aValue);
+end;
+
+procedure TLink.SetMasterRel(aValue: TLinkRel);
+begin
+  FRelations.AddOrSetValue('LINK2LINK', aValue);
+end;
+
+function TLinkRel.GetMasterLinkID: Integer;
+begin
+  Result := FData.Items['MASTER_LINK_ID'];
+end;
+
+procedure TLinkRel.SetMasterLinkID(aValue: Integer);
+begin
+  FData.AddOrSetValue('MASTER_LINK_ID', aValue);
+end;
+
+function TLink.GetMasterRel: TLinkRel;
+begin
+  Result := FRelations.Items['LINK2LINK'] as TLinkRel;
+end;
+
+class function TLinkRel.GetEntityStruct: TEntityStruct;
+begin
+  Result.TableName := 'LINK2LINK';
+
+  AddField(Result.FieldList, 'MASTER_LINK_ID', ftInteger);
+  AddField(Result.FieldList, 'SLAVE_LINK_ID', ftInteger);
+end;
+
 function TJob.GetLevel(aLevel: integer): TJobLevel;
 var
   Level: TJobLevel;
@@ -288,6 +419,8 @@ begin
   AddField(Result.FieldList, 'LINK', ftString);
   AddField(Result.FieldList, 'LINK_HASH', ftString);
   AddField(Result.FieldList, 'HANDLED', ftInteger);
+
+  AddRelation(Result.RelatedList, 'SLAVE_LINK_ID', '', TLinkRel);
 end;
 
 procedure TJobRule.SetCut(aValue: TJobCut);

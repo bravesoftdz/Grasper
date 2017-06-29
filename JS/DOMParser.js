@@ -1,27 +1,65 @@
 
 var group = %s;
+group.rules.sort(function (a, b) {
+    if (a.cut === true)
+        return -1;
+    else
+        return 1;
+});
 
 function getElementResults(rule, elem, firstGroupResult) {
-    
+
     if (elem == null)
         return [getResultNoElementFind('NoMatchInRuleNodes', rule.id, rule.critical)];
 
     // paint selected elements
     $(elem).addClass('PIAColor');
-    $(elem).css('background-color', rule.color);  
-    $('.PIAColor').children().css('background-color', 'inherit'); 
-    
-    // РїРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєР°СЏ РѕР±СЂР°Р±РѕС‚РєР°
+    $(elem).css('background-color', rule.color);
+    $('.PIAColor').children().css('background-color', 'inherit');
+
+    ////////////////////////////////////////////////////////////////////////////
+    var matches = [];
+
+    if (rule.level != null) {
+        
+        if (rule.level == 3){
+            var eng = elem.innerText.match(/^English$/g);
+            if (eng != null) matches.push(elem.href); 
+        }
+        else
+            matches.push(elem.href);
+        var islink = true;
+    }
+    if (rule.key != null) {
+        var content = elem.innerText;
+
+        /////Temp RegExp////////////////////////////////////////////////////////
+        content = content.replace(/\[.*\]/g, "");
+        content = content.replace(/\nПримечания(.|\s)*/g, "");
+        content = content.replace(/\nСсылки(.|\s)*/g, "");
+        
+        content = content.replace(/\nSee alse(.|\s)*/g, "");
+        content = content.replace(/\nReferences(.|\s)*/g, "");
+        content = content.replace(/\nExternal links(.|\s)*/g, "");
+        ////////////////////////////////////////////////////////////////////////
+
+        matches.push(content);
+        var isrecord = true;
+    }
+    //////////////////////////////////////////////////////////////////////////// 
+
+
+    // пользовательская обработка
     //if (rule.custom_func !== undefined)
     //    elem = customFuncs[rule.custom_func](elem);
 
-    // С‚РёРї РєРѕРЅС‚РµРЅС‚Р°
+    // тип контента
     //if (rule.typeid === 1)
-        var content = elem.innerText;
+    //    var content = elem.innerText;
     //if (rule.typeid === 2 || rule.typeid == null)
     //    content = elem.innerHTML;}
 
-    // РѕР±СЂР°Р±РѕС‚РєР° RegExps
+    // обработка RegExps
     //if (rule.regexps.length > 0) {
     //    var checkOnly = false;
     //    var matches = processRegExps(content, rule.regexps, firstGroupResult, checkOnly);
@@ -30,38 +68,38 @@ function getElementResults(rule, elem, firstGroupResult) {
     //}
 
     /*
-    // Links
-    if (rule.level != null)
-        var islink = true;
-    // Records
-    if (rule.key != null)
-        var isrecord = true;
-  
-    if (matches == null || checkOnly) {
-        matches = [];
-        if (islink)
-            matches.push(elem.href);
-        if (isrecord)
-            matches.push(content);
-    }*/
+     // Links
+     if (rule.level != null)
+     var islink = true;
+     // Records
+     if (rule.key != null)
+     var isrecord = true;
+     
+     if (matches == null || checkOnly) {
+     matches = [];
+     if (islink)
+     matches.push(elem.href);
+     if (isrecord)
+     matches.push(content);
+     }*/
 
-    var matches = [];
-    matches.push(content);
-    
+    //var matches = [];
+    //matches.push(content);
+
     var elementResults = [];
     matches.forEach(function (value) {
         var elemRes = {};
         elemRes.id = rule.id;
 
-        //if (islink) {
-        //    elemRes.level = rule.level;
-        //    elemRes.href = value;
-        //}
+        if (islink) {
+            elemRes.level = rule.level;
+            elemRes.href = value;
+        }
 
-        //if (isrecord) {
+        if (isrecord) {
             elemRes.key = rule.key;
             elemRes.value = value;
-        //}
+        }
 
         elementResults.push(elemRes);
     });
@@ -69,26 +107,32 @@ function getElementResults(rule, elem, firstGroupResult) {
     return elementResults;
 }
 
-function getElementsByNodes(baseElement, nodes) {
+function getElementsByNodes(baseElement, nodes, strict) {
     var elements = [baseElement];
     // list each node inside base element
     nodes.map(function (node) {
         var matchElements = [];
-        
+
         elements.map(function (element) {
             var collection = getCollectionByTag(element, node.tag);
-            // list each child nodes - search for matching
-            collection.map(function (child, i) {
-                // search element
-                node.index = i + 1;
-                element = getElementByRuleNode(node, collection, false);
-                if (element === undefined)
-                    matchElements.push(null);
-                else
-                    matchElements.push(element);
-            });  
+
+            if (strict) {
+                element = getElementByRuleNode(node, collection, true);
+                matchElements.push(element);
+            } else {
+                // list each child nodes - search for matching
+                collection.map(function (child, i) {
+                    // search element
+                    node.index = i + 1;
+                    element = getElementByRuleNode(node, collection, false);
+                    if (element === undefined)
+                        matchElements.push(null);
+                    else
+                        matchElements.push(element);
+                });
+            }
         });
-        
+
         elements = matchElements;
     });
     return elements;
@@ -225,39 +269,46 @@ function parseDOMbyGroup(group) {
             var collection = getCollectionByTag(element, node.tag);
 
             element = getElementByRuleNode(node, collection, true);
-            // РЅРµ РЅР°Р№РґРµРЅ СѓР·РµР»
+            // не найден узел
             //        if (element == null) {
             //            var mainRule = group.rules[0];
             //            resultsFromElements.push([getResultNoElementFind('NoMatchInGroupNodes', mainRule.id, mainRule.critical)]);
             //        }
         }
     });
-    
+
     // step down to DOM tree - get rule collection  
     if (element != null) {
-        group.rules.map(function (rule, i) {            
-            
-            var elements = getElementsByNodes(element, rule.nodes);
-            
+
+        var rcount = 0;
+        group.rules.map(function (rule) {
+
             if (rule.cut) {
-                $(elements).addClass('PIAHide');
-                $('.PIAHide').css('display', 'none');
+                var elements = getElementsByNodes(element, rule.nodes, rule.strict);
+
+                if (elements != null) { 
+                    $(elements).addClass('PIAHide');
+                    $('.PIAHide').css('display', 'none');
+                }
+            } else {
+                elements = getElementsByNodes(element, rule.nodes, false);
+
+                rcount++;
+                if (rcount === 1)
+                    elements.map(function (elem) {
+                        resultsFromElements.push(getElementResults(rule, elem));
+                    });
+                else
+                    resultsFromElements.map(function (elementResults, j) {
+                        elementResults.concat(getElementResults(rule, elements[j], elementResults[0]));
+                    });
             }
-            
-            if (i === 0)
-                elements.map(function (elem) {
-                    resultsFromElements.push(getElementResults(rule, elem));
-                });
-            else
-                resultsFromElements.map(function (elementResults, j) {
-                   elementResults.concat(getElementResults(rule, elements[j], elementResults[0]));
-                });
         });
     }
 
     returnObj.result = resultsFromElements;
-    //if (group.islast === 1)
-    //    returnObj.islast = 1;
+    if (group.islast === 1)
+        returnObj.islast = 1;
     return JSON.stringify(returnObj);
 
 }
@@ -271,6 +322,6 @@ paintedElements.removeClass('PIAColor');
 var hiddenElements = $('.PIAHide');
 hiddenElements.css('display', '');
 hiddenElements.removeClass('PIAHide');
-        
+
 app.parsedataback(parseDOMbyGroup(group));
 console.log('done');
