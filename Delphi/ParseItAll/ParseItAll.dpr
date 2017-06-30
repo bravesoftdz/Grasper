@@ -7,7 +7,6 @@ uses
   vMain in 'vMain.pas' {ViewMain},
   cController in 'cController.pas',
   vLogin in 'vLogin.pas' {ViewLogin},
-  mLogin in 'mLogin.pas',
   eEntities in 'eEntities.pas',
   vJob in 'vJob.pas' {ViewJob},
   ceflib,
@@ -22,7 +21,9 @@ uses
   API_Files in '..\..\..\Libraries\Delphi\API_Files.pas',
   API_ORM_Cntrls in '..\..\..\Libraries\Delphi\API_ORM_Cntrls.pas',
   mParser in 'mParser.pas',
-  vRuleResult in 'vRuleResult.pas' {ViewRuleResult};
+  vRuleResult in 'vRuleResult.pas' {ViewRuleResult},
+  Vcl.Themes,
+  Vcl.Styles;
 
 {$R *.res}
 

@@ -62,6 +62,27 @@ procedure TModelParser.WriteToTemp;
         aQuery.Next;
       end;
   end;
+  function GetSite(RuDS, EnDS: TFDQuery): string;
+  begin
+    Result := '';
+    if ByKey(RuDS, 'site')<> '' then
+      Result := Result + ByKey(RuDS, 'site');
+    if ByKey(RuDS, 'site2')<> '' then
+      begin
+        if Result <> '' then Result := Result + '; ';
+        Result := Result + ByKey(RuDS, 'site2');
+      end;
+    if ByKey(EnDS, 'site')<> '' then
+      begin
+        if Result <> '' then Result := Result + '; ';
+        Result := Result + ByKey(EnDS, 'site');
+      end;
+    if ByKey(EnDS, 'site2')<> '' then
+      begin
+        if Result <> '' then Result := Result + '; ';
+        Result := Result + ByKey(EnDS, 'site2');
+      end;
+   end;
 var
   dsQuery: TFDQuery;
   dsRec: TFDQuery;
@@ -119,7 +140,7 @@ begin
         dsQuery.ParamByName('rucontent').AsString := ByKey(dsRec, 'content');
         dsQuery.ParamByName('entitle').AsString := ByKey(dsRecEN, 'title_en');
         dsQuery.ParamByName('encontent').AsString := ByKey(dsRecEN, 'content_en');
-        dsQuery.ParamByName('site').AsString := ByKey(dsRec, 'site') + ByKey(dsRec, 'site2') + ByKey(dsRecEN, 'site') + ByKey(dsRecEN, 'site2');
+        dsQuery.ParamByName('site').AsString := GetSite(dsRec, dsRecEN);
 
 
         dsQuery.ParamByName('rulink').AsString := ru_link;

@@ -7,11 +7,10 @@ uses
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ComCtrls, Vcl.ExtCtrls, Vcl.Grids, Vcl.StdCtrls,
   Vcl.Buttons,
   API_MVC,
-  eEntities, cefvcl;
+  eEntities, cefvcl, Vcl.Menus, System.ImageList, Vcl.ImgList, Vcl.XPMan;
 
 type
   TViewMain = class(TViewAbstract)
-    statBar: TStatusBar;
     pnlJobs: TPanel;
     stgdJobs: TStringGrid;
     pnlButtons: TPanel;
@@ -19,7 +18,14 @@ type
     btnEditJob: TBitBtn;
     btnEditRules: TBitBtn;
     btnGo: TBitBtn;
+    mmMenu: TMainMenu;
+    mniProject: TMenuItem;
+    mniNewProject: TMenuItem;
+    xpmnfstXP: TXPManifest;
+    ilIcons: TImageList;
+    splJobBrowser: TSplitter;
     chrmBrowser: TChromium;
+    btnCreateJob: TSpeedButton;
     procedure btnNewJobClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure btnEditJobClick(Sender: TObject);

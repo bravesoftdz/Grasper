@@ -88,7 +88,6 @@ uses
   vJob,
   vRules,
   vRuleResult,
-  mLogin,
   mJobs,
   mParser;
 
@@ -389,14 +388,6 @@ begin
   if aEventMsg = 'AfterJSScriptPrepared' then
     ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(FData.Items['JSScript'], 'about:blank', 0);
 
-  if aEventMsg = 'LoginDone' then
-    begin
-      ViewLogin.Close;
-      ViewMain.statBar.Panels[0].Text := 'user: ' + FData.Items['user'];
-      ViewMain.statBar.Panels[1].Text := 'ip: ' + FData.Items['ip'];
-      GetJobList;
-    end;
-
   if aEventMsg = 'GetJobDone' then
     begin
       CallView(TViewJob);
@@ -414,14 +405,6 @@ begin
   if aMsg = 'ViewRulesClosed' then
     begin
       FObjData.Items['Job'].Free;
-    end;
-
-  if aMsg = 'ShowViewLogin' then CallView(TViewLogin);
-  if aMsg = 'PerfomLoggining' then
-    begin
-      FData.Add('login', ViewLogin.edtLogin.Text);
-      FData.Add('password', ViewLogin.edtPassword.Text);
-      CallModel(TModelLogin);
     end;
 
   if aMsg = 'CreateJob' then
