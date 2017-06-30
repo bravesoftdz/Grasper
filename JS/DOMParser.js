@@ -38,7 +38,7 @@ function getElementResults(rule, elem, firstGroupResult) {
         content = content.replace(/\nПримечания(.|\s)*/g, "");
         content = content.replace(/\nСсылки(.|\s)*/g, "");
         
-        content = content.replace(/\nSee alse(.|\s)*/g, "");
+        content = content.replace(/\nSee else(.|\s)*/g, "");
         content = content.replace(/\nReferences(.|\s)*/g, "");
         content = content.replace(/\nExternal links(.|\s)*/g, "");
         ////////////////////////////////////////////////////////////////////////
@@ -118,7 +118,8 @@ function getElementsByNodes(baseElement, nodes, strict) {
 
             if (strict) {
                 element = getElementByRuleNode(node, collection, true);
-                matchElements.push(element);
+                if (element != null)
+                    matchElements.push(element);
             } else {
                 // list each child nodes - search for matching
                 collection.map(function (child, i) {
@@ -130,7 +131,7 @@ function getElementsByNodes(baseElement, nodes, strict) {
                     else
                         matchElements.push(element);
                 });
-            }
+            }          
         });
 
         elements = matchElements;

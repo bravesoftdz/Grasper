@@ -34,6 +34,7 @@ type
             const message: ICefProcessMessage; out Result: Boolean);
     procedure ProcessDataReceived(aData: string);
     procedure SetCurrLinkHandle(aValue: Integer);
+    procedure WriteToTemp;
     function GetNextlink: TLink;
     function AddLink(aLink: string; aMasterLinkID, aLevel: Integer; aNum: Integer = 1): Integer;
     function AddRecord(aLinkId, aRecordNum: integer; aKey, aValue: string): integer;
@@ -48,6 +49,90 @@ uses
   System.Generics.Collections,
   FireDAC.Comp.Client,
   API_Files;
+
+procedure TModelParser.WriteToTemp;
+  function ByKey(aQuery: TFDQuery; aKey: string): string;
+  begin
+    Result := '';
+    aQuery.First;
+    while not aQuery.Eof do
+      begin
+        if aQuery.FieldByName('key').AsString = aKey then
+          Exit(aQuery.FieldByName('value').AsString);
+        aQuery.Next;
+      end;
+  end;
+var
+  dsQuery: TFDQuery;
+  dsRec: TFDQuery;
+  dsRecEN: TFDQuery;
+
+  ru_title, ru_content, en_title, en_content, site, ru_link, en_link: string;
+begin
+  if FCurrLink = nil then Exit;
+  if FCurrLink.Level = 1 then Exit;
+
+  dsQuery := TFDQuery.Create(nil);
+  dsRec := TFDQuery.Create(nil);
+  dsRecEN:= TFDQuery.Create(nil);
+  try
+    dsQuery.SQL.Text := 'select * from link2link where master_link_id = :linkid';
+    dsQuery.ParamByName('linkid').AsInteger := FCurrLink.ID;
+    FDBEngine.OpenQuery(dsQuery);
+
+    if dsQuery.IsEmpty then
+      begin
+        if FCurrLink.Level = 2 then
+          begin
+            dsRec.SQL.Text := 'select * from records where link_id = :linkid';
+            dsRec.ParamByName('linkid').AsInteger := FCurrLink.ID;
+            FDBEngine.OpenQuery(dsRec);
+
+            dsRecEN.SQL.Text := 'select * from records where id = 0';
+            FDBEngine.OpenQuery(dsRecEn);
+
+            ru_link := FCurrLink.Link;
+            en_link := '';
+          end
+        else
+          begin
+            dsRecEN.SQL.Text := 'select * from records where link_id = :linkid';
+            dsRecEN.ParamByName('linkid').AsInteger := FCurrLink.ID;
+            FDBEngine.OpenQuery(dsRecEn);
+
+            dsRec.SQL.Text := 'select * ' +
+                              ' from records t ' +
+                              ' join link2link t2 on t2.master_link_id = t.link_id ' +
+                              ' join links t3 on t3.id = t2.master_link_id ' +
+                              ' where t3.level = 2 ' +
+                              ' and t2.slave_link_id = :linkid ';
+            dsRec.ParamByName('linkid').AsInteger := FCurrLink.ID;
+            FDBEngine.OpenQuery(dsRec);
+
+            en_link := FCurrLink.Link;
+            ru_link := dsRec.FieldByName('link').AsString;
+          end;
+
+        dsQuery.SQL.Text := 'insert into temp set ru_title = :rutitle, ru_content = :rucontent, '+
+        'en_title = :entitle, en_content = :encontent, site = :site, ru_link = :rulink, en_link = :enlink';
+        dsQuery.ParamByName('rutitle').AsString := ByKey(dsRec, 'title');
+        dsQuery.ParamByName('rucontent').AsString := ByKey(dsRec, 'content');
+        dsQuery.ParamByName('entitle').AsString := ByKey(dsRecEN, 'title_en');
+        dsQuery.ParamByName('encontent').AsString := ByKey(dsRecEN, 'content_en');
+        dsQuery.ParamByName('site').AsString := ByKey(dsRec, 'site') + ByKey(dsRec, 'site2') + ByKey(dsRecEN, 'site') + ByKey(dsRecEN, 'site2');
+
+
+        dsQuery.ParamByName('rulink').AsString := ru_link;
+        dsQuery.ParamByName('enlink').AsString := en_link;
+
+        FDBEngine.ExecQuery(dsQuery);
+      end;
+  finally
+    dsQuery.Free;
+    dsRec.Free;
+    dsRecEN.Free;
+  end;
+end;
 
 function TModelParser.AddRecord(aLinkId, aRecordNum: integer; aKey, aValue: string): integer;
 var
@@ -89,7 +174,11 @@ begin
         Link.MasterRel.MasterLinkID := aMasterLinkID;
       end;
 
-    Link.SaveAll;
+    try
+      Link.SaveAll;
+    except
+
+    end;
 
     Result := Link.ID;
   finally
@@ -239,6 +328,7 @@ end;
 procedure TModelParser.ProcessNextLink;
 begin
   if Assigned(FCurrLink) then SetCurrLinkHandle(2);
+  WriteToTemp;
   FCurrLink := GetNextlink;
   SetCurrLinkHandle(1);
   FChromium.Load(FCurrLink.Link);
