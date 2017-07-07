@@ -2,6 +2,8 @@ program ParseItAll;
 
 
 
+
+
 uses
   Vcl.Forms,
   vMain in 'vMain.pas' {ViewMain},
@@ -23,7 +25,8 @@ uses
   mParser in 'mParser.pas',
   vRuleResult in 'vRuleResult.pas' {ViewRuleResult},
   Vcl.Themes,
-  Vcl.Styles;
+  Vcl.Styles,
+  API_DB_SQLite in '..\..\..\Libraries\Delphi\API_DB_SQLite.pas';
 
 {$R *.res}
 

@@ -22,15 +22,18 @@ type
     mniProject: TMenuItem;
     mniNewProject: TMenuItem;
     xpmnfstXP: TXPManifest;
-    ilIcons: TImageList;
     splJobBrowser: TSplitter;
     chrmBrowser: TChromium;
     btnCreateJob: TSpeedButton;
+    Image1: TImage;
+    ilIcons: TImageList;
     procedure btnNewJobClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure btnEditJobClick(Sender: TObject);
     procedure btnEditRulesClick(Sender: TObject);
     procedure btnGoClick(Sender: TObject);
+    procedure stgdJobsDrawCell(Sender: TObject; ACol, ARow: Integer;
+      Rect: TRect; State: TGridDrawState);
   private
     { Private declarations }
     function GetSelectedJobID: integer;
@@ -51,6 +54,7 @@ implementation
 {$R *.dfm}
 
 uses
+  WinProcs,
   cController;
 
 procedure TViewMain.SetJobsGrid(aJobs: TJobList);
@@ -63,11 +67,23 @@ begin
   for Job in aJobs do
     begin
       if i > 0 then stgdJobs.RowCount := stgdJobs.RowCount + 1;
-      stgdJobs.Cells[0, stgdJobs.RowCount - 1] := IntToStr(Job.ID);
-      stgdJobs.Cells[1, stgdJobs.RowCount - 1] := IntToStr(Job.UserID);
-      stgdJobs.Cells[2, stgdJobs.RowCount - 1] := Job.Caption;
+      stgdJobs.Cells[0, stgdJobs.RowCount - 1] := Job.Caption;
       Inc(i);
     end;
+end;
+
+procedure TViewMain.stgdJobsDrawCell(Sender: TObject; ACol, ARow: Integer;
+  Rect: TRect; State: TGridDrawState);
+var
+  F: Word;
+  C: array[0..255] of Char;
+begin
+  if ARow = 0 then
+    F := DT_CENTER;
+
+  stgdJobs.Canvas.FillRect(Rect);
+  StrPCopy(C, stgdJobs.Cells[ACol, 0]);
+  WinProcs.DrawText(stgdJobs.Canvas.Handle, C, StrLen(C), Rect, F);
 end;
 
 function TViewMain.GetSelectedJobID: Integer;
@@ -78,10 +94,7 @@ end;
 procedure TViewMain.InitView;
 begin
   ViewMain := Self;
-
-  stgdJobs.Cells[0,0] := 'ID';
-  stgdJobs.Cells[1,0] := 'UserID';
-  stgdJobs.Cells[2,0] := 'Title';
+  stgdJobs.Cells[0,0] := 'Title';
 end;
 
 procedure TViewMain.btnEditJobClick(Sender: TObject);
@@ -106,7 +119,7 @@ end;
 
 procedure TViewMain.FormShow(Sender: TObject);
 begin
-  Self.SendMessage('ShowViewLogin');
+  Self.SendMessage('GetJobList');
 end;
 
 procedure TViewMain.InitMVC;

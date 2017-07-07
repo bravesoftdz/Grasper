@@ -250,8 +250,6 @@ type
     procedure SetCaption(aValue: string);
     function GetZeroLink: string;
     procedure SetZeroLink(aValue: string);
-    function GetUserID: integer;
-    procedure SetUserID(aValue: integer);
     //////////////////
     procedure SaveLists; override;
   public
@@ -260,7 +258,6 @@ type
   published
     property Caption: string read GetCaption write SetCaption;
     property ZeroLink: string read GetZeroLink write SetZeroLink;
-    property UserID: Integer read GetUserID write SetUserID;
     property Levels: TLevelList read GetLevels;
   end;
 
@@ -784,16 +781,6 @@ begin
   AddField(Result.FieldList, 'BASE_LINK', ftString);
 end;
 
-function TJob.GetUserID: integer;
-begin
-  Result := FData.Items['USER_ID'];
-end;
-
-procedure TJob.SetUserID(aValue: integer);
-begin
-  FData.AddOrSetValue('USER_ID', aValue);
-end;
-
 procedure TJob.SetZeroLink(aValue: string);
 begin
   FData.AddOrSetValue('ZERO_LINK', aValue);
@@ -817,7 +804,6 @@ end;
 class function TJob.GetEntityStruct: TEntityStruct;
 begin
   Result.TableName := 'JOBS';
-  AddField(Result.FieldList, 'USER_ID', ftInteger);
   AddField(Result.FieldList, 'CAPTION', ftString);
   AddField(Result.FieldList, 'ZERO_LINK', ftString);
 end;

@@ -6,7 +6,7 @@ uses
   System.JSON,
   API_MVC,
   API_MVC_DB,
-  API_DB_MySQL,
+  API_DB_SQLite,
   cefvcl,
   cefLib,
   eEntities;
@@ -437,8 +437,8 @@ end;
 procedure TController.InitDB;
 begin
   FConnectOnCreate := True;
-  FConnectParams := Self.GetConnectParams('Settings\MySQL.ini');
-  FDBEngineClass := TMySQLEngine;
+  FConnectParams.DataBase := GetCurrentDir + '\DB\local.db';
+  FDBEngineClass := TSQLiteEngine;
 
   FJSScript := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\DOMParser.js');
   FData.AddOrSetValue('JSScript', FJSScript);
