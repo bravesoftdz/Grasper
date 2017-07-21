@@ -1,7 +1,7 @@
 object ViewJob: TViewJob
   Left = 0
   Top = 0
-  Caption = 'Parse It All! Job'
+  Caption = 'Parse It All! Project'
   ClientHeight = 290
   ClientWidth = 554
   Color = clBtnFace

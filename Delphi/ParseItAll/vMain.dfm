@@ -1,7 +1,7 @@
 object ViewMain: TViewMain
   Left = 0
   Top = 0
-  Caption = 'ParseItAll!'
+  Caption = 'Parse It All!'
   ClientHeight = 290
   ClientWidth = 554
   Color = clBtnFace
@@ -42,26 +42,40 @@ object ViewMain: TViewMain
     Align = alTop
     BevelOuter = bvNone
     TabOrder = 0
-    ExplicitTop = 25
-    object stgdJobs: TStringGrid
+    object strgrdJobs: TZColorStringGrid
       Left = 0
       Top = 0
       Width = 554
       Height = 130
       Align = alClient
-      BevelInner = bvNone
       ColCount = 1
       DefaultRowHeight = 18
+      DefaultDrawing = False
+      DoubleBuffered = True
+      FixedColor = clBtnFace
       FixedCols = 0
       RowCount = 2
-      Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goRowSelect]
+      ParentDoubleBuffered = False
       TabOrder = 0
-      OnDrawCell = stgdJobsDrawCell
+      DefaultCellStyle.Font.Charset = DEFAULT_CHARSET
+      DefaultCellStyle.Font.Color = clWindowText
+      DefaultCellStyle.Font.Height = -11
+      DefaultCellStyle.Font.Name = 'Tahoma'
+      DefaultCellStyle.Font.Style = []
+      DefaultCellStyle.BGColor = clWindow
+      DefaultFixedCellStyle.Font.Charset = DEFAULT_CHARSET
+      DefaultFixedCellStyle.Font.Color = clWindowText
+      DefaultFixedCellStyle.Font.Height = -11
+      DefaultFixedCellStyle.Font.Name = 'Tahoma'
+      DefaultFixedCellStyle.Font.Style = []
+      DefaultFixedCellStyle.BGColor = clBtnFace
+      LineDesign.LineUpColor = clWhite
+      ExplicitLeft = 24
+      ExplicitTop = 56
+      ExplicitWidth = 320
+      ExplicitHeight = 120
       ColWidths = (
-        376)
-      RowHeights = (
-        18
-        18)
+        334)
     end
   end
   object pnlButtons: TPanel
@@ -81,7 +95,7 @@ object ViewMain: TViewMain
       Top = 4
       Width = 33
       Height = 22
-      Hint = 'New Project'
+      Action = acCreateJob
       Flat = True
       Glyph.Data = {
         36030000424D3603000000000000360000002800000010000000100000000100
@@ -158,18 +172,16 @@ object ViewMain: TViewMain
     Align = alClient
     DefaultUrl = 'about:blank'
     TabOrder = 2
-    ExplicitTop = 158
-    ExplicitHeight = 132
   end
   object mmMenu: TMainMenu
     Images = ilIcons
-    Left = 496
+    Left = 499
     Top = 96
     object mniProject: TMenuItem
-      Caption = 'Project'
+      Caption = 'Projects'
       object mniNewProject: TMenuItem
+        Action = acCreateJob
         Caption = 'New Project'
-        ImageIndex = 0
       end
     end
   end
@@ -183,7 +195,7 @@ object ViewMain: TViewMain
     Left = 400
     Top = 97
     Bitmap = {
-      494C010101000800100010001000FFFFFFFF2100FFFFFFFFFFFFFFFF424D3600
+      494C010101000800180010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       000000000000000000000000000000000000323232FF000000FF000000FF0000
       00FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF0202
@@ -319,6 +331,16 @@ object ViewMain: TViewMain
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
-      00000000000000000000000000000000}
+      0000000000000000000000000000000000000000000000000000000000000000
+      000000000000}
+  end
+  object actlstMain: TActionList
+    Left = 351
+    Top = 97
+    object acCreateJob: TAction
+      Hint = 'New Project'
+      ImageIndex = 0
+      OnExecute = acCreateJobExecute
+    end
   end
 end

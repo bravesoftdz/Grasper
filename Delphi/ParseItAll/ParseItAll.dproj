@@ -100,7 +100,6 @@
             <Form>ViewJob</Form>
             <FormType>dfm</FormType>
         </DCCReference>
-        <DCCReference Include="mJobs.pas"/>
         <DCCReference Include="vRules.pas">
             <Form>ViewRules</Form>
             <FormType>dfm</FormType>

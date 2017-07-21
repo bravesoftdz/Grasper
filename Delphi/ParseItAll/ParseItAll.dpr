@@ -12,7 +12,6 @@ uses
   eEntities in 'eEntities.pas',
   vJob in 'vJob.pas' {ViewJob},
   ceflib,
-  mJobs in 'mJobs.pas',
   vRules in 'vRules.pas' {ViewRules},
   API_MVC in '..\..\..\Libraries\Delphi\API_MVC.pas',
   API_MVC_Bind in '..\..\..\Libraries\Delphi\API_MVC_Bind.pas',

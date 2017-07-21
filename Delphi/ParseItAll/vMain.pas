@@ -7,12 +7,12 @@ uses
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ComCtrls, Vcl.ExtCtrls, Vcl.Grids, Vcl.StdCtrls,
   Vcl.Buttons,
   API_MVC,
-  eEntities, cefvcl, Vcl.Menus, System.ImageList, Vcl.ImgList, Vcl.XPMan;
+  eEntities, cefvcl, Vcl.Menus, System.ImageList, Vcl.ImgList, Vcl.XPMan,
+  ZColorStringGrid, System.Actions, Vcl.ActnList;
 
 type
   TViewMain = class(TViewAbstract)
     pnlJobs: TPanel;
-    stgdJobs: TStringGrid;
     pnlButtons: TPanel;
     btnNewJob: TBitBtn;
     btnEditJob: TBitBtn;
@@ -27,13 +27,15 @@ type
     btnCreateJob: TSpeedButton;
     Image1: TImage;
     ilIcons: TImageList;
+    strgrdJobs: TZColorStringGrid;
+    actlstMain: TActionList;
+    acCreateJob: TAction;
     procedure btnNewJobClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure btnEditJobClick(Sender: TObject);
     procedure btnEditRulesClick(Sender: TObject);
     procedure btnGoClick(Sender: TObject);
-    procedure stgdJobsDrawCell(Sender: TObject; ACol, ARow: Integer;
-      Rect: TRect; State: TGridDrawState);
+    procedure acCreateJobExecute(Sender: TObject);
   private
     { Private declarations }
     function GetSelectedJobID: integer;
@@ -63,38 +65,30 @@ var
   Job: TJob;
 begin
   i := 0;
-  stgdJobs.RowCount := 2;
+  strgrdJobs.RowCount := 2;
   for Job in aJobs do
     begin
-      if i > 0 then stgdJobs.RowCount := stgdJobs.RowCount + 1;
-      stgdJobs.Cells[0, stgdJobs.RowCount - 1] := Job.Caption;
+      if i > 0 then strgrdJobs.RowCount := strgrdJobs.RowCount + 1;
+      strgrdJobs.Cells[0, strgrdJobs.RowCount - 1] := Job.Caption;
       Inc(i);
     end;
 end;
 
-procedure TViewMain.stgdJobsDrawCell(Sender: TObject; ACol, ARow: Integer;
-  Rect: TRect; State: TGridDrawState);
-var
-  F: Word;
-  C: array[0..255] of Char;
-begin
-  if ARow = 0 then
-    F := DT_CENTER;
-
-  stgdJobs.Canvas.FillRect(Rect);
-  StrPCopy(C, stgdJobs.Cells[ACol, 0]);
-  WinProcs.DrawText(stgdJobs.Canvas.Handle, C, StrLen(C), Rect, F);
-end;
-
 function TViewMain.GetSelectedJobID: Integer;
 begin
-  Result := StrToInt(stgdJobs.Cells[0, stgdJobs.Row]);
+  Result := StrToInt(strgrdJobs.Cells[0, strgrdJobs.Row]);
 end;
 
 procedure TViewMain.InitView;
 begin
   ViewMain := Self;
-  stgdJobs.Cells[0,0] := 'Title';
+  strgrdJobs.Cells[0,0] := 'Title';
+  strgrdJobs.CellStyle[0,0].HorizontalAlignment := taCenter;
+end;
+
+procedure TViewMain.acCreateJobExecute(Sender: TObject);
+begin
+  SendMessage('CreateJob');
 end;
 
 procedure TViewMain.btnEditJobClick(Sender: TObject);

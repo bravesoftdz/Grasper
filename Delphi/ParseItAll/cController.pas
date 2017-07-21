@@ -40,6 +40,8 @@ type
   published
     procedure GetJobList;
 
+    procedure CreateJob;
+
     procedure EditJobRules;
     procedure StoreJobRules;
 
@@ -88,8 +90,17 @@ uses
   vJob,
   vRules,
   vRuleResult,
-  mJobs,
   mParser;
+
+procedure TController.CreateJob;
+var
+  Job: TJob;
+begin
+  Job := TJob.Create(FDBEngine, 0);
+  CallView(TViewJob);
+  ViewJob.CRUDPanel.BuildCRUD(Job);
+  ViewJob.SetBrowserLinks;
+end;
 
 procedure TController.DeleteLevel;
 begin
@@ -387,14 +398,6 @@ var
 begin
   if aEventMsg = 'AfterJSScriptPrepared' then
     ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(FData.Items['JSScript'], 'about:blank', 0);
-
-  if aEventMsg = 'GetJobDone' then
-    begin
-      CallView(TViewJob);
-      Job := FObjData.Items['Job'] as TJob;
-      ViewJob.CRUDPanel.BuildCRUD(Job);
-      ViewJob.SetBrowserLinks;
-    end;
 end;
 
 procedure TController.PerfomViewMessage(aMsg: string);
@@ -407,23 +410,18 @@ begin
       FObjData.Items['Job'].Free;
     end;
 
-  if aMsg = 'CreateJob' then
-    begin
-      FData.AddOrSetValue('JobID', 0);
-      CallModel(TModelJobs, 'GetJob');
-    end;
-  if aMsg = 'EditJob' then
+  {if aMsg = 'EditJob' then
     begin
       FData.AddOrSetValue('JobID', ViewMain.SelectedJobID);
       CallModel(TModelJobs, 'GetJob');
-    end;
-  if aMsg = 'StoreJob' then
+    end; }
+  {if aMsg = 'StoreJob' then
     begin
       ViewJob.Close;
       ViewJob.CRUDPanel.UpdateEntity;
       ViewJob.CRUDPanel.Entity.SaveEntity;
       CallModel(TModelJobs, 'GetJobList');
-    end;
+    end;}
 
   if aMsg = 'StartJob' then
     begin
