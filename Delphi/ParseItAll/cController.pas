@@ -41,6 +41,7 @@ type
     procedure GetJobList;
 
     procedure CreateJob;
+    procedure StoreJob;
 
     procedure EditJobRules;
     procedure StoreJobRules;
@@ -92,13 +93,37 @@ uses
   vRuleResult,
   mParser;
 
+procedure TController.StoreJob;
+var
+  Job: TJob;
+begin
+  Job := FObjData.Items['Job'] as TJob;
+  Job.SaveAll;
+  ViewJob.Close;
+  GetJobList;
+end;
+
+  {if aMsg = 'EditJob' then
+    begin
+      FData.AddOrSetValue('JobID', ViewMain.SelectedJobID);
+      CallModel(TModelJobs, 'GetJob');
+    end; }
+  {if aMsg = 'StoreJob' then
+    begin
+      ViewJob.Close;
+      ViewJob.CRUDPanel.UpdateEntity;
+      ViewJob.CRUDPanel.Entity.SaveEntity;
+      CallModel(TModelJobs, 'GetJobList');
+    end;}
+
 procedure TController.CreateJob;
 var
   Job: TJob;
 begin
   Job := TJob.Create(FDBEngine, 0);
+  FObjData.AddOrSetValue('Job', Job);
   CallView(TViewJob);
-  ViewJob.CRUDPanel.BuildCRUD(Job);
+  ViewJob.EntityPanel.BuildControls(Job);
   ViewJob.SetBrowserLinks;
 end;
 
@@ -409,19 +434,6 @@ begin
     begin
       FObjData.Items['Job'].Free;
     end;
-
-  {if aMsg = 'EditJob' then
-    begin
-      FData.AddOrSetValue('JobID', ViewMain.SelectedJobID);
-      CallModel(TModelJobs, 'GetJob');
-    end; }
-  {if aMsg = 'StoreJob' then
-    begin
-      ViewJob.Close;
-      ViewJob.CRUDPanel.UpdateEntity;
-      ViewJob.CRUDPanel.Entity.SaveEntity;
-      CallModel(TModelJobs, 'GetJobList');
-    end;}
 
   if aMsg = 'StartJob' then
     begin

@@ -48,13 +48,14 @@ object ViewMain: TViewMain
       Width = 554
       Height = 130
       Align = alClient
-      ColCount = 1
+      ColCount = 2
       DefaultRowHeight = 18
       DefaultDrawing = False
       DoubleBuffered = True
       FixedColor = clBtnFace
       FixedCols = 0
       RowCount = 2
+      Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goRowSelect]
       ParentDoubleBuffered = False
       TabOrder = 0
       DefaultCellStyle.Font.Charset = DEFAULT_CHARSET
@@ -70,12 +71,12 @@ object ViewMain: TViewMain
       DefaultFixedCellStyle.Font.Style = []
       DefaultFixedCellStyle.BGColor = clBtnFace
       LineDesign.LineUpColor = clWhite
-      ExplicitLeft = 24
-      ExplicitTop = 56
-      ExplicitWidth = 320
-      ExplicitHeight = 120
       ColWidths = (
-        334)
+        35
+        318)
+      RowHeights = (
+        18
+        18)
     end
   end
   object pnlButtons: TPanel
@@ -127,31 +128,22 @@ object ViewMain: TViewMain
       ParentShowHint = False
       ShowHint = True
     end
-    object btnNewJob: TBitBtn
-      Left = 304
-      Top = 10
-      Width = 75
-      Height = 25
-      Caption = 'btnAddJob'
-      TabOrder = 0
-      OnClick = btnNewJobClick
-    end
     object btnEditJob: TBitBtn
-      Left = 358
-      Top = 10
+      Left = 375
+      Top = 8
       Width = 75
       Height = 25
       Caption = 'btnEditJob'
-      TabOrder = 1
+      TabOrder = 0
       OnClick = btnEditJobClick
     end
     object btnEditRules: TBitBtn
-      Left = 415
-      Top = 10
+      Left = 63
+      Top = 3
       Width = 75
       Height = 25
       Caption = 'btnEditRules'
-      TabOrder = 2
+      TabOrder = 1
       OnClick = btnEditRulesClick
     end
     object btnGo: TBitBtn
@@ -160,7 +152,7 @@ object ViewMain: TViewMain
       Width = 75
       Height = 25
       Caption = 'btnGo'
-      TabOrder = 3
+      TabOrder = 2
       OnClick = btnGoClick
     end
   end
@@ -195,7 +187,7 @@ object ViewMain: TViewMain
     Left = 400
     Top = 97
     Bitmap = {
-      494C010101000800180010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C0101010008001C0010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       000000000000000000000000000000000000323232FF000000FF000000FF0000
       00FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF0202

@@ -6,10 +6,10 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, Vcl.StdCtrls, Vcl.Buttons,
   API_MVC,
-  API_ORM_Cntrls;
+  API_ORM_Cntrls, cefvcl, ceflib;
 
 type
-  TCRUDPanel = class(TCRUDPanelAbstract)
+  TEntityPanel = class(TEntityPanelAbstract)
   end;
 
   TViewJob = class(TViewAbstract)
@@ -19,6 +19,9 @@ type
     lblURL: TLabel;
     btnNavigate: TBitBtn;
     pnlFieldsContainer: TPanel;
+    btnCancel: TButton;
+    btnApply: TButton;
+    chrmBrowser: TChromium;
     procedure btnNavigateClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
   private
@@ -27,10 +30,10 @@ type
     procedure InitView; override;
     procedure ApplyChanges(Sender: TObject);
     procedure CancelChanges(Sender: TObject);
-    //procedure LoadStart(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame);
+    procedure LoadStart(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame);
   public
     { Public declarations }
-    CRUDPanel: TCRUDPanel;
+    EntityPanel: TEntityPanel;
     ZeroLinkEdit: TEdit;
     procedure SetBrowserLinks;
   end;
@@ -42,20 +45,20 @@ implementation
 
 {$R *.dfm}
 
-{procedure TViewJob.LoadStart(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame);
+procedure TViewJob.LoadStart(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame);
 begin
   edtURL.Text := frame.Url;
   if frame.Url <> 'about:blank' then ZeroLinkEdit.Text := frame.Url;
-end; }
+end;
 
 procedure TViewJob.SetBrowserLinks;
 begin
-  //chrmBrowser.OnLoadStart := LoadStart;
-  ZeroLinkEdit := CRUDPanel.FindComponent('cntrl' + 'ZERO_LINK') as TEdit;
+  chrmBrowser.OnLoadStart := LoadStart;
+  ZeroLinkEdit := EntityPanel.FindComponent('cntrl' + 'ZERO_LINK') as TEdit;
   ZeroLinkEdit.Enabled := False;
 
-  {if ZeroLinkEdit.Text <> '' then
-    chrmBrowser.Load(ZeroLinkEdit.Text);}
+  if ZeroLinkEdit.Text <> '' then
+    chrmBrowser.Load(ZeroLinkEdit.Text);
 end;
 
 procedure TViewJob.ApplyChanges(Sender: TObject);
@@ -70,14 +73,14 @@ end;
 
 procedure TViewJob.btnNavigateClick(Sender: TObject);
 begin
-  //chrmBrowser.Load(edtURL.Text);
+  chrmBrowser.Load(edtURL.Text);
 end;
 
 procedure TViewJob.FormCreate(Sender: TObject);
 begin
-  CRUDPanel := TCRUDPanel.Create(Self.pnlFieldsContainer);
-  CRUDPanel.btnApply.OnClick := ApplyChanges;
-  CRUDPanel.btnCancel.OnClick := CancelChanges;
+  EntityPanel := TEntityPanel.Create(Self.pnlFieldsContainer);
+  btnApply.OnClick := ApplyChanges;
+  btnCancel.OnClick := CancelChanges;
 end;
 
 procedure TViewJob.InitView;

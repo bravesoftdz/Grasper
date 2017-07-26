@@ -14,7 +14,6 @@ type
   TViewMain = class(TViewAbstract)
     pnlJobs: TPanel;
     pnlButtons: TPanel;
-    btnNewJob: TBitBtn;
     btnEditJob: TBitBtn;
     btnEditRules: TBitBtn;
     btnGo: TBitBtn;
@@ -30,7 +29,6 @@ type
     strgrdJobs: TZColorStringGrid;
     actlstMain: TActionList;
     acCreateJob: TAction;
-    procedure btnNewJobClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure btnEditJobClick(Sender: TObject);
     procedure btnEditRulesClick(Sender: TObject);
@@ -69,7 +67,8 @@ begin
   for Job in aJobs do
     begin
       if i > 0 then strgrdJobs.RowCount := strgrdJobs.RowCount + 1;
-      strgrdJobs.Cells[0, strgrdJobs.RowCount - 1] := Job.Caption;
+      strgrdJobs.Cells[0, strgrdJobs.RowCount - 1] := IntToStr(Job.ID);
+      strgrdJobs.Cells[1, strgrdJobs.RowCount - 1] := Job.Caption;
       Inc(i);
     end;
 end;
@@ -82,8 +81,11 @@ end;
 procedure TViewMain.InitView;
 begin
   ViewMain := Self;
-  strgrdJobs.Cells[0,0] := 'Title';
+  strgrdJobs.Cells[0,0] := 'ID';
   strgrdJobs.CellStyle[0,0].HorizontalAlignment := taCenter;
+
+  strgrdJobs.Cells[1,0] := 'Title';
+  strgrdJobs.CellStyle[1,0].HorizontalAlignment := taCenter;
 end;
 
 procedure TViewMain.acCreateJobExecute(Sender: TObject);
@@ -104,11 +106,6 @@ end;
 procedure TViewMain.btnGoClick(Sender: TObject);
 begin
   SendMessage('StartJob');
-end;
-
-procedure TViewMain.btnNewJobClick(Sender: TObject);
-begin
-  SendMessage('CreateJob');
 end;
 
 procedure TViewMain.FormShow(Sender: TObject);

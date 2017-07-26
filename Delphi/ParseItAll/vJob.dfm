@@ -2,7 +2,7 @@ object ViewJob: TViewJob
   Left = 0
   Top = 0
   Caption = 'Parse It All! Project'
-  ClientHeight = 290
+  ClientHeight = 300
   ClientWidth = 554
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -19,10 +19,24 @@ object ViewJob: TViewJob
     Left = 0
     Top = 33
     Width = 377
-    Height = 257
+    Height = 267
     Align = alLeft
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 0
+    ExplicitHeight = 257
+    object chrmBrowser: TChromium
+      Left = 1
+      Top = 1
+      Width = 375
+      Height = 265
+      Align = alClient
+      DefaultUrl = 'about:blank'
+      TabOrder = 0
+      ExplicitLeft = 88
+      ExplicitTop = 72
+      ExplicitWidth = 100
+      ExplicitHeight = 41
+    end
   end
   object pnlURL: TPanel
     Left = 0
@@ -59,8 +73,23 @@ object ViewJob: TViewJob
     Left = 377
     Top = 33
     Width = 177
-    Height = 257
-    Align = alClient
+    Height = 228
     TabOrder = 2
+  end
+  object btnCancel: TButton
+    Left = 471
+    Top = 267
+    Width = 75
+    Height = 25
+    Caption = 'btnCancel'
+    TabOrder = 3
+  end
+  object btnApply: TButton
+    Left = 390
+    Top = 267
+    Width = 75
+    Height = 25
+    Caption = 'btnApply'
+    TabOrder = 4
   end
 end
