@@ -334,7 +334,8 @@ begin
     FDBEngine.OpenQuery(dsQuery);
 
     // first start - no links else
-    if dsQuery.FieldByName('links_count').AsInteger = 0 then
+    //if dsQuery.FieldByName('links_count').AsInteger = 0 then
+    if dsQuery.EOF then
       begin
         AddLink(FJob.ZeroLink, 0, 1);
         Exit(GetNextlink);
