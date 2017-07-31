@@ -47,6 +47,7 @@ implementation
 uses
   System.SysUtils,
   System.Generics.Collections,
+  System.Hash,
   FireDAC.Comp.Client,
   API_Files;
 
@@ -66,85 +67,142 @@ procedure TModelParser.WriteToTemp;
   begin
     Result := '';
     if ByKey(RuDS, 'site')<> '' then
-      Result := Result + ByKey(RuDS, 'site');
+      Exit(ByKey(RuDS, 'site'));
     if ByKey(RuDS, 'site2')<> '' then
-      begin
-        if Result <> '' then Result := Result + '; ';
-        Result := Result + ByKey(RuDS, 'site2');
-      end;
+      Exit(ByKey(RuDS, 'site2'));
+
     if ByKey(EnDS, 'site')<> '' then
-      begin
-        if Result <> '' then Result := Result + '; ';
-        Result := Result + ByKey(EnDS, 'site');
-      end;
+      Exit(ByKey(EnDS, 'site'));
     if ByKey(EnDS, 'site2')<> '' then
-      begin
-        if Result <> '' then Result := Result + '; ';
-        Result := Result + ByKey(EnDS, 'site2');
-      end;
+      Exit(ByKey(EnDS, 'site2'));
    end;
 var
   dsQuery: TFDQuery;
   dsRec: TFDQuery;
   dsRecEN: TFDQuery;
+  dsRecUA: TFDQuery;
 
   ru_title, ru_content, en_title, en_content, site, ru_link, en_link: string;
+  ua_title, ua_content, ua_link: string;
+  ru_linkid, en_linkid, ua_linkid: Integer;
+  IsProcess: Boolean;
 begin
   if FCurrLink = nil then Exit;
   if FCurrLink.Level = 1 then Exit;
 
   dsQuery := TFDQuery.Create(nil);
   dsRec := TFDQuery.Create(nil);
-  dsRecEN:= TFDQuery.Create(nil);
+  dsRecEN := TFDQuery.Create(nil);
+  dsRecUA := TFDQuery.Create(nil);
   try
-    dsQuery.SQL.Text := 'select * from link2link where master_link_id = :linkid';
-    dsQuery.ParamByName('linkid').AsInteger := FCurrLink.ID;
-    FDBEngine.OpenQuery(dsQuery);
-
-    if dsQuery.IsEmpty then
+    if FCurrLink.Level = 2 then
       begin
-        if FCurrLink.Level = 2 then
-          begin
-            dsRec.SQL.Text := 'select * from records where link_id = :linkid';
-            dsRec.ParamByName('linkid').AsInteger := FCurrLink.ID;
-            FDBEngine.OpenQuery(dsRec);
+        dsQuery.SQL.Text := 'select * from link2link where master_link_id = :linkid';
+        dsQuery.ParamByName('linkid').AsInteger := FCurrLink.ID;
+        FDBEngine.OpenQuery(dsQuery);
 
-            dsRecEN.SQL.Text := 'select * from records where id = 0';
-            FDBEngine.OpenQuery(dsRecEn);
+        if dsQuery.IsEmpty then
+          begin
+            ru_linkid := FCurrLink.ID;
+            en_linkid := 0;
+            ua_linkid := 0;
+            IsProcess := True;
 
             ru_link := FCurrLink.Link;
             en_link := '';
-          end
-        else
-          begin
-            dsRecEN.SQL.Text := 'select * from records where link_id = :linkid';
-            dsRecEN.ParamByName('linkid').AsInteger := FCurrLink.ID;
-            FDBEngine.OpenQuery(dsRecEn);
-
-            dsRec.SQL.Text := 'select * ' +
-                              ' from records t ' +
-                              ' join link2link t2 on t2.master_link_id = t.link_id ' +
-                              ' join links t3 on t3.id = t2.master_link_id ' +
-                              ' where t3.level = 2 ' +
-                              ' and t2.slave_link_id = :linkid ';
-            dsRec.ParamByName('linkid').AsInteger := FCurrLink.ID;
-            FDBEngine.OpenQuery(dsRec);
-
-            en_link := FCurrLink.Link;
-            ru_link := dsRec.FieldByName('link').AsString;
+            ua_link := '';
           end;
+      end;
 
-        dsQuery.SQL.Text := 'insert into temp set ru_title = :rutitle, ru_content = :rucontent, '+
-        'en_title = :entitle, en_content = :encontent, site = :site, ru_link = :rulink, en_link = :enlink';
+    if FCurrLink.Level = 3 then
+      begin
+        dsQuery.SQL.Text :=
+          'select '+
+          'lun.id as un_id, ifnull(lun.handled, -1) as un_handled, lun.link as un_link, '+
+          'lru.id as ru_id, ifnull(lru.handled, -1) as ru_handled, lru.link as ru_link, '+
+          'len.id as en_id, ifnull(len.handled, -1) as en_handled, len.link as en_link '+
+          'from link2link l2l '+
+          'left join link2link l2l4 on l2l4.master_link_id = l2l.master_link_id '+
+          'left join links lun on lun.Id = l2l4.slave_link_id and lun.level = 4 '+
+          'left join links lru on lru.Id = l2l.master_link_id and lru.level = 2 '+
+          'left join links len on len.Id = l2l.slave_link_id and len.level = 3 '+
+          'where l2l.slave_link_id = :linkid';
+
+        dsQuery.ParamByName('linkid').AsInteger := FCurrLink.ID;
+        FDBEngine.OpenQuery(dsQuery);
+        dsQuery.Last;
+
+        if dsQuery.FieldByName('un_handled').AsInteger <> 0 then
+          begin
+            ru_linkid := dsQuery.FieldByName('ru_id').AsInteger;
+            en_linkid := dsQuery.FieldByName('en_id').AsInteger;
+            ua_linkid := dsQuery.FieldByName('un_id').AsInteger;
+            IsProcess := True;
+
+            ru_link := dsQuery.FieldByName('ru_link').AsString;
+            en_link := dsQuery.FieldByName('en_link').AsString;
+            ua_link := dsQuery.FieldByName('un_link').AsString;
+          end;
+      end;
+
+    if FCurrLink.Level = 4 then
+      begin
+        dsQuery.SQL.Text :=
+          'select '+
+          'lun.id as un_id, ifnull(lun.handled, -1) as un_handled, lun.link as un_link, '+
+          'lru.id as ru_id, ifnull(lru.handled, -1) as ru_handled, lru.link as ru_link, '+
+          'len.id as en_id, ifnull(len.handled, -1) as en_handled, len.link as en_link '+
+          'from link2link l2l '+
+          'left join link2link l2l3 on l2l3.master_link_id = l2l.master_link_id '+
+          'left join links lun on lun.Id = l2l.slave_link_id and lun.level = 4 '+
+          'left join links lru on lru.Id = l2l.master_link_id and lru.level = 2 '+
+          'left join links len on len.Id = l2l3.slave_link_id and len.level = 3 '+
+          'where l2l.slave_link_id = :linkid ';
+
+        dsQuery.ParamByName('linkid').AsInteger := FCurrLink.ID;
+        FDBEngine.OpenQuery(dsQuery);
+
+        if dsQuery.FieldByName('en_handled').AsInteger <> 0 then
+          begin
+            ru_linkid := dsQuery.FieldByName('ru_id').AsInteger;
+            en_linkid := dsQuery.FieldByName('en_id').AsInteger;
+            ua_linkid := dsQuery.FieldByName('un_id').AsInteger;
+            IsProcess := True;
+
+            ru_link := dsQuery.FieldByName('ru_link').AsString;
+            en_link := dsQuery.FieldByName('en_link').AsString;
+            ua_link := dsQuery.FieldByName('un_link').AsString;
+          end;
+      end;
+
+    if IsProcess then
+      begin
+        dsRecEN.SQL.Text := 'select * from records where link_id = :linkid';
+        dsRecEN.ParamByName('linkid').AsInteger := en_linkid;
+        FDBEngine.OpenQuery(dsRecEn);
+
+        dsRec.SQL.Text := 'select * from records where link_id = :linkid';
+        dsRec.ParamByName('linkid').AsInteger := ru_linkid;
+        FDBEngine.OpenQuery(dsRec);
+
+        dsRecUA.SQL.Text := 'select * from records where link_id = :linkid';
+        dsRecUA.ParamByName('linkid').AsInteger := ua_linkid;
+        FDBEngine.OpenQuery(dsRecUA);
+
+        dsQuery.SQL.Text := 'insert into temp (ru_title, ru_content, en_title, en_content, ua_title, ua_content, site, ru_link, en_link, ua_link) values (:rutitle, :rucontent, '+
+        ':entitle, :encontent, :uatitle, :uacontent, :site, :rulink, :enlink, :ualink)';
         dsQuery.ParamByName('rutitle').AsString := ByKey(dsRec, 'title');
         dsQuery.ParamByName('rucontent').AsString := ByKey(dsRec, 'content');
         dsQuery.ParamByName('entitle').AsString := ByKey(dsRecEN, 'title_en');
         dsQuery.ParamByName('encontent').AsString := ByKey(dsRecEN, 'content_en');
-        dsQuery.ParamByName('site').AsString := GetSite(dsRec, dsRecEN);
+        dsQuery.ParamByName('uatitle').AsString := ByKey(dsRecUA, 'title_ua');
+        dsQuery.ParamByName('uacontent').AsString := ByKey(dsRecUA, 'content_ua');
 
+        dsQuery.ParamByName('site').AsString := GetSite(dsRec, dsRecEN);
 
         dsQuery.ParamByName('rulink').AsString := ru_link;
         dsQuery.ParamByName('enlink').AsString := en_link;
+        dsQuery.ParamByName('ualink').AsString := ua_link;
 
         FDBEngine.ExecQuery(dsQuery);
       end;
@@ -152,6 +210,7 @@ begin
     dsQuery.Free;
     dsRec.Free;
     dsRecEN.Free;
+    dsRecUA.Free;
   end;
 end;
 
@@ -188,6 +247,7 @@ begin
     Link.Level := aLevel;
     Link.Num := aNum;
     Link.Link := aLink;
+    Link.LinkHash := THashMD5.GetHashString(aLink);
 
     if aMasterLinkID > 0 then
       begin

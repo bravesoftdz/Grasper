@@ -23,8 +23,14 @@ function getElementResults(rule, elem, firstGroupResult) {
     if (rule.level != null) {
         
         if (rule.level == 3){
-            var eng = elem.innerText.match(/^English$/g);
+        
+	    var eng = elem.innerText.match(/^English$/g);
             if (eng != null) matches.push(elem.href); 
+	
+	} else if (rule.level == 4){
+
+            var ukr = elem.innerText.match(/^Українська$/g);
+            if (ukr != null) matches.push(elem.href); 
         }
         else
             matches.push(elem.href);
@@ -41,6 +47,11 @@ function getElementResults(rule, elem, firstGroupResult) {
         content = content.replace(/\nSee else(.|\s)*/g, "");
         content = content.replace(/\nReferences(.|\s)*/g, "");
         content = content.replace(/\nExternal links(.|\s)*/g, "");
+
+
+        content = content.replace(/\nПримітки(.|\s)*/g, "");
+        content = content.replace(/\nПосилання(.|\s)*/g, "");
+        content = content.replace(/\nДив. також(.|\s)*/g, "");
         ////////////////////////////////////////////////////////////////////////
 
         matches.push(content);

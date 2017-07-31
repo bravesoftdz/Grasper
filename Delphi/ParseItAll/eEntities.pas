@@ -61,6 +61,8 @@ type
     procedure SetNum(aValue: Integer);
     function GetLink: string;
     procedure SetLink(aValue: string);
+    function GetLinkHash: string;
+    procedure SetLinkHash(aValue: string);
     function GetMasterRel: TLinkRel;
     procedure SetMasterRel(aValue: TLinkRel);
     function GetHandled: Integer;
@@ -71,6 +73,7 @@ type
     property Level: Integer read GetLevel write SetLevel;
     property Num: Integer read GetNum write SetNum;
     property Link: string read GetLink write SetLink;
+    property LinkHash: string read GetLinkHash write SetLinkHash;
     property MasterRel: TLinkRel read GetMasterRel write SetMasterRel;
     property Handled: Integer read GetHandled write SetHandled;
   end;
@@ -267,6 +270,16 @@ implementation
 
 uses
   System.SysUtils;
+
+function TLink.GetLinkHash: string;
+begin
+  Result := FData.Items['LINK_HASH'];
+end;
+
+procedure TLink.SetLinkHash(aValue: string);
+begin
+  FData.AddOrSetValue('LINK_HASH', aValue);
+end;
 
 function TRecord.GetNum: Integer;
 begin
