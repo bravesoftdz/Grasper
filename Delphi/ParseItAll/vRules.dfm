@@ -107,15 +107,15 @@ object ViewRules: TViewRules
       Left = 1
       Top = 41
       Width = 248
-      Height = 160
+      Height = 215
       Align = alTop
       Caption = 'pnlTree'
       TabOrder = 1
       object tvTree: TTreeView
         Left = 1
-        Top = 38
+        Top = 80
         Width = 246
-        Height = 121
+        Height = 134
         Align = alBottom
         Images = ilIcons
         Indent = 35
@@ -182,22 +182,24 @@ object ViewRules: TViewRules
     end
     object pnlFields: TPanel
       Left = 1
-      Top = 265
+      Top = 340
       Width = 248
-      Height = 98
+      Height = 23
       Align = alClient
       TabOrder = 2
+      ExplicitTop = 296
+      ExplicitHeight = 67
     end
     object pnlXPath: TPanel
       Left = 1
-      Top = 201
+      Top = 256
       Width = 248
-      Height = 64
+      Height = 84
       Align = alTop
       Caption = 'pnlXPath'
       TabOrder = 3
       Visible = False
-      ExplicitTop = 171
+      ExplicitTop = 229
       object btnSelectHTML: TBitBtn
         Left = 15
         Top = 20
@@ -261,7 +263,7 @@ object ViewRules: TViewRules
     Left = 32
     Top = 32
     Bitmap = {
-      494C010104005C00D00010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C010104005C00D40010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000002000000001002000000000000020
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -542,8 +544,8 @@ object ViewRules: TViewRules
     end
   end
   object pmTreeItemPopup: TPopupMenu
-    Left = 554
-    Top = 113
+    Left = 618
+    Top = 169
     object mniAddCut: TMenuItem
       Caption = 'Add Cut'
       OnClick = mniAddCutClick
