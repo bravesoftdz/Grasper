@@ -7,6 +7,7 @@ uses
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, cefvcl, Vcl.StdCtrls, Vcl.Buttons, Vcl.ComCtrls,
   Vcl.ImgList,
   API_MVC,
+  API_ORM,
   API_ORM_Cntrls,
   eEntities, System.ImageList, System.Actions, Vcl.ActnList, Vcl.Menus;
 
@@ -16,7 +17,7 @@ type
     procedure InitPanel; override;
   end;
 
-  TViewRules = class(TViewAbstract)
+  TViewRules = class(TViewORM)
     pnlBrowser: TPanel;
     pnlControls: TPanel;
     chrmBrowser: TChromium;
@@ -28,8 +29,7 @@ type
     pnlFields: TPanel;
     tvTree: TTreeView;
     btnAG: TBitBtn;
-    ilIcons: TImageList;
-    btnAL: TBitBtn;
+    ilButtons: TImageList;
     btnDG: TBitBtn;
     btnDL: TBitBtn;
     btnAR: TBitBtn;
@@ -48,6 +48,12 @@ type
     mniAddCut: TMenuItem;
     btnDLv: TBitBtn;
     udChildStep: TUpDown;
+    btnAddURL: TSpeedButton;
+    acAddLink: TAction;
+    imgIcons: TImage;
+    ilIcons: TImageList;
+    btnAddRecord: TSpeedButton;
+    acAddRecord: TAction;
     procedure btnAGClick(Sender: TObject);
     procedure btnCancelClick(Sender: TObject);
     procedure btnApplyClick(Sender: TObject);
@@ -61,16 +67,18 @@ type
     procedure btnSelectHTMLClick(Sender: TObject);
     procedure DevToolsActivate(Sender: Tobject);
     procedure AfterEntityPanelChange(aControl: TControl);
-    procedure udContainerStepClick(Sender: TObject; Button: TUDBtnType);
+    //procedure udContainerStepClick(Sender: TObject; Button: TUDBtnType);
     procedure btnAddLevelClick(Sender: TObject);
     procedure cbbLevelChange(Sender: TObject);
     procedure tvTreeDblClick(Sender: TObject);
     procedure mniAddCutClick(Sender: TObject);
     procedure btnDLvClick(Sender: TObject);
+    procedure acAddLinkExecute(Sender: TObject);
+    procedure acAddRecordExecute(Sender: TObject);
   private
     { Private declarations }
     FDevToolsEnabled: Boolean;
-    function GetUpperNode(aLevelBreak: Integer): TTreeNode;
+    //function GetUpperNode(aLevelBreak: Integer): TTreeNode;
   protected
     procedure InitView; override;
   public
@@ -78,16 +86,18 @@ type
     pnlEntityFields: TEntityPanel;
 
     function GetGroupIndex: integer;
-    function GetRuleIndex: Integer;
+    //function GetRuleIndex: Integer;
     function GetLevelIndex: integer;
 
     function GetSelectedLevel: TJobLevel;
     function GetSelectedGroup: TJobGroup;
-    function GetSelectedRule: TJobRule;
+    //function GetSelectedRule: TJobRule;
 
     procedure SetLevels(aLevelList: TLevelList; aIndex: Integer = 0);
-    procedure SetControlTree(aJobGroupList: TGroupList);
+    procedure RenderLevelRulesTree(aJobGroupList: TGroupList);
     procedure AfterLevelSelected;
+
+    procedure AddLinkToTree(aLink: TJobLink);
   end;
 
 var
@@ -98,9 +108,20 @@ implementation
 {$R *.dfm}
 
 uses
-  System.UITypes,
-  API_ORM,
-  API_MVC_Bind;
+  System.UITypes;
+
+procedure TViewRules.acAddRecordExecute(Sender: TObject);
+begin
+  SendMessage('AddRecord');
+end;
+
+procedure TViewRules.AddlinkToTree(aLink: TJobLink);
+var
+  LinkNode: TTreeNode;
+begin
+  LinkNode := tvTree.Items.AddChild(nil, aLink.Level.ToString);
+  FBind.AddBind(LinkNode, aLink);
+end;
 
 procedure TViewRules.AfterLevelSelected;
 begin
@@ -110,16 +131,16 @@ begin
   if GetSelectedLevel <> nil then
     begin
       chrmBrowser.Load(GetSelectedLevel.BaseLink);
-      SetControlTree(GetSelectedLevel.Groups);
+      RenderLevelRulesTree(GetSelectedLevel.Groups);
     end
   else
     tvTree.Items.Clear;
 end;
 
-function TViewRules.GetSelectedRule: TJobRule;
+{function TViewRules.GetSelectedRule: TJobRule;
 begin
   Result := GetSelectedGroup.Rules[GetRuleIndex];
-end;
+end;  }
 
 function TViewRules.GetSelectedGroup: TJobGroup;
 begin
@@ -139,6 +160,11 @@ begin
   Result := cbbLevel.ItemIndex;
 end;
 
+procedure TViewRules.acAddLinkExecute(Sender: TObject);
+begin
+  SendMessage('AddLink');
+end;
+
 procedure TViewRules.AfterEntityPanelChange(aControl: TControl);
 begin
   if aControl.Name = 'cntrlVISUAL_COLOR' then
@@ -148,7 +174,7 @@ begin
     tvTree.Selected.Text := (aControl as TEdit).Text;
 end;
 
-function TViewRules.GetUpperNode(aLevelBreak: Integer): TTreeNode;
+{function TViewRules.GetUpperNode(aLevelBreak: Integer): TTreeNode;
 var
   i: Integer;
 begin
@@ -157,16 +183,17 @@ begin
     begin
       Result := Result.Parent;
     end;
-end;
+end;}
 
-function TViewRules.GetRuleIndex: Integer;
+{function TViewRules.GetRuleIndex: Integer;
 begin
   Result := GetUpperNode(1).Index;
-end;
+end;}
 
 function TViewRules.GetGroupIndex: integer;
 begin
-  Result := GetUpperNode(0).Index;
+  Result := -1;
+  //Result := GetUpperNode(0).Index;
 end;
 
 procedure TEntityPanel.InitPanel;
@@ -174,17 +201,28 @@ begin
   OnAfterEditChange := ViewRules.AfterEntityPanelChange;
 end;
 
-procedure TViewRules.SetControlTree(aJobGroupList: TGroupList);
+procedure TViewRules.RenderLevelRulesTree(aJobGroupList: TGroupList);
 var
   Group: TJobGroup;
   JobRule: TJobRule;
   GroupNode, RuleNode: TTreeNode;
 begin
   tvTree.Items.Clear;
-  tvTree.OnChange := nil;
-  tvTree.OnChange := tvTreeChange;
+  //tvTree.OnChange := nil;
+  //tvTree.OnChange := tvTreeChange;
 
   for Group in aJobGroupList do
+    begin
+      for JobRule in Group.Rules do
+        begin
+          if JobRule.Link <> nil then
+            begin
+              AddlinkToTree(JobRule.Link);
+            end;
+        end;
+    end;
+
+  {for Group in aJobGroupList do
     begin
       GroupNode := tvTree.Items.Add(nil, Group.Notes);
       GroupNode.ImageIndex := 0;
@@ -215,7 +253,7 @@ begin
         end;
     end;
 
-  ViewRules.tvTree.FullExpand;
+  ViewRules.tvTree.FullExpand; }
 end;
 
 procedure TViewRules.SetLevels(aLevelList: TLevelList; aIndex: Integer = 0);
@@ -240,20 +278,22 @@ begin
   pnlXPath.Visible := False;
   btnAddLevel.Enabled := False;
 
-  case Node.Level of
-    0:  begin
+  {case Node.Level of
+    {0:  begin
           SendMessage('GroupSelected');
           Entity := GetSelectedGroup;
         end;
 
-    1:  begin
+    0:  begin
           SendMessage('RuleSelected');
           Entity := GetSelectedRule;
 
           pnlXPath.Visible := True;
           btnAddLevel.Enabled := FController.Data.Items['CanAddLevel'];
         end;
-  end;
+  end; }
+
+  Entity := FBind.GetEntityByControl(Node);
 
   pnlEntityFields.ClearControls;
   pnlEntityFields.BuildControls(Entity);
@@ -265,7 +305,7 @@ begin
     SendMessage('ShowRuleResult');
 end;
 
-procedure TViewRules.udContainerStepClick(Sender: TObject; Button: TUDBtnType);
+{procedure TViewRules.udContainerStepClick(Sender: TObject; Button: TUDBtnType);
 begin
   if Button = btNext then
     GetSelectedRule.ContainerOffset := GetSelectedRule.ContainerOffset + 1
@@ -277,7 +317,7 @@ begin
   pnlEntityFields.BuildControls(GetSelectedRule);
 
   SendMessage('RuleSelected');
-end;
+end; }
 
 procedure TViewRules.btnAddLevelClick(Sender: TObject);
 begin

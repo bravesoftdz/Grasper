@@ -56,7 +56,7 @@ type
     procedure CreateGroup;
     procedure DeleteGroup;
 
-    procedure CreateLink;
+    procedure AddLink;
     procedure DeleteLink;
 
     procedure CreateRecord;
@@ -85,7 +85,6 @@ uses
   System.SysUtils,
   API_Files,
   API_ORM,
-  API_MVC_Bind,
   vMain,
   vLogin,
   vJob,
@@ -141,10 +140,10 @@ end;
 
 procedure TController.RuleSelected;
 begin
-  FObjData.AddOrSetValue('Rule', ViewRules.GetSelectedRule);
-  FData.AddOrSetValue('JSScript', FJSScript);
-  FData.AddOrSetValue('CanAddLevel', CanAddLevel(ViewRules.GetSelectedRule.Link));
-  CallModel(TModelJS, 'PrepareJSScriptForRule');
+  //FObjData.AddOrSetValue('Rule', ViewRules.GetSelectedRule);
+  //FData.AddOrSetValue('JSScript', FJSScript);
+  //FData.AddOrSetValue('CanAddLevel', CanAddLevel(ViewRules.GetSelectedRule.Link));
+  //CallModel(TModelJS, 'PrepareJSScriptForRule');
 end;
 
 procedure TController.GroupSelected;
@@ -162,7 +161,7 @@ begin
   Rule.Cut := TJobCut.Create(FDBEngine);
 
   ViewRules.GetSelectedGroup.Rules.Add(Rule);
-  ViewRules.SetControlTree(ViewRules.GetSelectedLevel.Groups);
+  ViewRules.RenderLevelRulesTree(ViewRules.GetSelectedLevel.Groups);
 end;
 
 procedure TController.SelectCutNode;
@@ -236,7 +235,7 @@ var
   Level: TJobLevel;
 begin
   Level := TJobLevel.Create(FDBEngine, 0);
-  Level.Level := ViewRules.GetSelectedRule.Link.Level;
+  //Level.Level := ViewRules.GetSelectedRule.Link.Level;
   Level.BaseLink := frame.Url;
 
   GetJob.Levels.Add(Level);
@@ -254,7 +253,7 @@ var
   sValue: string;
 begin
   jsnNodes:=TJSONObject.ParseJSONValue(aNodesData) as TJSONArray;
-  Rule := ViewRules.GetSelectedRule;
+  //Rule := ViewRules.GetSelectedRule;
   Rule.Nodes.DeleteAll;
 
   for jsnValue in jsnNodes do
@@ -305,7 +304,7 @@ begin
   Rule.Rec := TJobRecord.Create(FDBEngine);
 
   ViewRules.GetSelectedGroup.Rules.Add(Rule);
-  ViewRules.SetControlTree(ViewRules.GetSelectedLevel.Groups);
+  ViewRules.RenderLevelRulesTree(ViewRules.GetSelectedLevel.Groups);
 end;
 
 procedure TController.DeleteRecord;
@@ -317,7 +316,7 @@ begin
   Group := Level.Groups[ViewRules.tvTree.Selected.Parent.Index];
 
   //Group.Records.DeleteByIndex(ViewRules.tvTree.Selected.Index - Group.Links.Count);
-  ViewRules.SetControlTree(Level.Groups);
+  ViewRules.RenderLevelRulesTree(Level.Groups);
   ViewRules.pnlEntityFields.ClearControls;
 end;
 
@@ -330,19 +329,28 @@ begin
   Group := Level.Groups[ViewRules.tvTree.Selected.Parent.Index];
 
   //Group.Links.DeleteByIndex(ViewRules.tvTree.Selected.Index);
-  ViewRules.SetControlTree(Level.Groups);
+  ViewRules.RenderLevelRulesTree(Level.Groups);
   ViewRules.pnlEntityFields.ClearControls;
 end;
 
-procedure TController.CreateLink;
+procedure TController.AddLink;
 var
   Rule: TJobRule;
+  Group: TJobGroup;
 begin
   Rule := TJobRule.Create(FDBEngine);
   Rule.Link := TJobLink.Create(FDBEngine);
 
-  ViewRules.GetSelectedGroup.Rules.Add(Rule);
-  ViewRules.SetControlTree(ViewRules.GetSelectedLevel.Groups);
+  if ViewRules.GetGroupIndex = -1 then
+    begin
+      Group := TJobGroup.Create(FDBEngine);
+      ViewRules.GetSelectedLevel.Groups.Add(Group);
+    end
+  else
+    Group := ViewRules.GetSelectedGroup;
+
+  Group.Rules.Add(Rule);
+  ViewRules.AddLinkToTree(Rule.Link);
 end;
 
 procedure TController.GetJobList;
@@ -364,7 +372,7 @@ begin
   Groups := (FObjData.Items['Level'] as TJobLevel).Groups;
   Groups.DeleteByIndex(ViewRules.tvTree.Selected.Index);
 
-  ViewRules.SetControlTree(Groups);
+  ViewRules.RenderLevelRulesTree(Groups);
   ViewRules.pnlEntityFields.ClearControls;
 end;
 
@@ -412,7 +420,7 @@ begin
   Group.Notes := 'New Group';
 
   Level.Groups.Add(Group);
-  ViewRules.SetControlTree(Level.Groups);
+  ViewRules.RenderLevelRulesTree(Level.Groups);
 end;
 
 procedure TController.EventListener(aEventMsg: string);
