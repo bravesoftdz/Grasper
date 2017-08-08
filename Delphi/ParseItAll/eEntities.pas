@@ -208,6 +208,7 @@ type
     function GetNotes: string;
     procedure SetNotes(aValue: string);
     function GetRuleList: TRuleList;
+    function GetRulesCount: Integer;
     //////////////////
   protected
     procedure SaveLists; override;
@@ -219,6 +220,7 @@ type
     property LevelID: Integer read GetLevelID write SetLevelID;
     property Notes: string read GetNotes write SetNotes;
     property Rules: TRuleList read GetRuleList;
+    property RulesCount: Integer read GetRulesCount;
     destructor Destroy; override;
   end;
 
@@ -270,6 +272,13 @@ implementation
 
 uses
   System.SysUtils;
+
+function TJobGroup.GetRulesCount: Integer;
+begin
+  if Rules <> nil then
+    Result := Rules.Count
+  else Result := 0;
+end;
 
 function TLink.GetLinkHash: string;
 begin

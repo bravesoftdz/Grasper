@@ -31,9 +31,6 @@ type
     btnAG: TBitBtn;
     ilButtons: TImageList;
     btnDG: TBitBtn;
-    btnDL: TBitBtn;
-    btnAR: TBitBtn;
-    btnDR: TBitBtn;
     pnlXPath: TPanel;
     btnSelectHTML: TBitBtn;
     chdtDevTools: TChromiumDevTools;
@@ -54,6 +51,12 @@ type
     ilIcons: TImageList;
     btnAddRecord: TSpeedButton;
     acAddRecord: TAction;
+    btnRemove: TSpeedButton;
+    acRemove: TAction;
+    acAddLinkSameGroup: TAction;
+    mniAddLinkSameGroup: TMenuItem;
+    acAddRecSameGroup: TAction;
+    mniAddRecSameGroup: TMenuItem;
     procedure btnAGClick(Sender: TObject);
     procedure btnCancelClick(Sender: TObject);
     procedure btnApplyClick(Sender: TObject);
@@ -61,9 +64,6 @@ type
     procedure tvTreeChange(Sender: TObject; Node: TTreeNode);
     procedure btnDGClick(Sender: TObject);
     procedure btnALClick(Sender: TObject);
-    procedure btnDLClick(Sender: TObject);
-    procedure btnARClick(Sender: TObject);
-    procedure btnDRClick(Sender: TObject);
     procedure btnSelectHTMLClick(Sender: TObject);
     procedure DevToolsActivate(Sender: Tobject);
     procedure AfterEntityPanelChange(aControl: TControl);
@@ -75,10 +75,13 @@ type
     procedure btnDLvClick(Sender: TObject);
     procedure acAddLinkExecute(Sender: TObject);
     procedure acAddRecordExecute(Sender: TObject);
+    procedure acRemoveExecute(Sender: TObject);
+    procedure acAddLinkSameGroupExecute(Sender: TObject);
+    procedure acAddRecSameGroupExecute(Sender: TObject);
   private
     { Private declarations }
     FDevToolsEnabled: Boolean;
-    //function GetUpperNode(aLevelBreak: Integer): TTreeNode;
+    function GetUpperNode(aLevelBreak: Integer): TTreeNode;
   protected
     procedure InitView; override;
   public
@@ -86,18 +89,20 @@ type
     pnlEntityFields: TEntityPanel;
 
     function GetGroupIndex: integer;
-    //function GetRuleIndex: Integer;
+    function GetRuleIndex: Integer;
     function GetLevelIndex: integer;
 
     function GetSelectedLevel: TJobLevel;
     function GetSelectedGroup: TJobGroup;
-    //function GetSelectedRule: TJobRule;
+    function GetSelectedRule: TJobRule;
 
     procedure SetLevels(aLevelList: TLevelList; aIndex: Integer = 0);
     procedure RenderLevelRulesTree(aJobGroupList: TGroupList);
     procedure AfterLevelSelected;
 
-    procedure AddLinkToTree(aLink: TJobLink);
+    procedure AddRuleToTree(aGroup: TJobGroup; aRule: TJobRule);
+    procedure AddGroupToTree(aGroup: TJobGroup; aSibling: TTreeNode = nil);
+    procedure RemoveTreeNode;
   end;
 
 var
@@ -110,17 +115,91 @@ implementation
 uses
   System.UITypes;
 
+procedure TViewRules.RemoveTreeNode;
+begin
+  tvTree.Selected.Delete;
+end;
+
+procedure TViewRules.acAddLinkSameGroupExecute(Sender: TObject);
+begin
+  SendMessage('AddLinkSameGroup');
+end;
+
 procedure TViewRules.acAddRecordExecute(Sender: TObject);
 begin
   SendMessage('AddRecord');
 end;
 
-procedure TViewRules.AddlinkToTree(aLink: TJobLink);
-var
-  LinkNode: TTreeNode;
+procedure TViewRules.acAddRecSameGroupExecute(Sender: TObject);
 begin
-  LinkNode := tvTree.Items.AddChild(nil, aLink.Level.ToString);
-  FBind.AddBind(LinkNode, aLink);
+  SendMessage('AddRecSameGroup');
+end;
+
+procedure TViewRules.acRemoveExecute(Sender: TObject);
+var
+  Node: TObject;
+  Entity: TEntityAbstract;
+begin
+  Node := tvTree.Selected;
+  Entity := FBind.GetEntityByControl(Node);
+
+  if Entity is TJobRule then
+    SendMessage('RemoveRule');
+end;
+
+procedure TViewRules.AddGroupToTree(aGroup: TJobGroup; aSibling: TTreeNode = nil);
+var
+  GroupNode: TTreeNode;
+  Rule: TJobRule;
+begin
+  if aSibling = nil then
+    GroupNode := tvTree.Items.AddChild(nil, aGroup.Notes)
+  else
+    GroupNode := tvTree.Items.Insert(aSibling, aGroup.Notes);
+
+  GroupNode.ImageIndex := 2;
+  GroupNode.SelectedIndex := 2;
+
+  FBind.AddBind(GroupNode, aGroup);
+
+  for Rule in aGroup.Rules do
+    AddRuleToTree(aGroup, Rule);
+end;
+
+procedure TViewRules.AddRuleToTree(aGroup: TJobGroup; aRule: TJobRule);
+var
+  RuleNode, ParentNode: TTreeNode;
+begin
+  if aGroup.RulesCount > 1 then
+    begin
+      ParentNode := TTreeNode(FBind.GetControlByEntity(aGroup));
+      if ParentNode = nil then
+        begin
+          AddGroupToTree(aGroup, tvTree.Selected);
+          tvTree.Selected.Delete;
+          ParentNode := TTreeNode(FBind.GetControlByEntity(aGroup));
+          ParentNode.Expand(False);
+          Exit;
+        end;
+    end
+  else
+    ParentNode := nil;
+
+  RuleNode := tvTree.Items.AddChild(ParentNode, aRule.Notes);
+
+  if aRule.Link <> nil then
+    begin
+      RuleNode.ImageIndex := 0;
+      RuleNode.SelectedIndex := 0;
+    end;
+
+  if aRule.Rec <> nil then
+    begin
+      RuleNode.ImageIndex := 1;
+      RuleNode.SelectedIndex := 1;
+    end;
+
+  FBind.AddBind(RuleNode, aRule);
 end;
 
 procedure TViewRules.AfterLevelSelected;
@@ -137,10 +216,10 @@ begin
     tvTree.Items.Clear;
 end;
 
-{function TViewRules.GetSelectedRule: TJobRule;
+function TViewRules.GetSelectedRule: TJobRule;
 begin
   Result := GetSelectedGroup.Rules[GetRuleIndex];
-end;  }
+end;
 
 function TViewRules.GetSelectedGroup: TJobGroup;
 begin
@@ -174,7 +253,7 @@ begin
     tvTree.Selected.Text := (aControl as TEdit).Text;
 end;
 
-{function TViewRules.GetUpperNode(aLevelBreak: Integer): TTreeNode;
+function TViewRules.GetUpperNode(aLevelBreak: Integer): TTreeNode;
 var
   i: Integer;
 begin
@@ -183,17 +262,16 @@ begin
     begin
       Result := Result.Parent;
     end;
-end;}
+end;
 
-{function TViewRules.GetRuleIndex: Integer;
+function TViewRules.GetRuleIndex: Integer;
 begin
   Result := GetUpperNode(1).Index;
-end;}
+end;
 
 function TViewRules.GetGroupIndex: integer;
 begin
-  Result := -1;
-  //Result := GetUpperNode(0).Index;
+  Result := GetUpperNode(0).Index;
 end;
 
 procedure TEntityPanel.InitPanel;
@@ -213,47 +291,14 @@ begin
 
   for Group in aJobGroupList do
     begin
-      for JobRule in Group.Rules do
-        begin
-          if JobRule.Link <> nil then
-            begin
-              AddlinkToTree(JobRule.Link);
-            end;
-        end;
+      if Group.RulesCount > 1 then
+        AddGroupToTree(Group)
+      else
+        for JobRule in Group.Rules do
+          AddRuleToTree(Group, JobRule);
     end;
 
-  {for Group in aJobGroupList do
-    begin
-      GroupNode := tvTree.Items.Add(nil, Group.Notes);
-      GroupNode.ImageIndex := 0;
-      GroupNode.SelectedIndex := 0;
-
-      for JobRule in Group.Rules do
-        begin
-          if JobRule.Link <> nil then
-            begin
-              RuleNode := tvTree.Items.AddChild(GroupNode, JobRule.Link.Level.ToString);
-              RuleNode.ImageIndex := 1;
-              RuleNode.SelectedIndex := 1;
-            end;
-
-          if JobRule.Rec <> nil then
-            begin
-              RuleNode := tvTree.Items.AddChild(GroupNode, JobRule.Notes);
-              RuleNode.ImageIndex := 2;
-              RuleNode.SelectedIndex := 2;
-            end;
-
-          if JobRule.Cut <> nil then
-            begin
-              RuleNode := tvTree.Items.AddChild(GroupNode, JobRule.Notes);
-              RuleNode.ImageIndex := 3;
-              RuleNode.SelectedIndex := 3;
-            end;
-        end;
-    end;
-
-  ViewRules.tvTree.FullExpand; }
+  ViewRules.tvTree.FullExpand;
 end;
 
 procedure TViewRules.SetLevels(aLevelList: TLevelList; aIndex: Integer = 0);
@@ -334,11 +379,6 @@ begin
   SendMessage('StoreJobRules');
 end;
 
-procedure TViewRules.btnARClick(Sender: TObject);
-begin
-  SendMessage('CreateRecord');
-end;
-
 procedure TViewRules.btnALClick(Sender: TObject);
 begin
   SendMessage('CreateLink');
@@ -355,19 +395,9 @@ begin
     SendMessage('DeleteGroup');
 end;
 
-procedure TViewRules.btnDLClick(Sender: TObject);
-begin
-  SendMessage('DeleteLink');
-end;
-
 procedure TViewRules.btnDLvClick(Sender: TObject);
 begin
   SendMessage('DeleteLevel');
-end;
-
-procedure TViewRules.btnDRClick(Sender: TObject);
-begin
-  SendMessage('DeleteRecord');
 end;
 
 procedure TViewRules.btnSelectHTMLClick(Sender: TObject);

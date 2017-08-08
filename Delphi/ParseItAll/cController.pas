@@ -33,6 +33,9 @@ type
             const message: ICefProcessMessage; out Result: Boolean);
     function CanAddLevel(aJobRule: TJobLink): Boolean;
     function GetJob: TJob;
+
+    procedure DoAddLink(aGroup: TJobGroup);
+    procedure DoAddRec(aGroup: TJobGroup);
   protected
     procedure InitDB; override;
     procedure PerfomViewMessage(aMsg: string); override;
@@ -57,10 +60,12 @@ type
     procedure DeleteGroup;
 
     procedure AddLink;
-    procedure DeleteLink;
+    procedure AddLinkSameGroup;
 
-    procedure CreateRecord;
-    procedure DeleteRecord;
+    procedure AddRecord;
+    procedure AddRecSameGroup;
+
+    procedure RemoveRule;
 
     procedure CreateCut;
 
@@ -73,9 +78,6 @@ type
 
     procedure ParseDataReceived(aData: string);
   end;
-
-  // FObjData Item Keys
-  // Job
 
 implementation
 
@@ -296,61 +298,74 @@ begin
   RuleSelected;
 end;
 
-procedure TController.CreateRecord;
+procedure TController.AddRecord;
+var
+  Group: TJobGroup;
+begin
+  Group := TJobGroup.Create(FDBEngine);
+  ViewRules.GetSelectedLevel.Groups.Add(Group);
+  DoAddRec(Group);
+end;
+
+procedure TController.RemoveRule;
+var
+  Group: TJobGroup;
+begin
+  Group := ViewRules.GetSelectedGroup;
+  if Group.RulesCount = 1 then
+    DeleteGroup
+  else
+    begin
+      Group.Rules.DeleteByIndex(ViewRules.GetRuleIndex);
+      ViewRules.RemoveTreeNode;
+    end;
+end;
+
+procedure TController.DoAddLink(aGroup: TJobGroup);
+var
+  Rule: TJobRule;
+begin
+  Rule := TJobRule.Create(FDBEngine);
+  Rule.Link := TJobLink.Create(FDBEngine);
+
+  aGroup.Rules.Add(Rule);
+  ViewRules.AddRuleToTree(aGroup, Rule);
+end;
+
+procedure TController.DoAddRec(aGroup: TJobGroup);
 var
   Rule: TJobRule;
 begin
   Rule := TJobRule.Create(FDBEngine);
   Rule.Rec := TJobRecord.Create(FDBEngine);
 
-  ViewRules.GetSelectedGroup.Rules.Add(Rule);
-  ViewRules.RenderLevelRulesTree(ViewRules.GetSelectedLevel.Groups);
+  aGroup.Rules.Add(Rule);
+  ViewRules.AddRuleToTree(aGroup, Rule);
 end;
 
-procedure TController.DeleteRecord;
+procedure TController.AddRecSameGroup;
 var
-  Level: TJobLevel;
   Group: TJobGroup;
 begin
-  Level := FObjData.Items['Level'] as TJobLevel;
-  Group := Level.Groups[ViewRules.tvTree.Selected.Parent.Index];
-
-  //Group.Records.DeleteByIndex(ViewRules.tvTree.Selected.Index - Group.Links.Count);
-  ViewRules.RenderLevelRulesTree(Level.Groups);
-  ViewRules.pnlEntityFields.ClearControls;
+  Group := ViewRules.GetSelectedGroup;
+  DoAddRec(Group);
 end;
 
-procedure TController.DeleteLink;
+procedure TController.AddLinkSameGroup;
 var
-  Level: TJobLevel;
   Group: TJobGroup;
 begin
-  Level := FObjData.Items['Level'] as TJobLevel;
-  Group := Level.Groups[ViewRules.tvTree.Selected.Parent.Index];
-
-  //Group.Links.DeleteByIndex(ViewRules.tvTree.Selected.Index);
-  ViewRules.RenderLevelRulesTree(Level.Groups);
-  ViewRules.pnlEntityFields.ClearControls;
+  Group := ViewRules.GetSelectedGroup;
+  DoAddLink(Group);
 end;
 
 procedure TController.AddLink;
 var
-  Rule: TJobRule;
   Group: TJobGroup;
 begin
-  Rule := TJobRule.Create(FDBEngine);
-  Rule.Link := TJobLink.Create(FDBEngine);
-
-  if ViewRules.GetGroupIndex = -1 then
-    begin
-      Group := TJobGroup.Create(FDBEngine);
-      ViewRules.GetSelectedLevel.Groups.Add(Group);
-    end
-  else
-    Group := ViewRules.GetSelectedGroup;
-
-  Group.Rules.Add(Rule);
-  ViewRules.AddLinkToTree(Rule.Link);
+  Group := TJobGroup.Create(FDBEngine);
+  ViewRules.GetSelectedLevel.Groups.Add(Group);
+  DoAddLink(Group);
 end;
 
 procedure TController.GetJobList;
@@ -369,11 +384,10 @@ procedure TController.DeleteGroup;
 var
   Groups: TGroupList;
 begin
-  Groups := (FObjData.Items['Level'] as TJobLevel).Groups;
+  Groups := ViewRules.GetSelectedLevel.Groups;
   Groups.DeleteByIndex(ViewRules.tvTree.Selected.Index);
 
-  ViewRules.RenderLevelRulesTree(Groups);
-  ViewRules.pnlEntityFields.ClearControls;
+  ViewRules.RemoveTreeNode;
 end;
 
 procedure TController.EditJobRules;
