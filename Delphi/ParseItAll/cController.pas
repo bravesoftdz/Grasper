@@ -67,7 +67,7 @@ type
 
     procedure RemoveRule;
 
-    procedure CreateCut;
+    procedure AddCut;
 
     procedure SelectHTMLNode;
     procedure SelectCutNode;
@@ -155,7 +155,7 @@ begin
   CallModel(TModelJS, 'PrepareJSScriptForGroup');
 end;
 
-procedure TController.CreateCut;
+procedure TController.AddCut;
 var
   Rule: TJobRule;
 begin
@@ -164,6 +164,11 @@ begin
 
   ViewRules.GetSelectedGroup.Rules.Add(Rule);
   ViewRules.RenderLevelRulesTree(ViewRules.GetSelectedLevel.Groups);
+
+
+  Group := TJobGroup.Create(FDBEngine);
+  ViewRules.GetSelectedLevel.Groups.Add(Group);
+  DoAddRec(Group);
 end;
 
 procedure TController.SelectCutNode;

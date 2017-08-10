@@ -154,6 +154,13 @@ type
 
   TLinkList = TEntityList<TJobLink>;
 
+  TJobRuleRel = class(TEntityAbstract)
+  // overrides
+  public
+    class function GetEntityStruct: TEntityStruct; override;
+  ////////////////////
+  end;
+
   TJobRule = class(TEntityAbstract)
   // overrides
   public
@@ -196,6 +203,7 @@ type
     property Rec: TJobRecord read GetRec write SetRec;
     property Cut: TJobCut read GetCut write SetCut;
     property Nodes: TNodeList read GetNodeList;
+    property SlaveRules: TRuleList;
   end;
 
   TRuleList = TEntityList<TJobRule>;
@@ -272,6 +280,14 @@ implementation
 
 uses
   System.SysUtils;
+
+class function TJobRuleRel.GetEntityStruct: TEntityStruct;
+begin
+  Result.TableName := 'JOB_RULE2RULE';
+
+  AddField(Result.FieldList, 'MASTER_RULE_ID', ftInteger);
+  AddField(Result.FieldList, 'SLAVE_RULE_ID', ftInteger);
+end;
 
 function TJobGroup.GetRulesCount: Integer;
 begin

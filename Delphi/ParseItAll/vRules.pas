@@ -57,6 +57,8 @@ type
     mniAddLinkSameGroup: TMenuItem;
     acAddRecSameGroup: TAction;
     mniAddRecSameGroup: TMenuItem;
+    acAddCut: TAction;
+    btnAddCut: TSpeedButton;
     procedure btnAGClick(Sender: TObject);
     procedure btnCancelClick(Sender: TObject);
     procedure btnApplyClick(Sender: TObject);
@@ -78,6 +80,7 @@ type
     procedure acRemoveExecute(Sender: TObject);
     procedure acAddLinkSameGroupExecute(Sender: TObject);
     procedure acAddRecSameGroupExecute(Sender: TObject);
+    procedure acAddCutExecute(Sender: TObject);
   private
     { Private declarations }
     FDevToolsEnabled: Boolean;
@@ -237,6 +240,11 @@ end;
 function TViewRules.GetLevelIndex: integer;
 begin
   Result := cbbLevel.ItemIndex;
+end;
+
+procedure TViewRules.acAddCutExecute(Sender: TObject);
+begin
+  SendMessage('AddCut');
 end;
 
 procedure TViewRules.acAddLinkExecute(Sender: TObject);
