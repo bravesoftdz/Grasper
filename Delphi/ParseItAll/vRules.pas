@@ -9,7 +9,11 @@ uses
   API_MVC,
   API_ORM,
   API_ORM_Cntrls,
-  eEntities, System.ImageList, System.Actions, Vcl.ActnList, Vcl.Menus;
+  eEntities,
+  eJob,
+  eLevel,
+  eRule,
+  System.ImageList, System.Actions, Vcl.ActnList, Vcl.Menus;
 
 type
   TEntityPanel = class(TEntityPanelAbstract)
@@ -28,9 +32,7 @@ type
     pnlTree: TPanel;
     pnlFields: TPanel;
     tvTree: TTreeView;
-    btnAG: TBitBtn;
     ilButtons: TImageList;
-    btnDG: TBitBtn;
     pnlXPath: TPanel;
     btnSelectHTML: TBitBtn;
     chdtDevTools: TChromiumDevTools;
@@ -59,12 +61,10 @@ type
     mniAddRecSameGroup: TMenuItem;
     acAddCut: TAction;
     btnAddCut: TSpeedButton;
-    procedure btnAGClick(Sender: TObject);
     procedure btnCancelClick(Sender: TObject);
     procedure btnApplyClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure tvTreeChange(Sender: TObject; Node: TTreeNode);
-    procedure btnDGClick(Sender: TObject);
     procedure btnALClick(Sender: TObject);
     procedure btnSelectHTMLClick(Sender: TObject);
     procedure DevToolsActivate(Sender: Tobject);
@@ -96,15 +96,15 @@ type
     function GetLevelIndex: integer;
 
     function GetSelectedLevel: TJobLevel;
-    function GetSelectedGroup: TJobGroup;
+    //function GetSelectedGroup: TJobGroup;
     function GetSelectedRule: TJobRule;
 
     procedure SetLevels(aLevelList: TLevelList; aIndex: Integer = 0);
-    procedure RenderLevelRulesTree(aJobGroupList: TGroupList);
+    //procedure RenderLevelRulesTree(aJobGroupList: TGroupList);
     procedure AfterLevelSelected;
 
-    procedure AddRuleToTree(aGroup: TJobGroup; aRule: TJobRule);
-    procedure AddGroupToTree(aGroup: TJobGroup; aSibling: TTreeNode = nil);
+    //procedure AddRuleToTree(aGroup: TJobGroup; aRule: TJobRule);
+    //procedure AddGroupToTree(aGroup: TJobGroup; aSibling: TTreeNode = nil);
     procedure RemoveTreeNode;
   end;
 
@@ -150,7 +150,7 @@ begin
     SendMessage('RemoveRule');
 end;
 
-procedure TViewRules.AddGroupToTree(aGroup: TJobGroup; aSibling: TTreeNode = nil);
+{procedure TViewRules.AddGroupToTree(aGroup: TJobGroup; aSibling: TTreeNode = nil);
 var
   GroupNode: TTreeNode;
   Rule: TJobRule;
@@ -167,9 +167,9 @@ begin
 
   for Rule in aGroup.Rules do
     AddRuleToTree(aGroup, Rule);
-end;
+end; }
 
-procedure TViewRules.AddRuleToTree(aGroup: TJobGroup; aRule: TJobRule);
+{procedure TViewRules.AddRuleToTree(aGroup: TJobGroup; aRule: TJobRule);
 var
   RuleNode, ParentNode: TTreeNode;
 begin
@@ -203,7 +203,7 @@ begin
     end;
 
   FBind.AddBind(RuleNode, aRule);
-end;
+end;   }
 
 procedure TViewRules.AfterLevelSelected;
 begin
@@ -213,7 +213,7 @@ begin
   if GetSelectedLevel <> nil then
     begin
       chrmBrowser.Load(GetSelectedLevel.BaseLink);
-      RenderLevelRulesTree(GetSelectedLevel.Groups);
+      //RenderLevelRulesTree(GetSelectedLevel.Groups);
     end
   else
     tvTree.Items.Clear;
@@ -221,13 +221,13 @@ end;
 
 function TViewRules.GetSelectedRule: TJobRule;
 begin
-  Result := GetSelectedGroup.Rules[GetRuleIndex];
+  //Result := GetSelectedGroup.Rules[GetRuleIndex];
 end;
 
-function TViewRules.GetSelectedGroup: TJobGroup;
+{function TViewRules.GetSelectedGroup: TJobGroup;
 begin
-  Result := GetSelectedLevel.Groups.Items[GetGroupIndex];
-end;
+  //Result := GetSelectedLevel.Groups.Items[GetGroupIndex];
+end; }
 
 function TViewRules.GetSelectedLevel: TJobLevel;
 begin
@@ -287,7 +287,7 @@ begin
   OnAfterEditChange := ViewRules.AfterEntityPanelChange;
 end;
 
-procedure TViewRules.RenderLevelRulesTree(aJobGroupList: TGroupList);
+{procedure TViewRules.RenderLevelRulesTree(aJobGroupList: TGroupList);
 var
   Group: TJobGroup;
   JobRule: TJobRule;
@@ -307,7 +307,7 @@ begin
     end;
 
   ViewRules.tvTree.FullExpand;
-end;
+end; }
 
 procedure TViewRules.SetLevels(aLevelList: TLevelList; aIndex: Integer = 0);
 var
@@ -377,11 +377,6 @@ begin
   SendMessage('SelectNewLevelLink');
 end;
 
-procedure TViewRules.btnAGClick(Sender: TObject);
-begin
-  SendMessage('CreateGroup');
-end;
-
 procedure TViewRules.btnApplyClick(Sender: TObject);
 begin
   SendMessage('StoreJobRules');
@@ -395,12 +390,6 @@ end;
 procedure TViewRules.btnCancelClick(Sender: TObject);
 begin
   Close;
-end;
-
-procedure TViewRules.btnDGClick(Sender: TObject);
-begin
-  if MessageDlg('Are you sure?', mtConfirmation, [mbYes, mbCancel], 0) = mrYes then
-    SendMessage('DeleteGroup');
 end;
 
 procedure TViewRules.btnDLvClick(Sender: TObject);

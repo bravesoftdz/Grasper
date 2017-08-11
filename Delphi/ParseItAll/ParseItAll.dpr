@@ -25,7 +25,10 @@ uses
   vRuleResult in 'vRuleResult.pas' {ViewRuleResult},
   Vcl.Themes,
   Vcl.Styles,
-  API_DB_SQLite in '..\..\..\Libraries\Delphi\API_DB_SQLite.pas';
+  API_DB_SQLite in '..\..\..\Libraries\Delphi\API_DB_SQLite.pas',
+  eJob in 'eJob.pas',
+  eLevel in 'eLevel.pas',
+  eRule in 'eRule.pas';
 
 {$R *.res}
 

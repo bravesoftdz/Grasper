@@ -7,7 +7,9 @@ uses
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ComCtrls, Vcl.ExtCtrls, Vcl.Grids, Vcl.StdCtrls,
   Vcl.Buttons,
   API_MVC,
-  eEntities, cefvcl, Vcl.Menus, System.ImageList, Vcl.ImgList, Vcl.XPMan,
+  eEntities,
+  eJob,
+  cefvcl, Vcl.Menus, System.ImageList, Vcl.ImgList, Vcl.XPMan,
   ZColorStringGrid, System.Actions, Vcl.ActnList;
 
 type

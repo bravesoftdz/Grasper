@@ -8,7 +8,10 @@ uses
   cefvcl,
   cefLib,
   API_MVC_DB,
-  eEntities;
+  eEntities,
+  eJob,
+  eLevel,
+  eRule;
 
 type
   TModelJS = class(TModelDB)
@@ -330,7 +333,7 @@ end;
 procedure TModelParser.ProcessJSOnFrame(aFrame: ICefFrame);
 var
   Level: TJobLevel;
-  Group: TJobGroup;
+  //Group: TJobGroup;
   ModelJS: TModelJS;
   ObjData: TObjectDictionary<string, TObject>;
   Data: TDictionary<string, variant>;
@@ -344,7 +347,7 @@ begin
     Level := FJob.GetLevel(FCurrLink.Level);
 
     i := 0;
-    for Group in Level.Groups do
+    {for Group in Level.Groups do
       begin
         Inc(i);
         if i = Level.Groups.Count then
@@ -360,7 +363,7 @@ begin
         finally
           ModelJS.Free;
         end;
-      end;
+      end; }
   finally
     ObjData.Free;
     Data.Free;
@@ -456,17 +459,17 @@ var
   jsnGroup: TJSONObject;
   jsnRule: TJSONObject;
   jsnRules: TJSONArray;
-  Group: TJobGroup;
+  //Group: TJobGroup;
   Rule: TJobRule;
   ContainerNodeList, ContainerInsideNodes: TNodeList;
   JSScript: string;
   i: Integer;
   IsLast: Variant;
 begin
-  Group := FObjData.Items['Group'] as TJobGroup;
+  //Group := FObjData.Items['Group'] as TJobGroup;
   JSScript := FData.Items['JSScript'];
 
-  ContainerNodeList := Group.GetContainerNodes;
+  {ContainerNodeList := Group.GetContainerNodes;
   jsnGroup := TJSONObject.Create;
   jsnRules := TJSONArray.Create;
   try
@@ -519,15 +522,15 @@ begin
   finally
     ContainerNodeList.Free;
     jsnGroup.Free;
-  end;
+  end; }
 end;
 
 procedure TModelJS.PrepareJSScriptForRule;
 var
-  Group: TJobGroup;
+  //Group: TJobGroup;
   Rule: TJobRule;
 begin
-  Group := TJobGroup.Create(FDBEngine, 0);
+  {Group := TJobGroup.Create(FDBEngine, 0);
   try
     Rule := FObjData.Items['Rule'] as TJobRule;
     Group.Rules.Add(Rule);
@@ -537,7 +540,7 @@ begin
   finally
     Group.Rules.Extract(Rule);
     Group.Free;
-  end;
+  end; }
 end;
 
 end.
