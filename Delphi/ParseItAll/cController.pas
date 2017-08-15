@@ -365,9 +365,19 @@ begin
 end;
 
 procedure TController.AddLink;
-//var
-  //Group: TJobGroup;
+var
+  Level: TJobLevel;
+  RuleRel: TLevelRuleRel;
 begin
+  RuleRel := TLevelRuleRel.Create(FDBEngine);
+  RuleRel.Rule := TJobRule.Create(FDBEngine);
+  RuleRel.Rule.Link := TJobLink.Create(FDBEngine);
+
+  Level := ViewRules.GetSelectedLevel;
+  Level.Rules.Add(RuleRel);
+
+  ViewRules.AddRuleToTree(nil, RuleRel.Rule);
+
   //Group := TJobGroup.Create(FDBEngine);
   //ViewRules.GetSelectedLevel.Groups.Add(Group);
   //DoAddLink(Group);

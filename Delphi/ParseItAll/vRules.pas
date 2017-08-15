@@ -100,10 +100,10 @@ type
     function GetSelectedRule: TJobRule;
 
     procedure SetLevels(aLevelList: TLevelList; aIndex: Integer = 0);
-    //procedure RenderLevelRulesTree(aJobGroupList: TGroupList);
+    procedure RenderLevelRulesTree(aLevelRules: TLevelRuleRelList);
     procedure AfterLevelSelected;
 
-    //procedure AddRuleToTree(aGroup: TJobGroup; aRule: TJobRule);
+    procedure AddRuleToTree(aParentRule: TJobRule; aRule: TJobRule);
     //procedure AddGroupToTree(aGroup: TJobGroup; aSibling: TTreeNode = nil);
     procedure RemoveTreeNode;
   end;
@@ -169,11 +169,11 @@ begin
     AddRuleToTree(aGroup, Rule);
 end; }
 
-{procedure TViewRules.AddRuleToTree(aGroup: TJobGroup; aRule: TJobRule);
+procedure TViewRules.AddRuleToTree(aParentRule: TJobRule; aRule: TJobRule);
 var
   RuleNode, ParentNode: TTreeNode;
 begin
-  if aGroup.RulesCount > 1 then
+  {if aGroup.RulesCount > 1 then
     begin
       ParentNode := TTreeNode(FBind.GetControlByEntity(aGroup));
       if ParentNode = nil then
@@ -185,7 +185,7 @@ begin
           Exit;
         end;
     end
-  else
+  else  }
     ParentNode := nil;
 
   RuleNode := tvTree.Items.AddChild(ParentNode, aRule.Notes);
@@ -203,7 +203,7 @@ begin
     end;
 
   FBind.AddBind(RuleNode, aRule);
-end;   }
+end;
 
 procedure TViewRules.AfterLevelSelected;
 begin
@@ -213,7 +213,7 @@ begin
   if GetSelectedLevel <> nil then
     begin
       chrmBrowser.Load(GetSelectedLevel.BaseLink);
-      //RenderLevelRulesTree(GetSelectedLevel.Groups);
+      RenderLevelRulesTree(GetSelectedLevel.Rules);
     end
   else
     tvTree.Items.Clear;
@@ -287,27 +287,22 @@ begin
   OnAfterEditChange := ViewRules.AfterEntityPanelChange;
 end;
 
-{procedure TViewRules.RenderLevelRulesTree(aJobGroupList: TGroupList);
+procedure TViewRules.RenderLevelRulesTree(aLevelRules: TLevelRuleRelList);
 var
-  Group: TJobGroup;
-  JobRule: TJobRule;
-  GroupNode, RuleNode: TTreeNode;
+  LevelRuleRel: TLevelRuleRel;
+  //GroupNode, RuleNode: TTreeNode;
 begin
   tvTree.Items.Clear;
   //tvTree.OnChange := nil;
   //tvTree.OnChange := tvTreeChange;
 
-  for Group in aJobGroupList do
+  for LevelRuleRel in aLevelRules do
     begin
-      if Group.RulesCount > 1 then
-        AddGroupToTree(Group)
-      else
-        for JobRule in Group.Rules do
-          AddRuleToTree(Group, JobRule);
+      AddRuleToTree(nil, LevelRuleRel.Rule);
     end;
 
   ViewRules.tvTree.FullExpand;
-end; }
+end;
 
 procedure TViewRules.SetLevels(aLevelList: TLevelList; aIndex: Integer = 0);
 var

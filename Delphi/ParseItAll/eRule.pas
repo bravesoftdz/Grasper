@@ -160,7 +160,6 @@ end;
 class function TJobRule.GetEntityStruct: TEntityStruct;
 begin
   Result.TableName := 'JOB_RULES';
-  AddField(Result.FieldList, 'LEVEL_ID', ftInteger);
   AddField(Result.FieldList, 'NOTES', ftString);
   AddField(Result.FieldList, 'CONTAINER_OFFSET', ftInteger);
   AddField(Result.FieldList, 'CRITICAL_TYPE', ftInteger);
