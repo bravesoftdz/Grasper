@@ -28,7 +28,11 @@ uses
   API_DB_SQLite in '..\..\..\Libraries\Delphi\API_DB_SQLite.pas',
   eJob in 'eJob.pas',
   eLevel in 'eLevel.pas',
-  eRule in 'eRule.pas';
+  eRule in 'eRule.pas',
+  eRuleLink in 'eRuleLink.pas',
+  eRuleRecords in 'eRuleRecords.pas',
+  eRuleCut in 'eRuleCut.pas',
+  eRegExp in 'eRegExp.pas';
 
 {$R *.res}
 

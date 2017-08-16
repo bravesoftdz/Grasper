@@ -106,62 +106,7 @@ type
 
   TNodeList = TEntityList<TJobNode>;
 
-  TJobCut = class(TEntityAbstract)
-  // overrides
-  public
-    class function GetEntityStruct: TEntityStruct; override;
-  ////////////////////
-  private
-  // Getters Setters
-    function GetNotes: string;
-    procedure SetNotes(aValue: string);
-  ////////////////////
-  public
-    property Notes: string read GetNotes write SetNotes;
-  end;
-
-  TCutList = TEntityList<TJobCut>;
-
-  TJobRecord = class(TEntityAbstract)
-  // overrides
-  public
-    class function GetEntityStruct: TEntityStruct; override;
-  ////////////////////
-  private
-  // Getters Setters
-    function GetKey: string;
-    procedure SetKey(aValue: string);
-  //////////////////
-  public
-    property Key: string read GetKey write SetKey;
-  end;
-
-  TRecordList = TEntityList<TJobRecord>;
-
-  TJobLink = class(TEntityAbstract)
-  // overrides
-  public
-    class function GetEntityStruct: TEntityStruct; override;
-  ////////////////////
-  private
-  // Getters Setters
-    function GetLevel: integer;
-    procedure SetLevel(aValue: integer);
-  //////////////////
-  public
-    property Level: Integer read GetLevel write SetLevel;
-  end;
-
-  TLinkList = TEntityList<TJobLink>;
-
-  TJobRuleRel = class(TEntityAbstract)
-  // overrides
-  public
-    class function GetEntityStruct: TEntityStruct; override;
-  ////////////////////
-  end;
-
-  {TJobGroup = class(TEntityAbstract)
+ {TJobGroup = class(TEntityAbstract)
   private
     // Getters Setters
     function GetLevelID: Integer;
@@ -191,14 +136,6 @@ implementation
 
 uses
   System.SysUtils;
-
-class function TJobRuleRel.GetEntityStruct: TEntityStruct;
-begin
-  Result.TableName := 'JOB_RULE2RULE';
-
-  AddField(Result.FieldList, 'MASTER_RULE_ID', ftInteger);
-  AddField(Result.FieldList, 'SLAVE_RULE_ID', ftInteger);
-end;
 
 {function TJobGroup.GetRulesCount: Integer;
 begin
@@ -367,24 +304,6 @@ begin
   Result := FRules;
 end; }
 
-function TJobCut.GetNotes: string;
-begin
-  Result := FData.Items['NOTES'];
-end;
-
-procedure TJobCut.SetNotes(aValue: string);
-begin
-  FData.AddOrSetValue('NOTES', aValue);
-end;
-
-class function TJobCut.GetEntityStruct: TEntityStruct;
-begin
-  Result.TableName := 'JOB_RULE_CUTS';
-
-  AddField(Result.FieldList, 'JOB_RULE_ID', ftInteger);
-  AddField(Result.FieldList, 'NOTES', ftString);
-end;
-
 {function TJobGroup.GetContainerNodes: TNodeList;
 var
   i: integer;
@@ -462,44 +381,10 @@ begin
   AddField(Result.FieldList, 'NAME', ftString);
 end;
 
-procedure TJobRecord.SetKey(aValue: string);
-begin
-  FData.AddOrSetValue('KEY', aValue);
-end;
-
-function TJobRecord.GetKey: string;
-begin
-  Result := FData.Items['KEY'];
-end;
-
-class function TJobRecord.GetEntityStruct: TEntityStruct;
-begin
-  Result.TableName := 'JOB_RULE_RECORDS';
-  AddField(Result.FieldList, 'JOB_RULE_ID', ftInteger);
-  AddField(Result.FieldList, 'KEY', ftString);
-end;
-
 {procedure TJobGroup.SaveLists;
 begin
   if Assigned(FRules) then FRules.SaveList(ID);
 end;}
-
-function TJobLink.GetLevel: integer;
-begin
-  Result := FData.Items['LEVEL'];
-end;
-
-procedure TJobLink.SetLevel(aValue: integer);
-begin
-  FData.AddOrSetValue('LEVEL', aValue);
-end;
-
-class function TJobLink.GetEntityStruct: TEntityStruct;
-begin
-  Result.TableName := 'JOB_RULE_LINKS';
-  AddField(Result.FieldList, 'JOB_RULE_ID', ftInteger);
-  AddField(Result.FieldList, 'LEVEL', ftInteger);
-end;
 
 {destructor TJobGroup.Destroy;
 begin

@@ -5,9 +5,37 @@ interface
 uses
   System.UITypes,
   API_ORM,
+  eRuleLink,
+  eRuleRecords,
+  eRuleCut,
+  eRegExp,
   eEntities;
 
 type
+  TJobRule = class;
+
+  TRuleRuleRel = class(TEntityAbstract)
+  // overrides
+  public
+    class function GetEntityStruct: TEntityStruct; override;
+  ////////////////////
+  private
+  // Getters Setters
+    function GetParentRuleID: Integer;
+    procedure SetParentRuleID(aValue: Integer);
+    function GetChildRuleID: Integer;
+    procedure SetChildRuleID(aValue: Integer);
+    function GetChildRule: TJobRule;
+    procedure SetChildRule(aValue: TJobRule);
+  //////////////////
+  public
+    property ParentRuleID: Integer read GetParentRuleID write SetParentRuleID;
+    property ChildRuleID: Integer read GetChildRuleID write SetChildRuleID;
+    property ChildRule: TJobRule read GetChildRule write SetChildRule;
+  end;
+
+  TRuleRuleRelList = TEntityList<TRuleRuleRel>;
+
   TJobRule = class(TEntityAbstract)
   // overrides
   public
@@ -17,6 +45,8 @@ type
   ////////////////////
   private
     FNodes: TNodeList;
+    FChildRules: TRuleRuleRelList;
+    FRegExps: TJobRegExpList;
   // Getters Setters
     function GetLevelID: Integer;
     procedure SetLevelID(aValue: integer);
@@ -37,9 +67,12 @@ type
     procedure SetRec(aValue: TJobRecord);
     function GetCut: TJobCut;
     procedure SetCut(aValue: TJobCut);
+    function GetChildRules: TRuleRuleRelList;
+    function GetRegExps: TJobRegExpList;
   //////////////////
   public
     function GetContainerInsideNodes: TNodeList;
+    function IndexOfChildRule(aJobRule: TJobRule): Integer;
     property LevelID: Integer read GetLevelID write SetLevelID;
     property Notes: string read GetNotes write SetNotes;
     property ContainerOffset: Integer read GetContainerOffset write SetContainerOffset;
@@ -50,6 +83,8 @@ type
     property Rec: TJobRecord read GetRec write SetRec;
     property Cut: TJobCut read GetCut write SetCut;
     property Nodes: TNodeList read GetNodeList;
+    property ChildRules: TRuleRuleRelList read GetChildRules;
+    property RegExps: TJobRegExpList read GetRegExps;
   end;
 
   TRuleList = TEntityList<TJobRule>;
@@ -58,6 +93,79 @@ implementation
 
 uses
   Data.DB;
+
+function TJobRule.IndexOfChildRule(aJobRule: TJobRule): Integer;
+var
+  RuleRuleRel: TRuleRuleRel;
+  i: Integer;
+begin
+  Result := -1;
+  i := 0;
+
+  for RuleRuleRel in Self.ChildRules do
+    begin
+      if RuleRuleRel.ChildRule = aJobRule then
+        Exit(i);
+
+      Inc(i);
+    end;
+end;
+
+function TJobRule.GetRegExps: TJobRegExpList;
+begin
+  if not Assigned(FRegExps) then
+    FRegExps := TJobRegExpList.Create(Self, 'JOB_RULE_ID', ID);
+
+  Result := FRegExps;
+end;
+
+procedure TRuleRuleRel.SetChildRule(aValue: TJobRule);
+begin
+  FRelations.AddOrSetValue('JOB_RULES', aValue);
+end;
+
+function TRuleRuleRel.GetChildRule: TJobRule;
+begin
+  Result := FRelations.Items['JOB_RULES'] as TJobRule;
+end;
+
+function TJobRule.GetChildRules: TRuleRuleRelList;
+begin
+  if not Assigned(FChildRules) then
+    FChildRules := TRuleRuleRelList.Create(Self, 'PARENT_RULE_ID', ID);
+
+  Result := FChildRules;
+end;
+
+function TRuleRuleRel.GetChildRuleID: Integer;
+begin
+  Result := FData.Items['CHILD_RULE_ID'];
+end;
+
+procedure TRuleRuleRel.SetChildRuleID(aValue: Integer);
+begin
+  FData.AddOrSetValue('CHILD_RULE_ID', aValue);
+end;
+
+function TRuleRuleRel.GetParentRuleID: Integer;
+begin
+  Result := FData.Items['PARENT_RULE_ID'];
+end;
+
+procedure TRuleRuleRel.SetParentRuleID(aValue: Integer);
+begin
+  FData.AddOrSetValue('PARENT_RULE_ID', aValue);
+end;
+
+class function TRuleRuleRel.GetEntityStruct: TEntityStruct;
+begin
+  Result.TableName := 'JOB_RULE2RULE';
+
+  AddField(Result.FieldList, 'PARENT_RULE_ID', ftInteger);
+  AddField(Result.FieldList, 'CHILD_RULE_ID', ftInteger);
+
+  AddRelation(Result.RelatedList, 'ID', 'CHILD_RULE_ID', TJobRule);
+end;
 
 procedure TJobRule.SetCut(aValue: TJobCut);
 begin
@@ -127,6 +235,8 @@ end;
 procedure TJobRule.SaveLists;
 begin
   if Assigned(FNodes) then FNodes.SaveList(ID);
+  if Assigned(FChildRules) then FChildRules.SaveList(ID);
+  if Assigned(FRegExps) then FRegExps.SaveList(ID);
 end;
 
 function TJobRule.GetNodeList: TNodeList;
@@ -160,6 +270,7 @@ end;
 class function TJobRule.GetEntityStruct: TEntityStruct;
 begin
   Result.TableName := 'JOB_RULES';
+
   AddField(Result.FieldList, 'NOTES', ftString);
   AddField(Result.FieldList, 'CONTAINER_OFFSET', ftInteger);
   AddField(Result.FieldList, 'CRITICAL_TYPE', ftInteger);

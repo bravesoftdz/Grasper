@@ -12,7 +12,11 @@ uses
   eEntities,
   eJob,
   eLevel,
-  eRule;
+  eRule,
+  eRuleLink,
+  eRuleRecords,
+  eRuleCut,
+  eRegExp;
 
 type
   TJSExtension = class
@@ -37,7 +41,6 @@ type
     function CanAddLevel(aJobRule: TJobLink): Boolean;
     function GetJob: TJob;
 
-    //procedure DoAddLink(aGroup: TJobGroup);
     //procedure DoAddRec(aGroup: TJobGroup);
   protected
     procedure InitDB; override;
@@ -60,14 +63,16 @@ type
     procedure DeleteLevel;
 
     procedure AddLink;
-    procedure AddLinkSameGroup;
+    procedure AddChildLink;
 
     procedure AddRecord;
-    procedure AddRecSameGroup;
+    procedure AddChildRecord;
+
+    procedure AddChildCut;
+
+    procedure AddRegExp;
 
     procedure RemoveRule;
-
-    procedure AddCut;
 
     procedure SelectHTMLNode;
     procedure SelectCutNode;
@@ -93,6 +98,16 @@ uses
   vRules,
   vRuleResult,
   mParser;
+
+procedure TController.AddRegExp;
+var
+  RegExp: TJobRegExp;  
+begin  
+  RegExp := TJobRegExp.Create(FDBEngine); 
+  ViewRules.GetSelectedRule.RegExps.Add(RegExp);
+
+  ViewRules.AddRegExpToTree(ViewRules.GetSelectedRule, RegExp);
+end;
 
 procedure TController.StoreJob;
 var
@@ -153,22 +168,6 @@ begin
   //FObjData.AddOrSetValue('Group', ViewRules.GetSelectedGroup);
   FData.AddOrSetValue('JSScript', FJSScript);
   CallModel(TModelJS, 'PrepareJSScriptForGroup');
-end;
-
-procedure TController.AddCut;
-var
-  Rule: TJobRule;
-begin
-  {Rule := TJobRule.Create(FDBEngine);
-  Rule.Cut := TJobCut.Create(FDBEngine);
-
-  ViewRules.GetSelectedGroup.Rules.Add(Rule);
-  ViewRules.RenderLevelRulesTree(ViewRules.GetSelectedLevel.Groups);
-
-
-  Group := TJobGroup.Create(FDBEngine);
-  ViewRules.GetSelectedLevel.Groups.Add(Group);
-  DoAddRec(Group);   }
 end;
 
 procedure TController.SelectCutNode;
@@ -303,65 +302,51 @@ begin
   RuleSelected;
 end;
 
-procedure TController.AddRecord;
-//var
-  //Group: TJobGroup;
-begin
-  //Group := TJobGroup.Create(FDBEngine);
-  //ViewRules.GetSelectedLevel.Groups.Add(Group);
-  //DoAddRec(Group);
-end;
-
 procedure TController.RemoveRule;
-//var
-//  Group: TJobGroup;
+var
+  ParentRule: TJobRule;
+  Index: Integer;
 begin
-  {Group := ViewRules.GetSelectedGroup;
-  if Group.RulesCount = 1 then
-    //DeleteGroup
-  else
+  if ViewRules.GetParentEntity is TJobRule then
     begin
-      Group.Rules.DeleteByIndex(ViewRules.GetRuleIndex);
-      ViewRules.RemoveTreeNode;
-    end; }
+      ParentRule := ViewRules.GetParentEntity as TJobRule;
+      Index := ParentRule.IndexOfChildRule(ViewRules.GetSelectedRule);          
+      ParentRule.ChildRules.DeleteByIndex(Index);
+    end
+  else
+    ViewRules.GetSelectedLevel.Rules.DeleteByIndex(ViewRules.TreeIndex);    
+  
+  ViewRules.RemoveTreeNode;    
 end;
 
-{procedure TController.DoAddLink(aGroup: TJobGroup);
+procedure TController.AddChildCut;
 var
-  Rule: TJobRule;
+  RuleRel: TRuleRuleRel;
+  ParentRule: TJobRule;
 begin
-  Rule := TJobRule.Create(FDBEngine);
-  Rule.Link := TJobLink.Create(FDBEngine);
+  RuleRel := TRuleRuleRel.Create(FDBEngine);
+  RuleRel.ChildRule := TJobRule.Create(FDBEngine);
+  RuleRel.ChildRule.Cut := TJobCut.Create(FDBEngine);
 
-  aGroup.Rules.Add(Rule);
-  ViewRules.AddRuleToTree(aGroup, Rule);
-end;}
+  ParentRule := ViewRules.GetSelectedRule;
+  ParentRule.ChildRules.Add(RuleRel);
 
-{procedure TController.DoAddRec(aGroup: TJobGroup);
-var
-  Rule: TJobRule;
-begin
-  Rule := TJobRule.Create(FDBEngine);
-  Rule.Rec := TJobRecord.Create(FDBEngine);
-
-  aGroup.Rules.Add(Rule);
-  ViewRules.AddRuleToTree(aGroup, Rule);
-end; }
-
-procedure TController.AddRecSameGroup;
-//var
-//  Group: TJobGroup;
-begin
-  //Group := ViewRules.GetSelectedGroup;
-  //DoAddRec(Group);
+  ViewRules.AddRuleToTree(ParentRule, RuleRel.ChildRule);
 end;
 
-procedure TController.AddLinkSameGroup;
-//var
-//  Group: TJobGroup;
+procedure TController.AddChildLink;
+var
+  RuleRel: TRuleRuleRel;
+  ParentRule: TJobRule;
 begin
-  //Group := ViewRules.GetSelectedGroup;
-  //DoAddLink(Group);
+  RuleRel := TRuleRuleRel.Create(FDBEngine);
+  RuleRel.ChildRule := TJobRule.Create(FDBEngine);
+  RuleRel.ChildRule.Link := TJobLink.Create(FDBEngine);
+
+  ParentRule := ViewRules.GetSelectedRule;
+  ParentRule.ChildRules.Add(RuleRel);
+
+  ViewRules.AddRuleToTree(ParentRule, RuleRel.ChildRule);
 end;
 
 procedure TController.AddLink;
@@ -377,10 +362,33 @@ begin
   Level.Rules.Add(RuleRel);
 
   ViewRules.AddRuleToTree(nil, RuleRel.Rule);
+end;
 
-  //Group := TJobGroup.Create(FDBEngine);
-  //ViewRules.GetSelectedLevel.Groups.Add(Group);
-  //DoAddLink(Group);
+procedure TController.AddChildRecord;
+var
+  RuleRel: TRuleRuleRel;
+  ParentRule: TJobRule;
+begin
+  RuleRel := TRuleRuleRel.Create(FDBEngine);
+  RuleRel.ChildRule := TJobRule.Create(FDBEngine);
+  RuleRel.ChildRule.Rec := TJobRecord.Create(FDBEngine);
+
+  ParentRule := ViewRules.GetSelectedRule; 
+  ParentRule.ChildRules.Add(RuleRel);
+
+  ViewRules.AddRuleToTree(ParentRule, RuleRel.ChildRule);
+end;
+
+procedure TController.AddRecord;
+var
+  RuleRel: TLevelRuleRel;
+begin
+  RuleRel := TLevelRuleRel.Create(FDBEngine);
+  RuleRel.Rule := TJobRule.Create(FDBEngine);
+  RuleRel.Rule.Rec := TJobRecord.Create(FDBEngine);
+
+  ViewRules.GetSelectedLevel.Rules.Add(RuleRel);
+  ViewRules.AddRuleToTree(nil, RuleRel.Rule);
 end;
 
 procedure TController.GetJobList;

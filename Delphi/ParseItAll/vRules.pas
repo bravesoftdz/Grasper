@@ -13,6 +13,7 @@ uses
   eJob,
   eLevel,
   eRule,
+  eRegExp,
   System.ImageList, System.Actions, Vcl.ActnList, Vcl.Menus;
 
 type
@@ -55,12 +56,15 @@ type
     acAddRecord: TAction;
     btnRemove: TSpeedButton;
     acRemove: TAction;
-    acAddLinkSameGroup: TAction;
+    acAddChildLink: TAction;
     mniAddLinkSameGroup: TMenuItem;
-    acAddRecSameGroup: TAction;
+    acAddChildRecord: TAction;
     mniAddRecSameGroup: TMenuItem;
-    acAddCut: TAction;
+    acAddChildCut: TAction;
     btnAddCut: TSpeedButton;
+    acAddCut: TAction;
+    acAddRegExp: TAction;
+    mniAddRegExp: TMenuItem;
     procedure btnCancelClick(Sender: TObject);
     procedure btnApplyClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -73,37 +77,39 @@ type
     procedure btnAddLevelClick(Sender: TObject);
     procedure cbbLevelChange(Sender: TObject);
     procedure tvTreeDblClick(Sender: TObject);
-    procedure mniAddCutClick(Sender: TObject);
     procedure btnDLvClick(Sender: TObject);
     procedure acAddLinkExecute(Sender: TObject);
     procedure acAddRecordExecute(Sender: TObject);
     procedure acRemoveExecute(Sender: TObject);
-    procedure acAddLinkSameGroupExecute(Sender: TObject);
-    procedure acAddRecSameGroupExecute(Sender: TObject);
+    procedure acAddChildLinkExecute(Sender: TObject);
+    procedure acAddChildRecordExecute(Sender: TObject);
+    procedure acAddChildCutExecute(Sender: TObject);
     procedure acAddCutExecute(Sender: TObject);
+    procedure acAddRegExpExecute(Sender: TObject);
   private
     { Private declarations }
     FDevToolsEnabled: Boolean;
-    function GetUpperNode(aLevelBreak: Integer): TTreeNode;
   protected
     procedure InitView; override;
   public
     { Public declarations }
     pnlEntityFields: TEntityPanel;
 
-    function GetGroupIndex: integer;
-    function GetRuleIndex: Integer;
     function GetLevelIndex: integer;
-
     function GetSelectedLevel: TJobLevel;
     //function GetSelectedGroup: TJobGroup;
+    function GetParentEntity: TEntityAbstract;
+
     function GetSelectedRule: TJobRule;
+    function TreeIndex: Integer;
 
     procedure SetLevels(aLevelList: TLevelList; aIndex: Integer = 0);
     procedure RenderLevelRulesTree(aLevelRules: TLevelRuleRelList);
+    procedure RecourseTreeBranch(aRule: TJobRule);
     procedure AfterLevelSelected;
 
     procedure AddRuleToTree(aParentRule: TJobRule; aRule: TJobRule);
+    procedure AddRegExpToTree(aParentRule: TJobRule; aRegExp: TJobRegExp);
     //procedure AddGroupToTree(aGroup: TJobGroup; aSibling: TTreeNode = nil);
     procedure RemoveTreeNode;
   end;
@@ -118,14 +124,27 @@ implementation
 uses
   System.UITypes;
 
+function TViewRules.TreeIndex: Integer;
+begin
+  Result := tvTree.Selected.Index;
+end;
+
+function TViewRules.GetParentEntity: TEntityAbstract;
+var
+  Node: TTreeNode;
+begin
+  Node := tvTree.Selected.Parent;
+  Result := FBind.GetEntityByControl(Node);
+end;
+
 procedure TViewRules.RemoveTreeNode;
 begin
   tvTree.Selected.Delete;
 end;
 
-procedure TViewRules.acAddLinkSameGroupExecute(Sender: TObject);
+procedure TViewRules.acAddChildLinkExecute(Sender: TObject);
 begin
-  SendMessage('AddLinkSameGroup');
+  SendMessage('AddChildLink');
 end;
 
 procedure TViewRules.acAddRecordExecute(Sender: TObject);
@@ -133,59 +152,52 @@ begin
   SendMessage('AddRecord');
 end;
 
-procedure TViewRules.acAddRecSameGroupExecute(Sender: TObject);
+procedure TViewRules.acAddRegExpExecute(Sender: TObject);
 begin
-  SendMessage('AddRecSameGroup');
+  SendMessage('AddRegExp');
+end;
+
+procedure TViewRules.acAddChildRecordExecute(Sender: TObject);
+begin
+  SendMessage('AddChildRecord');
+end;
+
+procedure TViewRules.acAddCutExecute(Sender: TObject);
+begin
+  SendMessage('AddChildCut');
 end;
 
 procedure TViewRules.acRemoveExecute(Sender: TObject);
 var
-  Node: TObject;
   Entity: TEntityAbstract;
 begin
-  Node := tvTree.Selected;
-  Entity := FBind.GetEntityByControl(Node);
+  Entity := FBind.GetEntityByControl(tvTree.Selected);
 
   if Entity is TJobRule then
     SendMessage('RemoveRule');
 end;
 
-{procedure TViewRules.AddGroupToTree(aGroup: TJobGroup; aSibling: TTreeNode = nil);
+procedure TViewRules.AddRegExpToTree(aParentRule: TJobRule; aRegExp: TJobRegExp);
 var
-  GroupNode: TTreeNode;
-  Rule: TJobRule;
+  RegExpNode, ParentNode: TTreeNode;
 begin
-  if aSibling = nil then
-    GroupNode := tvTree.Items.AddChild(nil, aGroup.Notes)
-  else
-    GroupNode := tvTree.Items.Insert(aSibling, aGroup.Notes);
+  ParentNode := TTreeNode(FBind.GetControlByEntity(aParentRule));
+  RegExpNode := tvTree.Items.AddChild(ParentNode, aRegExp.Notes);
 
-  GroupNode.ImageIndex := 2;
-  GroupNode.SelectedIndex := 2;
+  RegExpNode.ImageIndex := 3;
+  RegExpNode.SelectedIndex := 3;
 
-  FBind.AddBind(GroupNode, aGroup);
-
-  for Rule in aGroup.Rules do
-    AddRuleToTree(aGroup, Rule);
-end; }
+  ParentNode.Expand(True);
+  FBind.AddBind(RegExpNode, aRegExp);
+end;
 
 procedure TViewRules.AddRuleToTree(aParentRule: TJobRule; aRule: TJobRule);
 var
   RuleNode, ParentNode: TTreeNode;
 begin
-  {if aGroup.RulesCount > 1 then
-    begin
-      ParentNode := TTreeNode(FBind.GetControlByEntity(aGroup));
-      if ParentNode = nil then
-        begin
-          AddGroupToTree(aGroup, tvTree.Selected);
-          tvTree.Selected.Delete;
-          ParentNode := TTreeNode(FBind.GetControlByEntity(aGroup));
-          ParentNode.Expand(False);
-          Exit;
-        end;
-    end
-  else  }
+  if aParentRule <> nil then
+    ParentNode := TTreeNode(FBind.GetControlByEntity(aParentRule))
+  else
     ParentNode := nil;
 
   RuleNode := tvTree.Items.AddChild(ParentNode, aRule.Notes);
@@ -202,6 +214,13 @@ begin
       RuleNode.SelectedIndex := 1;
     end;
 
+  if aRule.Cut <> nil then
+    begin
+      RuleNode.ImageIndex := 2;
+      RuleNode.SelectedIndex := 2;
+    end;
+
+  if ParentNode <> nil then ParentNode.Expand(True);
   FBind.AddBind(RuleNode, aRule);
 end;
 
@@ -221,7 +240,7 @@ end;
 
 function TViewRules.GetSelectedRule: TJobRule;
 begin
-  //Result := GetSelectedGroup.Rules[GetRuleIndex];
+  Result := FBind.GetEntityByControl(tvTree.Selected) as TJobRule;
 end;
 
 {function TViewRules.GetSelectedGroup: TJobGroup;
@@ -242,9 +261,9 @@ begin
   Result := cbbLevel.ItemIndex;
 end;
 
-procedure TViewRules.acAddCutExecute(Sender: TObject);
+procedure TViewRules.acAddChildCutExecute(Sender: TObject);
 begin
-  SendMessage('AddCut');
+  SendMessage('AddChildCut');
 end;
 
 procedure TViewRules.acAddLinkExecute(Sender: TObject);
@@ -261,36 +280,32 @@ begin
     tvTree.Selected.Text := (aControl as TEdit).Text;
 end;
 
-function TViewRules.GetUpperNode(aLevelBreak: Integer): TTreeNode;
-var
-  i: Integer;
-begin
-  Result:= tvTree.Selected;
-  for i := tvTree.Selected.Level downto aLevelBreak + 1 do
-    begin
-      Result := Result.Parent;
-    end;
-end;
-
-function TViewRules.GetRuleIndex: Integer;
-begin
-  Result := GetUpperNode(1).Index;
-end;
-
-function TViewRules.GetGroupIndex: integer;
-begin
-  Result := GetUpperNode(0).Index;
-end;
-
 procedure TEntityPanel.InitPanel;
 begin
   OnAfterEditChange := ViewRules.AfterEntityPanelChange;
 end;
 
+procedure TViewRules.RecourseTreeBranch(aRule: TJobRule);
+var
+  ChildRuleRel: TRuleRuleRel;
+  RegExp: TJobRegExp;
+begin
+  for ChildRuleRel in aRule.ChildRules do
+    begin
+      AddRuleToTree(aRule, ChildRuleRel.ChildRule);
+
+      for RegExp in ChildRuleRel.ChildRule.RegExps do
+        AddRegExpToTree(ChildRuleRel.ChildRule, RegExp);
+
+      RecourseTreeBranch(ChildRuleRel.ChildRule);
+    end;
+end;
+
 procedure TViewRules.RenderLevelRulesTree(aLevelRules: TLevelRuleRelList);
 var
   LevelRuleRel: TLevelRuleRel;
-  //GroupNode, RuleNode: TTreeNode;
+  CurrentRule: TJobRule;
+  RegExp: TJobRegExp;
 begin
   tvTree.Items.Clear;
   //tvTree.OnChange := nil;
@@ -298,10 +313,14 @@ begin
 
   for LevelRuleRel in aLevelRules do
     begin
-      AddRuleToTree(nil, LevelRuleRel.Rule);
-    end;
+      CurrentRule := LevelRuleRel.Rule;
+      AddRuleToTree(nil, CurrentRule);
 
-  ViewRules.tvTree.FullExpand;
+      for RegExp in CurrentRule.RegExps do
+        AddRegExpToTree(CurrentRule, RegExp);
+
+      RecourseTreeBranch(CurrentRule);
+    end;
 end;
 
 procedure TViewRules.SetLevels(aLevelList: TLevelList; aIndex: Integer = 0);
@@ -430,11 +449,6 @@ end;
 procedure TViewRules.InitView;
 begin
   ViewRules := Self;
-end;
-
-procedure TViewRules.mniAddCutClick(Sender: TObject);
-begin
-  SendMessage('CreateCut');
 end;
 
 end.
