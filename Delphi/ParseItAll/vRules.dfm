@@ -567,17 +567,19 @@ object ViewRules: TViewRules
     end
     object pnlFields: TPanel
       Left = 1
-      Top = 340
+      Top = 321
       Width = 248
-      Height = 23
+      Height = 42
       Align = alClient
       TabOrder = 2
+      ExplicitTop = 303
+      ExplicitHeight = 60
     end
     object pnlXPath: TPanel
       Left = 1
       Top = 256
       Width = 248
-      Height = 84
+      Height = 65
       Align = alTop
       Caption = 'pnlXPath'
       TabOrder = 3
@@ -588,6 +590,7 @@ object ViewRules: TViewRules
         Width = 75
         Height = 25
         Caption = 'btnSelectHTML'
+        Enabled = False
         TabOrder = 0
         OnClick = btnSelectHTMLClick
       end
@@ -596,6 +599,7 @@ object ViewRules: TViewRules
         Top = 9
         Width = 17
         Height = 46
+        Enabled = False
         TabOrder = 1
       end
       object udChildStep: TUpDown
@@ -603,6 +607,7 @@ object ViewRules: TViewRules
         Top = 24
         Width = 57
         Height = 17
+        Enabled = False
         Orientation = udHorizontal
         TabOrder = 2
       end
@@ -647,7 +652,7 @@ object ViewRules: TViewRules
     Left = 32
     Top = 32
     Bitmap = {
-      494C010104000800180020002000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C0101040008001C0020002000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000800000004000000001002000000000000080
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1786,7 +1791,7 @@ object ViewRules: TViewRules
     Left = 32
     Top = 88
     Bitmap = {
-      494C010104000800140010001000FFFFFFFF2100FFFFFFFFFFFFFFFF424D3600
+      494C010104000800180010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000002000000001002000000000000020
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -2054,6 +2059,7 @@ object ViewRules: TViewRules
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
-      00000000000000000000000000000000}
+      0000000000000000000000000000000000000000000000000000000000000000
+      000000000000}
   end
 end

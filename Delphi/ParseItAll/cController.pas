@@ -16,7 +16,8 @@ uses
   eRuleLink,
   eRuleRecords,
   eRuleCut,
-  eRegExp;
+  eRegExp,
+  eNodes;
 
 type
   TJSExtension = class
@@ -40,8 +41,6 @@ type
             const message: ICefProcessMessage; out Result: Boolean);
     function CanAddLevel(aJobRule: TJobLink): Boolean;
     function GetJob: TJob;
-
-    //procedure DoAddRec(aGroup: TJobGroup);
   protected
     procedure InitDB; override;
     procedure PerfomViewMessage(aMsg: string); override;
@@ -55,9 +54,9 @@ type
     procedure EditJobRules;
     procedure StoreJobRules;
 
-    procedure LevelSelected;
+    procedure OnLevelSelected;
     procedure GroupSelected;
-    procedure RuleSelected;
+    procedure OnRuleSelected;
 
     procedure CreateLevel(frame: ICefFrame);
     procedure DeleteLevel;
@@ -77,7 +76,7 @@ type
     procedure SelectHTMLNode;
     procedure SelectCutNode;
 
-    procedure CreateNodes(aNodesData: string);
+    procedure AddNodes(aNodesData: string);
 
     procedure ShowRuleResult;
 
@@ -149,13 +148,13 @@ begin
   ViewRules.SetLevels(GetJob.Levels);
 end;
 
-procedure TController.LevelSelected;
+procedure TController.OnLevelSelected;
 begin
   FObjData.AddOrSetValue('Level', ViewRules.GetSelectedLevel);
   ViewRules.AfterLevelSelected;
 end;
 
-procedure TController.RuleSelected;
+procedure TController.OnRuleSelected;
 begin
   //FObjData.AddOrSetValue('Rule', ViewRules.GetSelectedRule);
   //FData.AddOrSetValue('JSScript', FJSScript);
@@ -166,8 +165,8 @@ end;
 procedure TController.GroupSelected;
 begin
   //FObjData.AddOrSetValue('Group', ViewRules.GetSelectedGroup);
-  FData.AddOrSetValue('JSScript', FJSScript);
-  CallModel(TModelJS, 'PrepareJSScriptForGroup');
+  //FData.AddOrSetValue('JSScript', FJSScript);
+  //CallModel(TModelJS, 'PrepareJSScriptForGroup');
 end;
 
 procedure TController.SelectCutNode;
@@ -206,7 +205,12 @@ begin
 end;
 
 procedure TController.crmLoadEnd(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame; httpStatusCode: Integer);
+var
+  InjectJS: string;
 begin
+  InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\jquery-3.1.1.js');
+  ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
+
   if FSelectNewLevelLink then
     begin
       CreateLevel(frame);
@@ -248,7 +252,7 @@ begin
   ViewRules.SetLevels(GetJob.Levels, GetJob.Levels.Count - 1);
 end;
 
-procedure TController.CreateNodes(aNodesData: string);
+procedure TController.AddNodes(aNodesData: string);
 var
   jsnNodes: TJSONArray;
   jsnValue: TJSONValue;
@@ -259,7 +263,7 @@ var
   sValue: string;
 begin
   jsnNodes:=TJSONObject.ParseJSONValue(aNodesData) as TJSONArray;
-  //Rule := ViewRules.GetSelectedRule;
+  Rule := ViewRules.GetSelectedRule;
   Rule.Nodes.DeleteAll;
 
   for jsnValue in jsnNodes do
@@ -282,14 +286,14 @@ begin
       Rule.Nodes.Add(Node);
     end;
 
-  RuleSelected;
+  OnRuleSelected;
 end;
 
 procedure TController.crmProcessMessageReceived(Sender: TObject;
         const browser: ICefBrowser; sourceProcess: TCefProcessId;
         const message: ICefProcessMessage; out Result: Boolean);
 begin
-  if message.Name = 'selectdataback' then CreateNodes(message.ArgumentList.GetString(0));
+  if message.Name = 'selectdataback' then AddNodes(message.ArgumentList.GetString(0));
   if message.Name = 'parsedataback' then ParseDataReceived(message.ArgumentList.GetString(0));
 end;
 
@@ -299,7 +303,7 @@ var
 begin
   InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\DOMSelector.js');
   ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
-  RuleSelected;
+  OnRuleSelected;
 end;
 
 procedure TController.RemoveRule;

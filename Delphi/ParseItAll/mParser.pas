@@ -11,7 +11,8 @@ uses
   eEntities,
   eJob,
   eLevel,
-  eRule;
+  eRule,
+  eNodes;
 
 type
   TModelJS = class(TModelDB)

@@ -32,7 +32,8 @@ uses
   eRuleLink in 'eRuleLink.pas',
   eRuleRecords in 'eRuleRecords.pas',
   eRuleCut in 'eRuleCut.pas',
-  eRegExp in 'eRegExp.pas';
+  eRegExp in 'eRegExp.pas',
+  eNodes in 'eNodes.pas';
 
 {$R *.res}
 

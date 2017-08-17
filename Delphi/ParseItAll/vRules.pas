@@ -97,7 +97,6 @@ type
 
     function GetLevelIndex: integer;
     function GetSelectedLevel: TJobLevel;
-    //function GetSelectedGroup: TJobGroup;
     function GetParentEntity: TEntityAbstract;
 
     function GetSelectedRule: TJobRule;
@@ -110,7 +109,6 @@ type
 
     procedure AddRuleToTree(aParentRule: TJobRule; aRule: TJobRule);
     procedure AddRegExpToTree(aParentRule: TJobRule; aRegExp: TJobRegExp);
-    //procedure AddGroupToTree(aGroup: TJobGroup; aSibling: TTreeNode = nil);
     procedure RemoveTreeNode;
   end;
 
@@ -243,17 +241,9 @@ begin
   Result := FBind.GetEntityByControl(tvTree.Selected) as TJobRule;
 end;
 
-{function TViewRules.GetSelectedGroup: TJobGroup;
-begin
-  //Result := GetSelectedLevel.Groups.Items[GetGroupIndex];
-end; }
-
 function TViewRules.GetSelectedLevel: TJobLevel;
 begin
-  if GetLevelIndex >= 0 then
-    Result := (FController.ObjData.Items['Job'] as TJob).Levels[GetLevelIndex]
-  else
-    Result := nil;
+  Result := FBind.GetEntityByControl(cbbLevel, GetLevelIndex) as TJobLevel;
 end;
 
 function TViewRules.GetLevelIndex: integer;
@@ -308,8 +298,6 @@ var
   RegExp: TJobRegExp;
 begin
   tvTree.Items.Clear;
-  //tvTree.OnChange := nil;
-  //tvTree.OnChange := tvTreeChange;
 
   for LevelRuleRel in aLevelRules do
     begin
@@ -326,44 +314,42 @@ end;
 procedure TViewRules.SetLevels(aLevelList: TLevelList; aIndex: Integer = 0);
 var
   Level: TJobLevel;
+  i: Integer;
 begin
   cbbLevel.Items.Clear;
 
   for Level in aLevelList  do
     begin
-      cbbLevel.Items.Add(Level.Level.ToString);
+      i := cbbLevel.Items.Add(Level.Level.ToString);
+      FBind.AddBind(cbbLevel, Level, i);
     end;
 
   cbbLevel.ItemIndex := aIndex;
-  SendMessage('LevelSelected');
+  SendMessage('OnLevelSelected');
 end;
 
 procedure TViewRules.tvTreeChange(Sender: TObject; Node: TTreeNode);
 var
-  Entity: TEntityAbstract;
+  Entity, ParentEntity: TEntityAbstract;
 begin
   pnlXPath.Visible := False;
   btnAddLevel.Enabled := False;
-
-  {case Node.Level of
-    {0:  begin
-          SendMessage('GroupSelected');
-          Entity := GetSelectedGroup;
-        end;
-
-    0:  begin
-          SendMessage('RuleSelected');
-          Entity := GetSelectedRule;
-
-          pnlXPath.Visible := True;
-          btnAddLevel.Enabled := FController.Data.Items['CanAddLevel'];
-        end;
-  end; }
+  btnSelectHTML.Enabled := False;
 
   Entity := FBind.GetEntityByControl(Node);
-
   pnlEntityFields.ClearControls;
   pnlEntityFields.BuildControls(Entity);
+
+  if Entity is TJobRule then
+    begin
+      pnlXPath.Visible := True;
+
+      //btnAddLevel.Enabled := FController.Data.Items['CanAddLevel'];
+
+      btnSelectHTML.Enabled := (Entity as TJobRule).CanAddNodes;
+
+      SendMessage('OnRuleSelected');
+    end;
 end;
 
 procedure TViewRules.tvTreeDblClick(Sender: TObject);
@@ -418,7 +404,7 @@ end;
 
 procedure TViewRules.cbbLevelChange(Sender: TObject);
 begin
-  SendMessage('LevelSelected');
+  SendMessage('OnLevelSelected');
 end;
 
 procedure TViewRules.FormCreate(Sender: TObject);

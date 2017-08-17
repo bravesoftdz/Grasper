@@ -1,6 +1,4 @@
-var script = document.createElement('script');
-script.src = 'jquery-3.1.1.js';
-document.getElementsByTagName('head')[0].appendChild(script);
+console.log('domselector');
 
 function getXPathJSON(element) {
 
@@ -22,11 +20,10 @@ function getXPathJSON(element) {
     return JSON.stringify(xpath);
 }
 
-$(document).find('body').click(function (e) {
+$(document).find('body').one('click', function (e) {
+
     e.preventDefault();
 
     var xpath = getXPathJSON(e.target);
     app.selectdataback(xpath);
-
-    return false;
 });
