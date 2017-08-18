@@ -39,6 +39,7 @@ type
     procedure crmProcessMessageReceived(Sender: TObject;
             const browser: ICefBrowser; sourceProcess: TCefProcessId;
             const message: ICefProcessMessage; out Result: Boolean);
+    procedure SyncParentChildRuleNodes(aNodes, aParentNodes: TNodeList);
     function CanAddLevel(aJobRule: TJobLink): Boolean;
     function GetJob: TJob;
   protected
@@ -54,7 +55,6 @@ type
     procedure EditJobRules;
     procedure StoreJobRules;
 
-    procedure OnLevelSelected;
     procedure GroupSelected;
     procedure OnRuleSelected;
 
@@ -97,6 +97,34 @@ uses
   vRules,
   vRuleResult,
   mParser;
+
+procedure TController.SyncParentChildRuleNodes(aNodes, aParentNodes: TNodeList);
+var
+  i: Integer;
+  Node: TJobNode;
+  LastParentNode: TJobNode;
+  isClearMode: Boolean;
+begin
+  LastParentNode := aParentNodes.Last;
+  isClearMode := False;
+
+  for i := aNodes.Count - 1 downto 0 do
+    begin
+      Node := aNodes[i];
+
+      if not isClearMode then
+        if    (Node.Tag = LastParentNode.Tag)
+          and (Node.Index = LastParentNode.Index)
+          and (Node.TagID = LastParentNode.TagID)
+          and (Node.ClassName = LastParentNode.ClassName)
+          and (Node.Name = LastParentNode.Name)
+        then
+          isClearMode := True;
+
+      if isClearMode then
+        aNodes.DeleteByEntity(Node);
+    end;
+end;
 
 procedure TController.AddRegExp;
 var
@@ -146,12 +174,6 @@ procedure TController.DeleteLevel;
 begin
   GetJob.Levels.DeleteByIndex(ViewRules.GetLevelIndex);
   ViewRules.SetLevels(GetJob.Levels);
-end;
-
-procedure TController.OnLevelSelected;
-begin
-  FObjData.AddOrSetValue('Level', ViewRules.GetSelectedLevel);
-  ViewRules.AfterLevelSelected;
 end;
 
 procedure TController.OnRuleSelected;
@@ -257,9 +279,9 @@ var
   jsnNodes: TJSONArray;
   jsnValue: TJSONValue;
   jsnNode: TJSONObject;
-
   Node: TJobNode;
-  Rule: TJobRule;
+  ParentEntity: TEntityAbstract;
+  Rule, ParentRule: TJobRule;
   sValue: string;
 begin
   jsnNodes:=TJSONObject.ParseJSONValue(aNodesData) as TJSONArray;
@@ -284,6 +306,13 @@ begin
         Node.Name := jsnNode.GetValue('name').Value;
 
       Rule.Nodes.Add(Node);
+    end;
+
+  ParentEntity := ViewRules.GetParentEntity;
+  if ParentEntity is TJobRule then
+    begin
+      ParentRule := ParentEntity as TJobRule;
+      SyncParentChildRuleNodes(Rule.Nodes, ParentRule.Nodes);
     end;
 
   OnRuleSelected;

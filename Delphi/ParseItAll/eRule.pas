@@ -74,7 +74,6 @@ type
   public
     function GetContainerInsideNodes: TNodeList;
     function IndexOfChildRule(aJobRule: TJobRule): Integer;
-    function CanAddNodes: Boolean;
     property LevelID: Integer read GetLevelID write SetLevelID;
     property Notes: string read GetNotes write SetNotes;
     property ContainerOffset: Integer read GetContainerOffset write SetContainerOffset;
@@ -94,40 +93,7 @@ type
 implementation
 
 uses
-  Data.DB,
-  FireDAC.Comp.Client;
-
-function TJobRule.CanAddNodes: Boolean;
-var
-  sql: string;
-  dsQuery: TFDQuery;
-begin
-  sql :=
-    'select ' +
-    'count(rn.Id) as parent_rule_nodes_count, ' +
-    'case when l2r.Id is not null then 1 else 0 end as is_parent_level ' +
-    'from job_rules r ' +
-    'left join job_rule2rule r2r on r2r.child_rule_id = r.Id ' +
-    'left join job_nodes rn on rn.job_rule_id = r2r.parent_rule_id ' +
-    'left join job_level2rule l2r on l2r.rule_id = r.id ' +
-    'where r.id = :id';
-
-  dsQuery := TFDQuery.Create(nil);
-  try
-    dsQuery.SQL.Text := sql;
-    dsQuery.ParamByName('id').AsInteger := ID;
-    FDBEngine.OpenQuery(dsQuery);
-
-    if   (dsQuery.FieldByName('parent_rule_nodes_count').AsInteger > 0)
-      or (dsQuery.FieldByName('is_parent_level').AsInteger = 1)
-    then
-      Result := True
-    else
-      Result := False;
-  finally
-    dsQuery.Free;
-  end;
-end;
+  Data.DB;
 
 function TJobRule.IndexOfChildRule(aJobRule: TJobRule): Integer;
 var

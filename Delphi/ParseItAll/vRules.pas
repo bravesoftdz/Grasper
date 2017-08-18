@@ -89,6 +89,7 @@ type
   private
     { Private declarations }
     FDevToolsEnabled: Boolean;
+    procedure AfterLevelSelected;
   protected
     procedure InitView; override;
   public
@@ -105,7 +106,6 @@ type
     procedure SetLevels(aLevelList: TLevelList; aIndex: Integer = 0);
     procedure RenderLevelRulesTree(aLevelRules: TLevelRuleRelList);
     procedure RecourseTreeBranch(aRule: TJobRule);
-    procedure AfterLevelSelected;
 
     procedure AddRuleToTree(aParentRule: TJobRule; aRule: TJobRule);
     procedure AddRegExpToTree(aParentRule: TJobRule; aRegExp: TJobRegExp);
@@ -325,7 +325,7 @@ begin
     end;
 
   cbbLevel.ItemIndex := aIndex;
-  SendMessage('OnLevelSelected');
+  AfterLevelSelected;
 end;
 
 procedure TViewRules.tvTreeChange(Sender: TObject; Node: TTreeNode);
@@ -346,7 +346,12 @@ begin
 
       //btnAddLevel.Enabled := FController.Data.Items['CanAddLevel'];
 
-      btnSelectHTML.Enabled := (Entity as TJobRule).CanAddNodes;
+      ParentEntity := GetParentEntity;
+      if  (ParentEntity = nil) then
+        btnSelectHTML.Enabled := True
+      else
+        if (ParentEntity as TJobRule).Nodes.Count > 0 then
+          btnSelectHTML.Enabled := True;
 
       SendMessage('OnRuleSelected');
     end;
@@ -404,7 +409,7 @@ end;
 
 procedure TViewRules.cbbLevelChange(Sender: TObject);
 begin
-  SendMessage('OnLevelSelected');
+  AfterLevelSelected;
 end;
 
 procedure TViewRules.FormCreate(Sender: TObject);
