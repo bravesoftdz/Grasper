@@ -48,7 +48,7 @@ type
   public
     property Level: Integer read GetLevel write SetLevel;
     property BaseLink: string read GetBaseLink write SetBaseLink;
-    property Rules: TLevelRuleRelList read GetRuleRels;
+    property RuleRels: TLevelRuleRelList read GetRuleRels;
   end;
 
   TLevelList = TEntityList<TJobLevel>;

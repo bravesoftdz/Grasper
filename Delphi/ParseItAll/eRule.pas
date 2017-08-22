@@ -84,7 +84,7 @@ type
     property Rec: TJobRecord read GetRec write SetRec;
     property Cut: TJobCut read GetCut write SetCut;
     property Nodes: TNodeList read GetNodeList;
-    property ChildRules: TRuleRuleRelList read GetChildRules;
+    property ChildRuleRels: TRuleRuleRelList read GetChildRules;
     property RegExps: TJobRegExpList read GetRegExps;
   end;
 
@@ -103,7 +103,7 @@ begin
   Result := -1;
   i := 0;
 
-  for RuleRuleRel in Self.ChildRules do
+  for RuleRuleRel in Self.ChildRuleRels do
     begin
       if RuleRuleRel.ChildRule = aJobRule then
         Exit(i);

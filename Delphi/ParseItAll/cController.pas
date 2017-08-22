@@ -178,6 +178,11 @@ end;
 
 procedure TController.OnRuleSelected;
 begin
+  FObjData.AddOrSetValue('Level', ViewRules.GetSelectedLevel);
+  FObjData.AddOrSetValue('Rule', ViewRules.GetSelectedRule);
+  FData.AddOrSetValue('JSScript', FJSScript);
+  CallModel(TModelJS, 'PrepareJSScriptForLevel');
+
   //FObjData.AddOrSetValue('Rule', ViewRules.GetSelectedRule);
   //FData.AddOrSetValue('JSScript', FJSScript);
   //FData.AddOrSetValue('CanAddLevel', CanAddLevel(ViewRules.GetSelectedRule.Link));
@@ -344,10 +349,10 @@ begin
     begin
       ParentRule := ViewRules.GetParentEntity as TJobRule;
       Index := ParentRule.IndexOfChildRule(ViewRules.GetSelectedRule);          
-      ParentRule.ChildRules.DeleteByIndex(Index);
+      ParentRule.ChildRuleRels.DeleteByIndex(Index);
     end
   else
-    ViewRules.GetSelectedLevel.Rules.DeleteByIndex(ViewRules.TreeIndex);    
+    ViewRules.GetSelectedLevel.RuleRels.DeleteByIndex(ViewRules.TreeIndex);
   
   ViewRules.RemoveTreeNode;    
 end;
@@ -362,7 +367,7 @@ begin
   RuleRel.ChildRule.Cut := TJobCut.Create(FDBEngine);
 
   ParentRule := ViewRules.GetSelectedRule;
-  ParentRule.ChildRules.Add(RuleRel);
+  ParentRule.ChildRuleRels.Add(RuleRel);
 
   ViewRules.AddRuleToTree(ParentRule, RuleRel.ChildRule);
 end;
@@ -377,7 +382,7 @@ begin
   RuleRel.ChildRule.Link := TJobLink.Create(FDBEngine);
 
   ParentRule := ViewRules.GetSelectedRule;
-  ParentRule.ChildRules.Add(RuleRel);
+  ParentRule.ChildRuleRels.Add(RuleRel);
 
   ViewRules.AddRuleToTree(ParentRule, RuleRel.ChildRule);
 end;
@@ -392,7 +397,7 @@ begin
   RuleRel.Rule.Link := TJobLink.Create(FDBEngine);
 
   Level := ViewRules.GetSelectedLevel;
-  Level.Rules.Add(RuleRel);
+  Level.RuleRels.Add(RuleRel);
 
   ViewRules.AddRuleToTree(nil, RuleRel.Rule);
 end;
@@ -407,7 +412,7 @@ begin
   RuleRel.ChildRule.Rec := TJobRecord.Create(FDBEngine);
 
   ParentRule := ViewRules.GetSelectedRule; 
-  ParentRule.ChildRules.Add(RuleRel);
+  ParentRule.ChildRuleRels.Add(RuleRel);
 
   ViewRules.AddRuleToTree(ParentRule, RuleRel.ChildRule);
 end;
@@ -420,7 +425,7 @@ begin
   RuleRel.Rule := TJobRule.Create(FDBEngine);
   RuleRel.Rule.Rec := TJobRecord.Create(FDBEngine);
 
-  ViewRules.GetSelectedLevel.Rules.Add(RuleRel);
+  ViewRules.GetSelectedLevel.RuleRels.Add(RuleRel);
   ViewRules.AddRuleToTree(nil, RuleRel.Rule);
 end;
 

@@ -101,6 +101,7 @@ type
     function GetParentEntity: TEntityAbstract;
 
     function GetSelectedRule: TJobRule;
+    function GetSelectedRootRule: TJobRule;
     function TreeIndex: Integer;
 
     procedure SetLevels(aLevelList: TLevelList; aIndex: Integer = 0);
@@ -121,6 +122,26 @@ implementation
 
 uses
   System.UITypes;
+
+function TViewRules.GetSelectedRootRule: TJobRule;
+var
+  isRootLevel: Boolean;
+  CurrNode: TTreeNode;
+begin
+  Result := nil;
+  isRootLevel := False;
+  CurrNode := tvTree.Selected;
+
+  repeat
+    if CurrNode.Level = 0 then
+      begin
+        isRootLevel := True;
+        Result := FBind.GetEntityByControl(CurrNode) as TJobRule;
+      end;
+
+    CurrNode := CurrNode.Parent;
+  until isRootLevel;
+end;
 
 function TViewRules.TreeIndex: Integer;
 begin
@@ -230,7 +251,7 @@ begin
   if GetSelectedLevel <> nil then
     begin
       chrmBrowser.Load(GetSelectedLevel.BaseLink);
-      RenderLevelRulesTree(GetSelectedLevel.Rules);
+      RenderLevelRulesTree(GetSelectedLevel.RuleRels);
     end
   else
     tvTree.Items.Clear;
@@ -280,7 +301,7 @@ var
   ChildRuleRel: TRuleRuleRel;
   RegExp: TJobRegExp;
 begin
-  for ChildRuleRel in aRule.ChildRules do
+  for ChildRuleRel in aRule.ChildRuleRels do
     begin
       AddRuleToTree(aRule, ChildRuleRel.ChildRule);
 

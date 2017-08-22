@@ -19,9 +19,9 @@ type
   private
     function ColorToHex(color: TColor): String;
     function EncodeNodesToJSON(aNodeList: TNodeList): TJSONArray;
+    procedure AddRuleToJSON(aRule: TJobRule; ajsnArray: TJSONArray);
   published
-    procedure PrepareJSScriptForGroup;
-    procedure PrepareJSScriptForRule;
+    procedure PrepareJSScriptForLevel;
   end;
 
   TModelParser = class(TModelDB)
@@ -54,6 +54,29 @@ uses
   System.Hash,
   FireDAC.Comp.Client,
   API_Files;
+
+procedure TModelJS.AddRuleToJSON(aRule: TJobRule; ajsnArray: TJSONArray);
+var
+  jsnRule: TJSONObject;
+  jsnRules: TJSONArray;
+  RuleRel: TRuleRuleRel;
+begin
+  jsnRule := TJSONObject.Create;
+  jsnRule.AddPair('id', TJSONNumber.Create(aRule.ID));
+
+  jsnRules := TJSONArray.Create;
+  for RuleRel in aRule.ChildRuleRels do
+    begin
+      AddRuleToJSON(RuleRel.ChildRule, jsnRules);
+    end;
+
+  if jsnRules.Count > 0 then
+    jsnRule.AddPair('Rules', jsnRules)
+  else
+    jsnRules.Free;
+
+  ajsnArray.AddElement(jsnRule);
+end;
 
 procedure TModelParser.WriteToTemp;
   function ByKey(aQuery: TFDQuery; aKey: string): string;
@@ -455,20 +478,46 @@ begin
     end;
 end;
 
-procedure TModelJS.PrepareJSScriptForGroup;
+procedure TModelJS.PrepareJSScriptForLevel;
 var
-  jsnGroup: TJSONObject;
-  jsnRule: TJSONObject;
+  isLastNode: Boolean;
+  Level: TJobLevel;
+  RuleRel: TLevelRuleRel;
+  jsnLevel: TJSONObject;
   jsnRules: TJSONArray;
-  //Group: TJobGroup;
+  JSScript: string;
+
+  {jsnGroup: TJSONObject;
+  jsnRule: TJSONObject;
   Rule: TJobRule;
   ContainerNodeList, ContainerInsideNodes: TNodeList;
-  JSScript: string;
   i: Integer;
-  IsLast: Variant;
+  IsLast: Variant; }
 begin
+  isLastNode := False;
+  Level := FObjData.Items['Level'] as TJobLevel;
+
+  jsnLevel := TJSONObject.Create;
+  jsnRules := TJSONArray.Create;
+  try
+    for RuleRel in Level.RuleRels do
+      begin
+        AddRuleToJSON(RuleRel.Rule, jsnRules);
+      end;
+
+    jsnLevel.AddPair('rules', jsnRules);
+    JSScript := jsnLevel.ToJSON;
+  finally
+    jsnLevel.Free;
+  end;
+
+  {while not isLastNode do
+    begin
+
+    end;}
+
   //Group := FObjData.Items['Group'] as TJobGroup;
-  JSScript := FData.Items['JSScript'];
+  //JSScript := FData.Items['JSScript'];
 
   {ContainerNodeList := Group.GetContainerNodes;
   jsnGroup := TJSONObject.Create;
@@ -523,24 +572,6 @@ begin
   finally
     ContainerNodeList.Free;
     jsnGroup.Free;
-  end; }
-end;
-
-procedure TModelJS.PrepareJSScriptForRule;
-var
-  //Group: TJobGroup;
-  Rule: TJobRule;
-begin
-  {Group := TJobGroup.Create(FDBEngine, 0);
-  try
-    Rule := FObjData.Items['Rule'] as TJobRule;
-    Group.Rules.Add(Rule);
-
-    FObjData.AddOrSetValue('Group', Group);
-    PrepareJSScriptForGroup;
-  finally
-    Group.Rules.Extract(Rule);
-    Group.Free;
   end; }
 end;
 
