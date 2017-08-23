@@ -12,13 +12,15 @@ uses
   eJob,
   eLevel,
   eRule,
-  eNodes;
+  eNodes,
+  eRegExp;
 
 type
   TModelJS = class(TModelDB)
   private
     function ColorToHex(color: TColor): String;
     function EncodeNodesToJSON(aNodeList: TNodeList): TJSONArray;
+    function EncodeRegExpsToJSON(aRegExpList: TJobRegExpList): TJSONArray;
     procedure AddRuleToJSON(aRule: TJobRule; ajsnArray: TJSONArray);
   published
     procedure PrepareJSScriptForLevel;
@@ -64,6 +66,15 @@ begin
   jsnRule := TJSONObject.Create;
   jsnRule.AddPair('id', TJSONNumber.Create(aRule.ID));
 
+  if aRule.Link <> nil then
+    jsnRule.AddPair('rule_type', 'link');
+
+  if aRule.Rec <> nil then
+    jsnRule.AddPair('rule_type', 'record');
+
+  if aRule.Cut <> nil then
+    jsnRule.AddPair('rule_type', 'cut');
+
   jsnRules := TJSONArray.Create;
   for RuleRel in aRule.ChildRuleRels do
     begin
@@ -71,9 +82,13 @@ begin
     end;
 
   if jsnRules.Count > 0 then
-    jsnRule.AddPair('Rules', jsnRules)
+    jsnRule.AddPair('rules', jsnRules)
   else
     jsnRules.Free;
+
+  jsnRule.AddPair('regexps', EncodeRegExpsToJSON(aRule.RegExps));
+
+  jsnRule.AddPair('nodes', EncodeNodesToJSON(aRule.Nodes));
 
   ajsnArray.AddElement(jsnRule);
 end;
@@ -458,6 +473,24 @@ begin
   Result := Format('#%.2x%.2x%.2x', [byte(color), byte(color shr 8), byte(color shr 16)]);
 end;
 
+function TModelJS.EncodeRegExpsToJSON(aRegExpList: TJobRegExpList): TJSONArray;
+var
+  jsnRegExp: TJSONObject;
+  RegExp: TJobRegExp;
+begin
+  Result := TJSONArray.Create;
+
+  for RegExp in aRegExpList do
+    begin
+      jsnRegExp := TJSONObject.Create;
+      jsnRegExp.AddPair('id', TJSONNumber.Create(RegExp.ID));
+      jsnRegExp.AddPair('type', TJSONNumber.Create(RegExp.RegExpTypeID));
+      jsnRegExp.AddPair('regexp', RegExp.RegExp);
+      jsnRegExp.AddPair('replaceValue', RegExp.ReplaceValue);
+      Result.AddElement(jsnRegExp);
+    end;
+end;
+
 function TModelJS.EncodeNodesToJSON(aNodeList: TNodeList): TJSONArray;
 var
   jsnNode: TJSONObject;
@@ -468,7 +501,7 @@ begin
   for Node in aNodeList do
     begin
       jsnNode := TJSONObject.Create;
-      jsnNode.AddPair('ID', TJSONNumber.Create(Node.ID));
+      jsnNode.AddPair('id', TJSONNumber.Create(Node.ID));
       jsnNode.AddPair('tag', Node.Tag);
       jsnNode.AddPair('index', TJSONNumber.Create(Node.Index));
       jsnNode.AddPair('tagID', Node.TagID);
