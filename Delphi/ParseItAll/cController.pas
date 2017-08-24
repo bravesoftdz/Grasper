@@ -490,7 +490,7 @@ var
   JobList: TJobList;
   i: Integer;
 begin
-  if aEventMsg = 'AfterJSScriptPrepared' then
+  if aEventMsg = 'OnJSScriptPrepared' then
     ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(FData.Items['JSScript'], 'about:blank', 0);
 end;
 

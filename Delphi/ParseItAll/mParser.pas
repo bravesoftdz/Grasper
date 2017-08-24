@@ -539,7 +539,11 @@ begin
       end;
 
     jsnLevel.AddPair('rules', jsnRules);
-    JSScript := jsnLevel.ToJSON;
+
+    JSScript := FData.Items['JSScript'];
+    JSScript := Format(JSScript, [jsnLevel.ToJSON]);
+    FData.AddOrSetValue('JSScript', JSScript);
+    CreateEvent('OnJSScriptPrepared');
   finally
     jsnLevel.Free;
   end;
@@ -599,9 +603,6 @@ begin
     if FData.TryGetValue('IsLastGroup', IsLast) then
       jsnGroup.AddPair('islast', TJSONNumber.Create(1));
 
-    JSScript := Format(JSScript, [jsnGroup.ToJSON]);
-    FData.AddOrSetValue('JSScript', JSScript);
-    CreateEvent('AfterJSScriptPrepared');
   finally
     ContainerNodeList.Free;
     jsnGroup.Free;
