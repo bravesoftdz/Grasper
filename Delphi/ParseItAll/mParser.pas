@@ -65,6 +65,7 @@ var
 begin
   jsnRule := TJSONObject.Create;
   jsnRule.AddPair('id', TJSONNumber.Create(aRule.ID));
+  jsnRule.AddPair('container_offset', TJSONNumber.Create(aRule.ContainerOffset));
 
   if aRule.Link <> nil then
     jsnRule.AddPair('rule_type', 'link');
