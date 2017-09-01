@@ -171,7 +171,24 @@ function getInsideContainerNodes(containerNode, ruleNodes) {
     return nodes;
 }
 
-function processRule(rule, containerNode) {
+function processResultNodesByRule(rule, resultNodes) {
+    var objResults = [];
+    
+    resultNodes.forEach(function (node) {
+        var objNodeRes = {}
+        
+        if (rule.type == 'link') {
+            objNodeRes.href = node.href; 
+        }
+        
+        objResults.push(objNodeRes);
+    });
+    
+    return objResults; 
+}
+
+
+function getRuleResult(rule, containerNode) {
 
     var containerSize = rule.nodes.length - rule.container_offset;
     for (var i = 0; i < containerSize; i++) {
@@ -194,6 +211,8 @@ function processRule(rule, containerNode) {
         resultNodes = [containerNode];
     }
     
+    var arrRuleResult = processResultNodesByRule(rule, resultNodes);
+    
     resultNodes.forEach(function (node) {
         // paint selected elements
         $(node).addClass('PIAColor');
@@ -203,18 +222,24 @@ function processRule(rule, containerNode) {
         
         if (rule.rules != null) {
             rule.rules.forEach(function (rule) {
-                processRule(rule, node);
+                getRuleResult(rule, node);
             });
         }    
     });       
+    
+    return arrRuleResult; 
 }
 
 function parseDOMbyLevel(level) {
 
+    var objResult = {result: []};
+    
     level.rules.forEach(function (rule) {
-        processRule(rule, document);
+        var objRuleResult = getRuleResult(rule, document);
+        objResult.result.push(objRuleResult);
     });
 
+    return JSON.stringify(objResult);
 }
 
 // clear previous selection

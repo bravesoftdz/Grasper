@@ -8,12 +8,13 @@ uses
   cefvcl,
   cefLib,
   API_MVC_DB,
-  eEntities,
   eJob,
   eLevel,
   eRule,
   eNodes,
-  eRegExp;
+  eRegExp,
+  eLink,
+  eRecord;
 
 type
   TModelJS = class(TModelDB)
@@ -42,7 +43,7 @@ type
     procedure SetCurrLinkHandle(aValue: Integer);
     procedure WriteToTemp;
     function GetNextlink: TLink;
-    function AddLink(aLink: string; aMasterLinkID, aLevel: Integer; aNum: Integer = 1): Integer;
+    function AddLink(aLink: string; aParentLinkID, aLevel: Integer; aNum: Integer = 1): Integer;
     function AddRecord(aLinkId, aRecordNum: integer; aKey, aValue: string): integer;
   published
     procedure StartJob;
@@ -68,13 +69,13 @@ begin
   jsnRule.AddPair('container_offset', TJSONNumber.Create(aRule.ContainerOffset));
 
   if aRule.Link <> nil then
-    jsnRule.AddPair('rule_type', 'link');
+    jsnRule.AddPair('type', 'link');
 
   if aRule.Rec <> nil then
-    jsnRule.AddPair('rule_type', 'record');
+    jsnRule.AddPair('type', 'record');
 
   if aRule.Cut <> nil then
-    jsnRule.AddPair('rule_type', 'cut');
+    jsnRule.AddPair('type', 'cut');
 
   jsnRules := TJSONArray.Create;
   for RuleRel in aRule.ChildRuleRels do
@@ -280,7 +281,7 @@ begin
   FCurrLink.SaveEntity;
 end;
 
-function TModelParser.AddLink(aLink: string; aMasterLinkID, aLevel: Integer; aNum: Integer = 1): Integer;
+function TModelParser.AddLink(aLink: string; aParentLinkID, aLevel: Integer; aNum: Integer = 1): Integer;
 var
   Link: TLink;
 begin
@@ -292,10 +293,10 @@ begin
     Link.Link := aLink;
     Link.LinkHash := THashMD5.GetHashString(aLink);
 
-    if aMasterLinkID > 0 then
+    if aParentLinkID > 0 then
       begin
-        if Link.MasterRel = nil then Link.MasterRel := TLinkRel.Create(FDBEngine);
-        Link.MasterRel.MasterLinkID := aMasterLinkID;
+        if Link.ParentRel = nil then Link.ParentRel := TLinkRel.Create(FDBEngine);
+        Link.ParentRel.ParentLinkID := aParentLinkID;
       end;
 
     try
@@ -372,21 +373,32 @@ end;
 
 procedure TModelParser.ProcessJSOnFrame(aFrame: ICefFrame);
 var
-  Level: TJobLevel;
-  //Group: TJobGroup;
   ModelJS: TModelJS;
   ObjData: TObjectDictionary<string, TObject>;
   Data: TDictionary<string, variant>;
   JSScript: string;
-  i: Integer;
+  Level: TJobLevel;
 begin
   ObjData := TObjectDictionary<string, TObject>.Create;
   Data := TDictionary<string, variant>.Create;
   try
     ObjData.AddOrSetValue('DBEngine', FDBEngine);
-    Level := FJob.GetLevel(FCurrLink.Level);
 
-    i := 0;
+    for Level in FJob.Levels do
+      begin
+        Data.AddOrSetValue('JSScript', FData.Items['JSScript']);
+        ObjData.AddOrSetValue('Level', Level);
+
+        ModelJS := TModelJS.Create(Data, ObjData);
+        try
+          ModelJS.PrepareJSScriptForLevel;
+          JSScript := Data.Items['JSScript'];
+          aFrame.ExecuteJavaScript(JSScript, 'about:blank', 0);
+        finally
+          ModelJS.Free;
+        end;
+      end;
+
     {for Group in Level.Groups do
       begin
         Inc(i);
@@ -453,7 +465,7 @@ end;
 procedure TModelParser.ProcessNextLink;
 begin
   if Assigned(FCurrLink) then SetCurrLinkHandle(2);
-  WriteToTemp;
+  //WriteToTemp;
   FCurrLink := GetNextlink;
   SetCurrLinkHandle(1);
   FChromium.Load(FCurrLink.Link);

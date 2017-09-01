@@ -9,8 +9,7 @@ uses
   eRuleRecords,
   eRuleCut,
   eRegExp,
-  eNodes,
-  eEntities;
+  eNodes;
 
 type
   TJobRule = class;

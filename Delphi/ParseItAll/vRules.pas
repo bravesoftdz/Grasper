@@ -9,7 +9,6 @@ uses
   API_MVC,
   API_ORM,
   API_ORM_Cntrls,
-  eEntities,
   eJob,
   eLevel,
   eRule,
@@ -86,6 +85,7 @@ type
     procedure acAddChildCutExecute(Sender: TObject);
     procedure acAddCutExecute(Sender: TObject);
     procedure acAddRegExpExecute(Sender: TObject);
+    procedure udContainerStepClick(Sender: TObject; Button: TUDBtnType);
   private
     { Private declarations }
     FDevToolsEnabled: Boolean;
@@ -380,11 +380,10 @@ end;
 
 procedure TViewRules.tvTreeDblClick(Sender: TObject);
 begin
-  if tvTree.Selected.Level = 1 then
-    SendMessage('ShowRuleResult');
+  SendMessage('ShowRuleResult');
 end;
 
-{procedure TViewRules.udContainerStepClick(Sender: TObject; Button: TUDBtnType);
+procedure TViewRules.udContainerStepClick(Sender: TObject; Button: TUDBtnType);
 begin
   if Button = btNext then
     GetSelectedRule.ContainerOffset := GetSelectedRule.ContainerOffset + 1
@@ -395,8 +394,8 @@ begin
   pnlEntityFields.ClearControls;
   pnlEntityFields.BuildControls(GetSelectedRule);
 
-  SendMessage('RuleSelected');
-end; }
+  SendMessage('OnRuleSelected');
+end;
 
 procedure TViewRules.btnAddLevelClick(Sender: TObject);
 begin

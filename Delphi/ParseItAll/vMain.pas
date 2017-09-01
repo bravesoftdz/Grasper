@@ -7,7 +7,6 @@ uses
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ComCtrls, Vcl.ExtCtrls, Vcl.Grids, Vcl.StdCtrls,
   Vcl.Buttons,
   API_MVC,
-  eEntities,
   eJob,
   cefvcl, Vcl.Menus, System.ImageList, Vcl.ImgList, Vcl.XPMan,
   ZColorStringGrid, System.Actions, Vcl.ActnList;
@@ -31,11 +30,13 @@ type
     strgrdJobs: TZColorStringGrid;
     actlstMain: TActionList;
     acCreateJob: TAction;
+    btnClear: TButton;
     procedure FormShow(Sender: TObject);
     procedure btnEditJobClick(Sender: TObject);
     procedure btnEditRulesClick(Sender: TObject);
     procedure btnGoClick(Sender: TObject);
     procedure acCreateJobExecute(Sender: TObject);
+    procedure btnClearClick(Sender: TObject);
   private
     { Private declarations }
     function GetSelectedJobID: integer;
@@ -93,6 +94,11 @@ end;
 procedure TViewMain.acCreateJobExecute(Sender: TObject);
 begin
   SendMessage('CreateJob');
+end;
+
+procedure TViewMain.btnClearClick(Sender: TObject);
+begin
+  SendMessage('ClearJobLinks');
 end;
 
 procedure TViewMain.btnEditJobClick(Sender: TObject);

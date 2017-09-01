@@ -147,13 +147,22 @@ object ViewMain: TViewMain
       OnClick = btnEditRulesClick
     end
     object btnGo: TBitBtn
-      Left = 456
-      Top = 8
+      Left = 152
+      Top = 3
       Width = 75
       Height = 25
       Caption = 'btnGo'
       TabOrder = 2
       OnClick = btnGoClick
+    end
+    object btnClear: TButton
+      Left = 248
+      Top = 3
+      Width = 75
+      Height = 25
+      Caption = 'btnClear'
+      TabOrder = 3
+      OnClick = btnClearClick
     end
   end
   object chrmBrowser: TChromium
@@ -187,7 +196,7 @@ object ViewMain: TViewMain
     Left = 400
     Top = 97
     Bitmap = {
-      494C0101010008001C0010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C010101000800240010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       000000000000000000000000000000000000323232FF000000FF000000FF0000
       00FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF0202

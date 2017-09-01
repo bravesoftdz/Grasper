@@ -9,7 +9,6 @@ uses
   vMain in 'vMain.pas' {ViewMain},
   cController in 'cController.pas',
   vLogin in 'vLogin.pas' {ViewLogin},
-  eEntities in 'eEntities.pas',
   vJob in 'vJob.pas' {ViewJob},
   ceflib,
   vRules in 'vRules.pas' {ViewRules},
@@ -33,7 +32,9 @@ uses
   eRuleRecords in 'eRuleRecords.pas',
   eRuleCut in 'eRuleCut.pas',
   eRegExp in 'eRegExp.pas',
-  eNodes in 'eNodes.pas';
+  eNodes in 'eNodes.pas',
+  eLink in 'eLink.pas',
+  eRecord in 'eRecord.pas';
 
 {$R *.res}
 

@@ -9,7 +9,6 @@ uses
   API_DB_SQLite,
   cefvcl,
   cefLib,
-  eEntities,
   eJob,
   eLevel,
   eRule,
@@ -81,6 +80,8 @@ type
     procedure ShowRuleResult;
 
     procedure ParseDataReceived(aData: string);
+
+    procedure ClearJobLinks;
   end;
 
 implementation
@@ -96,7 +97,23 @@ uses
   vJob,
   vRules,
   vRuleResult,
-  mParser;
+  mParser,
+
+  FireDAC.Comp.Client;
+
+procedure TController.ClearJobLinks;
+var
+  dsQuery: TFDQuery;
+begin
+  dsQuery := TFDQuery.Create(nil);
+  try
+    dsQuery.SQL.Text := 'delete from links where job_id = :jobid';
+    dsQuery.ParamByName('jobid').AsInteger := ViewMain.SelectedJobID;
+    FDBEngine.ExecQuery(dsQuery);
+  finally
+    dsQuery.Free;
+  end;
+end;
 
 procedure TController.SyncParentChildRuleNodes(aNodes, aParentNodes: TNodeList);
 var
@@ -210,6 +227,7 @@ var
   jsnGroupArray: TJSONArray;
   jsnRuleObj: TJSONObject;
   jsnGroupValue, jsnRuleValue: TJSONValue;
+  value: string;
 begin
   CallView(TViewRuleResult);
 
@@ -221,7 +239,11 @@ begin
       for jsnRuleValue in jsnGroupArray do
         begin
           jsnRuleObj := jsnRuleValue as TJSONObject;
-          ViewRuleResult.redtResults.Lines.Add(jsnRuleObj.GetValue('value').Value);
+
+          if jsnRuleObj.TryGetValue('href', value) then
+            value := jsnRuleObj.GetValue('href').Value;
+
+          ViewRuleResult.redtResults.Lines.Add(value);
         end;
     end;
 end;
