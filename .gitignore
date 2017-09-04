@@ -2,3 +2,7 @@
 /Delphi/ParseItAll/Win32/Debug
 /Delphi/ParseItAll/__history
 /Delphi/ParseItAll/JS/nbproject/private/
+*.stat
+/Delphi/ParseItAll/*.identcache
+/Delphi/ParseItAll/*.local
+/Delphi/ParseItAll/*.stat
