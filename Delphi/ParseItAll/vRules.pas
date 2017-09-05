@@ -111,6 +111,7 @@ type
     procedure AddRuleToTree(aParentRule: TJobRule; aRule: TJobRule);
     procedure AddRegExpToTree(aParentRule: TJobRule; aRegExp: TJobRegExp);
     procedure RemoveTreeNode;
+    procedure ClearRuleTree;
   end;
 
 var
@@ -122,6 +123,16 @@ implementation
 
 uses
   System.UITypes;
+
+procedure TViewRules.ClearRuleTree;
+var
+  Node: TTreeNode;
+begin
+  for Node in tvTree.Items do
+    FBind.RemoveBind(Node);
+
+  tvTree.Items.Clear;
+end;
 
 function TViewRules.GetSelectedRootRule: TJobRule;
 var
@@ -254,7 +265,7 @@ begin
       RenderLevelRulesTree(GetSelectedLevel.RuleRels);
     end
   else
-    tvTree.Items.Clear;
+    ClearRuleTree;
 end;
 
 function TViewRules.GetSelectedRule: TJobRule;
@@ -318,7 +329,7 @@ var
   CurrentRule: TJobRule;
   RegExp: TJobRegExp;
 begin
-  tvTree.Items.Clear;
+  ClearRuleTree;
 
   for LevelRuleRel in aLevelRules do
     begin

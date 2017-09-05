@@ -171,17 +171,74 @@ function getInsideContainerNodes(containerNode, ruleNodes) {
     return nodes;
 }
 
+function getContentByRegExps(content, regexps) {
+
+    var results = []; 
+    var hasRegEx = {
+        match: false,
+        replace: false,
+        ignore: false,
+    };
+    
+    // type 1 - matches
+    regexps.forEach(function (regex) {
+    
+        if (regex.type == 1) {
+            hasRegEx.match = true;
+            var reg = new RegExp(regex.regexp, 'g');
+            var matches = content.match(reg); 
+            matches.forEach(function (match) {
+                results.push(match);
+            });
+        }
+        
+    });
+    if (!hasRegEx.match) results = [content];  
+    
+    // type 2 - replaces
+    regexps.forEach(function (regex) {
+    
+        if (regex.type == 2) {
+            hasRegEx.replace = true;
+            var replacedResults = results.map(function (result) {
+                return result.replace(regex.regexp, regex.replace);
+            });
+            results = replacedResults; 
+        }
+        
+    });
+    
+    return results; 
+    
+}
+
 function processResultNodesByRule(rule, resultNodes) {
     var objResults = [];
     
     resultNodes.forEach(function (node) {
-        var objNodeRes = {}
+      
+        //process regexps
+        var content = getContentByRegExps(node.innerText, rule.regexps);
         
-        if (rule.type == 'link') {
-            objNodeRes.href = node.href; 
-        }
-        
-        objResults.push(objNodeRes);
+        content.forEach(function (matchText) { 
+            
+            var objNodeRes = {}
+            
+            if (rule.type == 'link') {
+                objNodeRes.type = 'link';
+                objNodeRes.href = node.href; 
+                objNodeRes.level = rule.level;
+            }
+            
+            if (rule.type == 'record') {
+                objNodeRes.type = 'record';
+                objNodeRes.key = rule.key;
+                objNodeRes.value = matchText; 
+            }
+
+            objResults.push(objNodeRes);
+        });
+
     });
     
     return objResults; 
@@ -216,7 +273,7 @@ function getRuleResult(rule, containerNode) {
     resultNodes.forEach(function (node) {
         // paint selected elements
         $(node).addClass('PIAColor');
-        $(node).css('background-color', 'red');
+        $(node).css('background-color', rule.color);
         $('.PIAColor').children().css('background-color', 'inherit');    
         
         

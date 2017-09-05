@@ -243,6 +243,9 @@ begin
           if jsnRuleObj.TryGetValue('href', value) then
             value := jsnRuleObj.GetValue('href').Value;
 
+          if jsnRuleObj.TryGetValue('value', value) then
+            value := jsnRuleObj.GetValue('value').Value;
+
           ViewRuleResult.redtResults.Lines.Add(value);
         end;
     end;

@@ -67,12 +67,19 @@ begin
   jsnRule := TJSONObject.Create;
   jsnRule.AddPair('id', TJSONNumber.Create(aRule.ID));
   jsnRule.AddPair('container_offset', TJSONNumber.Create(aRule.ContainerOffset));
+  jsnRule.AddPair('color', ColorToHex(aRule.VisualColor));
 
   if aRule.Link <> nil then
-    jsnRule.AddPair('type', 'link');
+    begin
+      jsnRule.AddPair('type', 'link');
+      jsnRule.AddPair('level', TJSONNumber.Create(aRule.Link.Level));
+    end;
 
   if aRule.Rec <> nil then
-    jsnRule.AddPair('type', 'record');
+    begin
+      jsnRule.AddPair('type', 'record');
+      jsnRule.AddPair('key', aRule.Rec.Key);
+    end;
 
   if aRule.Cut <> nil then
     jsnRule.AddPair('type', 'cut');
@@ -315,10 +322,10 @@ procedure TModelParser.ProcessDataReceived(aData: string);
 var
   jsnData: TJSONObject;
   jsnResult: TJSONArray;
-  jsnGroup: TJSONValue;
-  jsnGroupList: TJSONArray;
   jsnRule: TJSONValue;
-  jsnRuleObj: TJSONObject;
+  jsnRulePair: TJSONValue;
+  jsnRulePairObj: TJSONObject;
+  jsnRulePairList: TJSONArray;
   Link: string;
   Level: Integer;
   Key, Value: string;
@@ -328,40 +335,35 @@ begin
   jsnData:=TJSONObject.ParseJSONValue(aData) as TJSONObject;
   jsnResult:=jsnData.GetValue('result') as TJSONArray;
 
-  i := 0;
-  for jsnGroup in jsnResult do
+  for jsnRule in jsnResult do
     begin
-      inc(i);
-      jsnGroupList := jsnGroup as TJSONArray;
+      i := 0;
+      jsnRulePairList := jsnRule as TJSONArray;
 
-      for jsnRule in jsnGroupList do
+      for jsnRulePair in jsnRulePairList do
         begin
-          jsnRuleObj := jsnRule as TJSONObject;
+          inc(i);
+          jsnRulePairObj := jsnRulePair as TJSONObject;
 
-          if jsnRuleObj.GetValue('href') <> nil then
+          if jsnRulePairObj.GetValue('type').Value = 'link' then
             begin
-              Link := jsnRuleObj.GetValue('href').Value;
-              Level := (jsnRuleObj.GetValue('level') as TJSONNumber).AsInt;
+              Link := jsnRulePairObj.GetValue('href').Value;
+              Level := (jsnRulePairObj.GetValue('level') as TJSONNumber).AsInt;
 
               AddLink(Link, FCurrLink.ID, Level, i);
             end;
 
-          if jsnRuleObj.GetValue('key') <> nil then
+          if jsnRulePairObj.GetValue('type').Value = 'record' then
             begin
-              Key := jsnRuleObj.GetValue('key').Value;
-              Value := jsnRuleObj.GetValue('value').Value;
+              Key := jsnRulePairObj.GetValue('key').Value;
+              Value := jsnRulePairObj.GetValue('value').Value;
 
               AddRecord(FCurrLink.ID, i, Key, Value);
             end;
         end;
     end;
 
-  if jsnData.GetValue('islast') <> nil then
-    isLast:=True
-  else
-    isLast:=False;
-
-  if isLast then ProcessNextLink;
+  ProcessNextLink;
 end;
 
 procedure TModelParser.crmProcessMessageReceived(Sender: TObject;
@@ -398,24 +400,6 @@ begin
           ModelJS.Free;
         end;
       end;
-
-    {for Group in Level.Groups do
-      begin
-        Inc(i);
-        if i = Level.Groups.Count then
-          Data.AddOrSetValue('IsLastGroup', True);
-        Data.AddOrSetValue('JSScript', FData.Items['JSScript']);
-        ObjData.AddOrSetValue('Group', Group);
-
-        ModelJS := TModelJS.Create(Data, ObjData);
-        try
-          ModelJS.PrepareJSScriptForGroup;
-          JSScript := Data.Items['JSScript'];
-          aFrame.ExecuteJavaScript(JSScript, 'about:blank', 0);
-        finally
-          ModelJS.Free;
-        end;
-      end; }
   finally
     ObjData.Free;
     Data.Free;
@@ -464,7 +448,12 @@ end;
 
 procedure TModelParser.ProcessNextLink;
 begin
-  if Assigned(FCurrLink) then SetCurrLinkHandle(2);
+  if Assigned(FCurrLink) then
+    begin
+      FCurrLink.HandleTime := Now;
+      SetCurrLinkHandle(2);
+    end;
+
   //WriteToTemp;
   FCurrLink := GetNextlink;
   SetCurrLinkHandle(1);
@@ -499,7 +488,7 @@ begin
       jsnRegExp.AddPair('id', TJSONNumber.Create(RegExp.ID));
       jsnRegExp.AddPair('type', TJSONNumber.Create(RegExp.RegExpTypeID));
       jsnRegExp.AddPair('regexp', RegExp.RegExp);
-      jsnRegExp.AddPair('replaceValue', RegExp.ReplaceValue);
+      jsnRegExp.AddPair('replace', RegExp.ReplaceValue);
       Result.AddElement(jsnRegExp);
     end;
 end;
@@ -526,7 +515,6 @@ end;
 
 procedure TModelJS.PrepareJSScriptForLevel;
 var
-  isLastNode: Boolean;
   Level: TJobLevel;
   RuleRel: TLevelRuleRel;
   jsnLevel: TJSONObject;
@@ -540,7 +528,6 @@ var
   i: Integer;
   IsLast: Variant; }
 begin
-  isLastNode := False;
   Level := FObjData.Items['Level'] as TJobLevel;
 
   jsnLevel := TJSONObject.Create;

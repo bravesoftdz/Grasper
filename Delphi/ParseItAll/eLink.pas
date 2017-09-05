@@ -41,6 +41,8 @@ type
     procedure SetParentRel(aValue: TLinkRel);
     function GetHandled: Integer;
     procedure SetHandled(aValue: Integer);
+    function GetHandleTime: TDateTime;
+    procedure SetHandleTime(aValue: TDateTime);
   ////////////////////
   public
     property JobID: Integer read GetJobID write SetJobID;
@@ -50,12 +52,23 @@ type
     property LinkHash: string read GetLinkHash write SetLinkHash;
     property ParentRel: TLinkRel read GetParentRel write SetParentRel;
     property Handled: Integer read GetHandled write SetHandled;
+    property HandleTime: TDateTime read GetHandleTime write SetHandleTime;
   end;
 
 implementation
 
 uses
   Data.DB;
+
+function TLink.GetHandleTime: TDateTime;
+begin
+  Result := FData.Items['HANDLE_TIME'];
+end;
+
+procedure TLink.SetHandleTime(aValue: TDateTime);
+begin
+  FData.AddOrSetValue('HANDLE_TIME', aValue);
+end;
 
 function TLink.GetLinkHash: string;
 begin
@@ -155,8 +168,9 @@ begin
   AddField(Result.FieldList, 'LINK', ftString);
   AddField(Result.FieldList, 'LINK_HASH', ftString);
   AddField(Result.FieldList, 'HANDLED', ftInteger);
+  AddField(Result.FieldList, 'HANDLE_TIME', ftDateTime);
 
-  AddRelation(Result.RelatedList, 'PARENT_LINK_ID', '', TLinkRel);
+  AddRelation(Result.RelatedList, 'CHILD_LINK_ID', '', TLinkRel);
 end;
 
 end.
