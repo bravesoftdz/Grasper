@@ -34,7 +34,9 @@ uses
   eRegExp in 'eRegExp.pas',
   eNodes in 'eNodes.pas',
   eLink in 'eLink.pas',
-  eRecord in 'eRecord.pas';
+  eRecord in 'eRecord.pas',
+  mTester in 'mTester.pas',
+  eTestLink in 'eTestLink.pas';
 
 {$R *.res}
 

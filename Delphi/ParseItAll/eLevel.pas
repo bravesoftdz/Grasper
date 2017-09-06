@@ -4,7 +4,8 @@ interface
 
 uses
   API_ORM,
-  eRule;
+  eRule,
+  eTestLink;
 
 type
   TLevelRuleRel = class(TEntityAbstract)
@@ -38,7 +39,9 @@ type
   ////////////////////
   private
     FRuleRels: TLevelRuleRelList;
+    FTestLinks: TTestLinkList;
   // Getters Setters
+    function GetTestLinks: TTestLinkList;
     function GetRuleRels: TLevelRuleRelList;
     function GetLevel: integer;
     procedure SetLevel(aValue: integer);
@@ -46,9 +49,11 @@ type
     procedure SetBaseLink(aValue: string);
   //////////////////
   public
+    function GetTestLink(aLevel: Integer): TTestLink;
     property Level: Integer read GetLevel write SetLevel;
     property BaseLink: string read GetBaseLink write SetBaseLink;
     property RuleRels: TLevelRuleRelList read GetRuleRels;
+    property TestLinks: TTestLinkList read GetTestLinks;
   end;
 
   TLevelList = TEntityList<TJobLevel>;
@@ -57,6 +62,24 @@ implementation
 
 uses
   Data.DB;
+
+function TJobLevel.GetTestLink(aLevel: Integer): TTestLink;
+var
+  TestLink: TTestLink;
+begin
+  Result := nil;
+
+  for TestLink in TestLinks do
+    if TestLink.Level = aLevel then Exit(TestLink);
+end;
+
+function TJobLevel.GetTestLinks: TTestLinkList;
+begin
+  if not Assigned(FTestLinks) then
+    FTestLinks := TTestLinkList.Create(Self, 'LEVEL_ID', ID);
+
+  Result := FTestLinks;
+end;
 
 function TLevelRuleRel.GetRule: TJobRule;
 begin
@@ -100,6 +123,7 @@ end;
 procedure TJobLevel.SaveLists;
 begin
   if Assigned(FRuleRels) then FRuleRels.SaveList(ID);
+  if Assigned(FTestLinks) then FTestLinks.SaveList(ID);
 end;
 
 function TJobLevel.GetRuleRels: TLevelRuleRelList;

@@ -64,6 +64,7 @@ type
     acAddCut: TAction;
     acAddRegExp: TAction;
     mniAddRegExp: TMenuItem;
+    btnGetTestPage: TBitBtn;
     procedure btnCancelClick(Sender: TObject);
     procedure btnApplyClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -86,6 +87,7 @@ type
     procedure acAddCutExecute(Sender: TObject);
     procedure acAddRegExpExecute(Sender: TObject);
     procedure udContainerStepClick(Sender: TObject; Button: TUDBtnType);
+    procedure btnGetTestPageClick(Sender: TObject);
   private
     { Private declarations }
     FDevToolsEnabled: Boolean;
@@ -430,6 +432,11 @@ end;
 procedure TViewRules.btnDLvClick(Sender: TObject);
 begin
   SendMessage('DeleteLevel');
+end;
+
+procedure TViewRules.btnGetTestPageClick(Sender: TObject);
+begin
+  SendMessage('GetNextTestPage');
 end;
 
 procedure TViewRules.btnSelectHTMLClick(Sender: TObject);

@@ -34,11 +34,13 @@ type
     FJSScript: string;
     FLastParseResult: TJSONObject;
     FSelectNewLevelLink: Boolean;
+    FGettingTestPage: Boolean;
     procedure crmLoadEnd(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame; httpStatusCode: Integer);
     procedure crmProcessMessageReceived(Sender: TObject;
             const browser: ICefBrowser; sourceProcess: TCefProcessId;
             const message: ICefProcessMessage; out Result: Boolean);
     procedure SyncParentChildRuleNodes(aNodes, aParentNodes: TNodeList);
+    procedure DoCallTestLinkModel(aStep, aLevel: Integer);
     function CanAddLevel(aJobRule: TJobLink): Boolean;
     function GetJob: TJob;
   protected
@@ -55,6 +57,7 @@ type
     procedure StoreJobRules;
 
     procedure OnRuleSelected;
+    procedure OnTestPageLoaded;
 
     procedure CreateLevel(frame: ICefFrame);
     procedure DeleteLevel;
@@ -80,6 +83,8 @@ type
     procedure ParseDataReceived(aData: string);
 
     procedure ClearJobLinks;
+
+    procedure GetNextTestPage;
   end;
 
 implementation
@@ -96,8 +101,30 @@ uses
   vRules,
   vRuleResult,
   mParser,
+  mTester,
 
   FireDAC.Comp.Client;
+
+procedure TController.DoCallTestLinkModel(aStep, aLevel: Integer);
+begin
+  FData.AddOrSetValue('TestStep', aStep);
+  FData.AddOrSetValue('Level', aLevel);
+
+  CallModel(TModelTester, 'GetTestPageURL');
+end;
+
+procedure TController.OnTestPageLoaded;
+begin
+  FObjData.AddOrSetValue('Level', FObjData.Items['TestLevel']);
+  FData.AddOrSetValue('JSScript', FJSScript);
+  CallModel(TModelJS, 'PrepareJSScriptForLevel');
+end;
+
+procedure TController.GetNextTestPage;
+begin
+  FGettingTestPage := True;
+  DoCallTestLinkModel(5, ViewRules.GetSelectedLevel.Level);
+end;
 
 procedure TController.ClearJobLinks;
 var
@@ -160,19 +187,6 @@ begin
   ViewJob.Close;
   GetJobList;
 end;
-
-  {if aMsg = 'EditJob' then
-    begin
-      FData.AddOrSetValue('JobID', ViewMain.SelectedJobID);
-      CallModel(TModelJobs, 'GetJob');
-    end; }
-  {if aMsg = 'StoreJob' then
-    begin
-      ViewJob.Close;
-      ViewJob.CRUDPanel.UpdateEntity;
-      ViewJob.CRUDPanel.Entity.SaveEntity;
-      CallModel(TModelJobs, 'GetJobList');
-    end;}
 
 procedure TController.CreateJob;
 var
@@ -237,6 +251,14 @@ end;
 procedure TController.ParseDataReceived(aData: string);
 begin
   FLastParseResult := TJSONObject.ParseJSONValue(aData) as TJSONObject;
+
+  if FGettingTestPage then
+    begin
+      //FGettingTestPage := False;
+      FData.AddOrSetValue('DataReceived', aData);
+      //DoCallTestLinkModel(FData.Items['TestStep'], FData.Items['TestLevel']);
+      CallModel(TModelTester, 'AssignDataToTestLink');
+    end;
 end;
 
 procedure TController.crmLoadEnd(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame; httpStatusCode: Integer);
@@ -251,6 +273,8 @@ begin
       CreateLevel(frame);
       FSelectNewLevelLink := False;
     end;
+
+  if FGettingTestPage then OnTestPageLoaded;
 end;
 
 function TController.GetJob: TJob;
@@ -487,11 +511,10 @@ begin
 end;
 
 procedure TController.EventListener(aEventMsg: string);
-var
-  Job: TJob;
-  JobList: TJobList;
-  i: Integer;
 begin
+  if aEventMsg = 'OnTestLinkPrepared' then
+    ViewRules.chrmBrowser.Load(FData.Items['URL']);
+
   if aEventMsg = 'OnJSScriptPrepared' then
     ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(FData.Items['JSScript'], 'about:blank', 0);
 end;
