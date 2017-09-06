@@ -386,20 +386,20 @@ begin
   try
     ObjData.AddOrSetValue('DBEngine', FDBEngine);
 
-    for Level in FJob.Levels do
-      begin
-        Data.AddOrSetValue('JSScript', FData.Items['JSScript']);
-        ObjData.AddOrSetValue('Level', Level);
+    Level := FJob.GetLevel(FCurrLink.Level);
+    if Level.RuleRels.Count = 0 then Exit;
 
-        ModelJS := TModelJS.Create(Data, ObjData);
-        try
-          ModelJS.PrepareJSScriptForLevel;
-          JSScript := Data.Items['JSScript'];
-          aFrame.ExecuteJavaScript(JSScript, 'about:blank', 0);
-        finally
-          ModelJS.Free;
-        end;
-      end;
+    Data.AddOrSetValue('JSScript', FData.Items['JSScript']);
+    ObjData.AddOrSetValue('Level', Level);
+
+    ModelJS := TModelJS.Create(Data, ObjData);
+    try
+      ModelJS.PrepareJSScriptForLevel;
+      JSScript := Data.Items['JSScript'];
+      aFrame.ExecuteJavaScript(JSScript, 'about:blank', 0);
+    finally
+      ModelJS.Free;
+    end;
   finally
     ObjData.Free;
     Data.Free;
@@ -452,6 +452,7 @@ begin
     begin
       FCurrLink.HandleTime := Now;
       SetCurrLinkHandle(2);
+      FreeAndNil(FCurrLink);
     end;
 
   //WriteToTemp;
@@ -520,13 +521,6 @@ var
   jsnLevel: TJSONObject;
   jsnRules: TJSONArray;
   JSScript: string;
-
-  {jsnGroup: TJSONObject;
-  jsnRule: TJSONObject;
-  Rule: TJobRule;
-  ContainerNodeList, ContainerInsideNodes: TNodeList;
-  i: Integer;
-  IsLast: Variant; }
 begin
   Level := FObjData.Items['Level'] as TJobLevel;
 
@@ -547,66 +541,6 @@ begin
   finally
     jsnLevel.Free;
   end;
-
-  {while not isLastNode do
-    begin
-
-    end;}
-
-  //Group := FObjData.Items['Group'] as TJobGroup;
-  //JSScript := FData.Items['JSScript'];
-
-  {ContainerNodeList := Group.GetContainerNodes;
-  jsnGroup := TJSONObject.Create;
-  jsnRules := TJSONArray.Create;
-  try
-    jsnGroup.AddPair('nodes', EncodeNodesToJSON(ContainerNodeList));
-
-    for Rule in Group.Rules do
-      begin
-        jsnRule := TJSONObject.Create;
-        jsnRule.AddPair('id', TJSONNumber.Create(Rule.ID));
-
-        if Rule.Link <> nil then
-          jsnRule.AddPair('level', TJSONNumber.Create(Rule.Link.Level));
-
-        if Rule.Rec <> nil then
-          jsnRule.AddPair('key', Rule.Rec.Key);
-
-        if Rule.Cut <> nil then
-          jsnRule.AddPair('cut', TJSONTrue.Create);
-
-        jsnRule.AddPair('color', ColorToHex(Rule.VisualColor));
-
-        try
-          if Rule.ContainerOffset = 0 then
-            begin
-              ContainerInsideNodes := TNodeList.Create(False);
-              for i := ContainerNodeList.Count to Rule.Nodes.Count - 1 do
-                ContainerInsideNodes.Add(Rule.Nodes[i]);
-
-              jsnRule.AddPair('strict', TJSONTrue.Create);
-            end
-          else
-            ContainerInsideNodes := Rule.GetContainerInsideNodes;
-
-          jsnRule.AddPair('nodes', EncodeNodesToJSON(ContainerInsideNodes));
-        finally
-          ContainerInsideNodes.Free;
-        end;
-
-        jsnRules.AddElement(jsnRule);
-      end;
-
-    jsnGroup.AddPair('rules', jsnRules);
-
-    if FData.TryGetValue('IsLastGroup', IsLast) then
-      jsnGroup.AddPair('islast', TJSONNumber.Create(1));
-
-  finally
-    ContainerNodeList.Free;
-    jsnGroup.Free;
-  end; }
 end;
 
 end.

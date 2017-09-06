@@ -8,6 +8,24 @@ function getNormalizeString(str) {
     return str.trim(str);
 }
 
+function checkClassMatch(ruleNode, node) {
+    
+    if (ruleNode.className == null) ruleNode.className = '';  
+    
+    var clName = ruleNode.className.toString();
+    var clArr = clName.split(' ');
+    clName = getNormalizeString(node.className);
+    
+    var isMatch = false;
+    clArr.forEach(function (item) {
+        var reg = new RegExp(item, 'g');
+        if (clName.match(reg) != null)
+            isMatch = true;
+    });    
+    
+    return isMatch; 
+}
+
 function checkNodeMatches(matches, ruleNode, node) {
 
     matches.IDMatch = false;
@@ -24,16 +42,9 @@ function checkNodeMatches(matches, ruleNode, node) {
         matches.IDMatch = true;
 
     // class match (true even one class name matched)
-    if (ruleNode.className === undefined)
-        ruleNode.className = '';
-    var clName = ruleNode.className.toString();
-    var clArr = clName.split(' ');
-    clName = getNormalizeString(node.className);
-    clArr.forEach(function (item) {
-        if (clName.match(item) != null)
-            matches.ClassMatch = true;
-    });
-
+    if (checkClassMatch(ruleNode, node)) 
+        matches.ClassMatch = true;    
+    
     // name match
     if (ruleNode.name === undefined)
         ruleNode.name = null;
@@ -61,8 +72,8 @@ function getNodeByClass(ruleNode, tagCollection, matches) {
     if (ruleNode.className !== "") {
         for (var i = 0; i < tagCollection.length; i++) {
             var node = tagCollection[i];
-            if (getNormalizeString(node.className) === ruleNode.className)
-                break;
+    
+            if (checkClassMatch(ruleNode, node)) break;
         }
     }
 
@@ -114,7 +125,7 @@ function getNodeByRuleNode(ruleNode, tagCollection, keepSearch) {
         if (node == null || (!(matches.ClassMatch) && (ruleNode.tagID === ""))) {
             matchedNode = getNodeByClass(ruleNode, tagCollection, matches);
             if (matchedNode != null)
-                node = matchNode;
+                node = matchedNode;
         }
 
         // find element by name
@@ -246,7 +257,7 @@ function processResultNodesByRule(rule, resultNodes) {
 
 
 function getRuleResult(rule, containerNode) {
-
+    
     var containerSize = rule.nodes.length - rule.container_offset;
     for (var i = 0; i < containerSize; i++) {
         var ruleNode = rule.nodes[i];
@@ -274,8 +285,7 @@ function getRuleResult(rule, containerNode) {
         // paint selected elements
         $(node).addClass('PIAColor');
         $(node).css('background-color', rule.color);
-        $('.PIAColor').children().css('background-color', 'inherit');    
-        
+        //$('.PIAColor').children().css('background-color', 'inherit');          
         
         if (rule.rules != null) {
             rule.rules.forEach(function (rule) {

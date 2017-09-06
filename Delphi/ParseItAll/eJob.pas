@@ -24,6 +24,7 @@ type
     procedure SetZeroLink(aValue: string);
   //////////////////
   public
+    function GetLevel(aLevel: integer): TJobLevel;
     property Caption: string read GetCaption write SetCaption;
     property ZeroLink: string read GetZeroLink write SetZeroLink;
     property Levels: TLevelList read GetLevels;
@@ -35,6 +36,15 @@ implementation
 
 uses
   Data.DB;
+
+function TJob.GetLevel(aLevel: integer): TJobLevel;
+var
+  JobLevel: TJobLevel;
+begin
+  for JobLevel in Levels do
+    if JobLevel.Level = aLevel then
+      Exit(JobLevel);
+end;
 
 procedure TJob.SaveLists;
 begin

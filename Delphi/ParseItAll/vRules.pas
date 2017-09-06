@@ -107,7 +107,6 @@ type
     procedure SetLevels(aLevelList: TLevelList; aIndex: Integer = 0);
     procedure RenderLevelRulesTree(aLevelRules: TLevelRuleRelList);
     procedure RecourseTreeBranch(aRule: TJobRule);
-
     procedure AddRuleToTree(aParentRule: TJobRule; aRule: TJobRule);
     procedure AddRegExpToTree(aParentRule: TJobRule; aRegExp: TJobRegExp);
     procedure RemoveTreeNode;

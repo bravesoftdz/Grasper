@@ -54,7 +54,6 @@ type
     procedure EditJobRules;
     procedure StoreJobRules;
 
-    procedure GroupSelected;
     procedure OnRuleSelected;
 
     procedure CreateLevel(frame: ICefFrame);
@@ -73,7 +72,6 @@ type
     procedure RemoveRule;
 
     procedure SelectHTMLNode;
-    procedure SelectCutNode;
 
     procedure AddNodes(aNodesData: string);
 
@@ -133,7 +131,7 @@ begin
         if    (Node.Tag = LastParentNode.Tag)
           and (Node.Index = LastParentNode.Index)
           and (Node.TagID = LastParentNode.TagID)
-          and (Node.ClassName = LastParentNode.ClassName)
+          and (Node.ClassName.Contains(LastParentNode.ClassName))
           and (Node.Name = LastParentNode.Name)
         then
           isClearMode := True;
@@ -204,21 +202,6 @@ begin
   //FData.AddOrSetValue('JSScript', FJSScript);
   //FData.AddOrSetValue('CanAddLevel', CanAddLevel(ViewRules.GetSelectedRule.Link));
   //CallModel(TModelJS, 'PrepareJSScriptForRule');
-end;
-
-procedure TController.GroupSelected;
-begin
-  //FObjData.AddOrSetValue('Group', ViewRules.GetSelectedGroup);
-  //FData.AddOrSetValue('JSScript', FJSScript);
-  //CallModel(TModelJS, 'PrepareJSScriptForGroup');
-end;
-
-procedure TController.SelectCutNode;
-var
-  InjectJS: string;
-begin
-  InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\DOMSelector.js');
-  ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
 end;
 
 procedure TController.ShowRuleResult;
@@ -352,7 +335,12 @@ procedure TController.crmProcessMessageReceived(Sender: TObject;
         const browser: ICefBrowser; sourceProcess: TCefProcessId;
         const message: ICefProcessMessage; out Result: Boolean);
 begin
-  if message.Name = 'selectdataback' then AddNodes(message.ArgumentList.GetString(0));
+  if message.Name = 'selectdataback' then
+    begin
+      AddNodes(message.ArgumentList.GetString(0));
+      OnRuleSelected;
+    end;
+
   if message.Name = 'parsedataback' then ParseDataReceived(message.ArgumentList.GetString(0));
 end;
 
@@ -362,7 +350,6 @@ var
 begin
   InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\DOMSelector.js');
   ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
-  OnRuleSelected;
 end;
 
 procedure TController.RemoveRule;
@@ -465,16 +452,6 @@ begin
     FreeAndNil(JobList);
   end;
 end;
-
-{procedure TController.DeleteGroup;
-var
-  Groups: TGroupList;
-begin
-  Groups := ViewRules.GetSelectedLevel.Groups;
-  Groups.DeleteByIndex(ViewRules.tvTree.Selected.Index);
-
-  ViewRules.RemoveTreeNode;
-end;}
 
 procedure TController.EditJobRules;
 var
