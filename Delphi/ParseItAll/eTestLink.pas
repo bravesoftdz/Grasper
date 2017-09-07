@@ -21,10 +21,13 @@ type
     procedure SetLink(aValue: string);
     function GetIsActual: Boolean;
     procedure SetIsActual(aValue: Boolean);
+    function GetNum: integer;
+    procedure SetNum(aValue: integer);
   //////////////////
   public
     property LevelID: integer read GetLevelID write SetLevelID;
     property Level: integer read GetLevel write SetLevel;
+    property Num: Integer read GetNum write SetNum;
     property Link: string read GetLink write SetLink;
     property IsActual: Boolean read GetIsActual write SetIsActual;
   end;
@@ -35,6 +38,16 @@ implementation
 
 uses
   Data.DB;
+
+function TTestLink.GetNum: integer;
+begin
+  Result := FData.Items['NUM'];
+end;
+
+procedure TTestLink.SetNum(aValue: integer);
+begin
+  FData.AddOrSetValue('NUM', aValue);
+end;
 
 function TTestLink.GetIsActual: Boolean;
 begin
@@ -52,6 +65,7 @@ begin
 
   AddField(Result.FieldList, 'LEVEL_ID', ftInteger);
   AddField(Result.FieldList, 'LEVEL', ftInteger);
+  AddField(Result.FieldList, 'NUM', ftInteger);
   AddField(Result.FieldList, 'LINK', ftString);
   AddField(Result.FieldList, 'IS_ACTUAL', ftBoolean);
 end;

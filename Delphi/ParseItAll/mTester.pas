@@ -9,11 +9,12 @@ uses
 type
   TModelTester = class(TModelDB)
   private
-    procedure GetNextTestLink(aTestLevel, aCurrentTestLevel, aTestStepRest: integer; aLastURL: string);
-    procedure PrepareLevel(aTestLevel, aCurrentTestLevel: integer);
+    procedure SetNextTestLink(aTestLevel, aCurrentTestLevel, aLinkNum: integer; aURL: string);
+    procedure PrepareTestLevel(aTestLevel, aCurrentTestLevel: integer);
+    procedure ProcessNextTestLink(aTestStepRest: integer; aURL: string);
   published
     procedure GetNextTestPage;
-    procedure AssignDataToTestLink;
+    procedure ProcessDataRecieved;
   end;
 
 implementation
@@ -23,7 +24,14 @@ uses
   eLevel,
   eTestLink;
 
-procedure TModelTester.PrepareLevel(aTestLevel, aCurrentTestLevel: integer);
+procedure TModelTester.ProcessNextTestLink(aTestStepRest: integer; aURL: string);
+begin
+  FData.AddOrSetValue('URL', aURL);
+  FData.AddOrSetValue('TestStepRest', aTestStepRest);
+  CreateEvent('OnTestLinkPrepared');
+end;
+
+procedure TModelTester.PrepareTestLevel(aTestLevel, aCurrentTestLevel: integer);
 var
   TestLevel, LevelForScript: TJobLevel;
   TestLink: TTestLink;
@@ -38,6 +46,7 @@ begin
     begin
       TestLink := TTestLink.Create(FDBEngine);
       TestLink.Level := aCurrentTestLevel;
+      TestLink.Num := 0;
       TestLink.Link := LevelForScript.BaseLink;
       TestLink.IsActual := True;
 
@@ -50,41 +59,31 @@ begin
   CreateEvent('OnTestLinkPrepared');
 end;
 
-procedure TModelTester.GetNextTestLink(aTestLevel, aCurrentTestLevel, aTestStepRest: integer; aLastURL: string);
+procedure TModelTester.SetNextTestLink(aTestLevel, aCurrentTestLevel, aLinkNum: integer; aURL: string);
 var
-  JobLevel: TJobLevel;
+  TestLevel: TJobLevel;
   TestLink: TTestLink;
   Job: TJob;
 begin
   Job := FObjData.Items['Job'] as TJob;
-  JobLevel := Job.GetLevel(aTestLevel);
+  TestLevel := Job.GetLevel(aTestLevel);
 
-  if aTestStepRest = 0 then
-    begin
-      TestLink := JobLevel.GetActualTestLink(aTestLevel);
-      TestLink.IsActual := False;
+  TestLink := TestLevel.GetActualTestLink(aCurrentTestLevel);
+  TestLink.IsActual := False;
 
-      TestLink := TTestLink.Create(FDBEngine);
-      TestLink.Level := JobLevel.Level;
-      TestLink.Link := aLastURL;
-      TestLink.IsActual := True;
+  TestLink := TTestLink.Create(FDBEngine);
+  TestLink.Level := aCurrentTestLevel;
+  TestLink.Num := aLinkNum;
+  TestLink.Link := aURL;
+  TestLink.IsActual := True;
 
-      JobLevel.TestLinks.Add(TestLink);
+  TestLevel.TestLinks.Add(TestLink);
 
-      if JobLevel.ID > 0 then
-        JobLevel.TestLinks.SaveList(JobLevel.ID);
-    end;
-
-  if aLastURL = '' then PrepareLevel(aTestLevel, aCurrentTestLevel - 1)
-  else
-    begin
-      FData.AddOrSetValue('URL', aLastURL);
-      FData.AddOrSetValue('TestStepRest', aTestStepRest);
-      CreateEvent('OnTestLinkPrepared');
-    end;
+  if TestLevel.ID > 0 then
+    TestLevel.TestLinks.SaveList(TestLevel.ID);
 end;
 
-procedure TModelTester.AssignDataToTestLink;
+procedure TModelTester.ProcessDataRecieved;
 var
   Data: string;
   jsnData: TJSONObject;
@@ -96,14 +95,19 @@ var
   LinkLevel, TestLevel, CurrentTestLevel: Integer;
   TestStepRest: Integer;
   URL: string;
+  i: Integer;
+  TestLink: TTestLink;
 begin
   Data := FData.Items['DataReceived'];
   CurrentTestLevel := FData.Items['CurrentTestLevel'];
   TestLevel := FData.Items['TestLevel'];
   TestStepRest := FData.Items['TestStepRest'];
+  TestLink := (FObjData.Items['Job'] as TJob).GetLevel(TestLevel).GetActualTestLink(TestLevel);
+
   jsnData:=TJSONObject.ParseJSONValue(Data) as TJSONObject;
   try
     jsnResult:=jsnData.GetValue('result') as TJSONArray;
+    i := 0;
 
     for jsnRule in jsnResult do
       begin
@@ -116,15 +120,23 @@ begin
             if jsnRuleResAsObj.GetValue('type').Value = 'link' then
               begin
                 LinkLevel := (jsnRuleResAsObj.GetValue('level') as TJSONNumber).AsInt;
+
+                if LinkLevel = CurrentTestLevel then
+
+
                 if LinkLevel = TestLevel then
                   begin
+                    inc(i);
+
                     URL := jsnRuleResAsObj.GetValue('href').Value;
-                    Dec(TestStepRest);
+                    if TestLink.Num < i then
+                      Dec(TestStepRest);
                   end;
 
                 if TestStepRest = 0 then
                   begin
-                    GetNextTestLink(TestLevel, CurrentTestLevel, TestStepRest, URL);
+                    SetNextTestLink(TestLevel, CurrentTestLevel, i, URL);
+                    ProcessNextTestLink(TestStepRest, URL);
                     Exit;
                   end;
               end;
@@ -132,9 +144,13 @@ begin
       end;
 
     if URL = '' then
-      PrepareLevel(TestLevel, CurrentTestLevel - 1)
+      PrepareTestLevel(TestLevel, CurrentTestLevel - 1)
     else
-      GetNextTestLink(TestLevel, CurrentTestLevel, TestStepRest, URL);
+      begin
+        TestLink.Num := 0;
+        SetNextTestLink(TestLevel, CurrentTestLevel, 0, URL);
+        ProcessNextTestLink(TestStepRest, URL);
+      end;
   finally
     jsnData.Free;
   end;
@@ -146,7 +162,7 @@ var
 begin
   TestLevel := FData.Items['TestLevel'];
 
-  PrepareLevel(TestLevel, TestLevel);
+  PrepareTestLevel(TestLevel, TestLevel);
 end;
 
 end.

@@ -40,7 +40,6 @@ type
             const browser: ICefBrowser; sourceProcess: TCefProcessId;
             const message: ICefProcessMessage; out Result: Boolean);
     procedure SyncParentChildRuleNodes(aNodes, aParentNodes: TNodeList);
-    procedure DoCallTestLinkModel(aStep, aLevel: Integer);
     function CanAddLevel(aJobRule: TJobLink): Boolean;
     function GetJob: TJob;
   protected
@@ -105,14 +104,6 @@ uses
 
   FireDAC.Comp.Client;
 
-procedure TController.DoCallTestLinkModel(aStep, aLevel: Integer);
-begin
-  FData.AddOrSetValue('TestStepRest', aStep);
-  FData.AddOrSetValue('TestLevel', aLevel);
-
-  CallModel(TModelTester, 'GetNextTestPage');
-end;
-
 procedure TController.OnTestPageLoaded;
 begin
   FObjData.AddOrSetValue('Level', FObjData.Items['LevelForScript']);
@@ -123,7 +114,11 @@ end;
 procedure TController.GetNextTestPage;
 begin
   FGettingTestPage := True;
-  DoCallTestLinkModel(5, ViewRules.GetSelectedLevel.Level);
+
+  FData.AddOrSetValue('TestStepRest', 5);
+  FData.AddOrSetValue('TestLevel', ViewRules.GetSelectedLevel.Level);
+
+  CallModel(TModelTester, 'GetNextTestPage');
 end;
 
 procedure TController.ClearJobLinks;
@@ -254,10 +249,8 @@ begin
 
   if FGettingTestPage then
     begin
-      //FGettingTestPage := False;
       FData.AddOrSetValue('DataReceived', aData);
-      //DoCallTestLinkModel(FData.Items['TestStep'], FData.Items['TestLevel']);
-      CallModel(TModelTester, 'AssignDataToTestLink');
+      CallModel(TModelTester, 'ProcessDataRecieved');
     end;
 end;
 
