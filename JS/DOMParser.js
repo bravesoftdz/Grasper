@@ -188,8 +188,23 @@ function getContentByRegExps(content, regexps) {
     var hasRegEx = {
         match: false,
         replace: false,
-        ignore: false,
+        ignore: false
     };
+    
+    // type 3 - ignore
+    var isIgnoreExit = false;
+    regexps.forEach(function (regex) {
+    
+        if (regex.type == 3) {
+            hasRegEx.ignore = true;
+            var reg = new RegExp(regex.regexp, 'g');
+            var matches = content.match(reg); 
+            
+            if (matches != null) isIgnoreExit = true; 
+        }
+        
+    });    
+    if (isIgnoreExit) return results; 
     
     // type 1 - matches
     regexps.forEach(function (regex) {
@@ -203,7 +218,6 @@ function getContentByRegExps(content, regexps) {
                 results.push(match);
             });
         }
-        
     });
     if (!hasRegEx.match) results = [content];  
     
@@ -220,11 +234,9 @@ function getContentByRegExps(content, regexps) {
             });
             results = replacedResults; 
         }
-        
     });
     
-    return results; 
-    
+    return results;    
 }
 
 function processResultNodesByRule(rule, resultNodes) {
@@ -242,7 +254,7 @@ function processResultNodesByRule(rule, resultNodes) {
         
         content.forEach(function (matchText) { 
             
-            var objNodeRes = {}
+            var objNodeRes = {};
             
             if (rule.type == 'link') {
                 objNodeRes.type = 'link';

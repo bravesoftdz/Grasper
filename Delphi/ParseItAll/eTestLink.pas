@@ -19,11 +19,14 @@ type
     procedure SetLevel(aValue: integer);
     function GetLink: string;
     procedure SetLink(aValue: string);
+    function GetIsActual: Boolean;
+    procedure SetIsActual(aValue: Boolean);
   //////////////////
   public
     property LevelID: integer read GetLevelID write SetLevelID;
     property Level: integer read GetLevel write SetLevel;
     property Link: string read GetLink write SetLink;
+    property IsActual: Boolean read GetIsActual write SetIsActual;
   end;
 
   TTestLinkList = TEntityList<TTestLink>;
@@ -33,6 +36,16 @@ implementation
 uses
   Data.DB;
 
+function TTestLink.GetIsActual: Boolean;
+begin
+  Result := FData.Items['IS_ACTUAL'];
+end;
+
+procedure TTestLink.SetIsActual(aValue: Boolean);
+begin
+  FData.AddOrSetValue('IS_ACTUAL', aValue);
+end;
+
 class function TTestLink.GetEntityStruct: TEntityStruct;
 begin
   Result.TableName := 'JOB_TEST_LINKS';
@@ -40,6 +53,7 @@ begin
   AddField(Result.FieldList, 'LEVEL_ID', ftInteger);
   AddField(Result.FieldList, 'LEVEL', ftInteger);
   AddField(Result.FieldList, 'LINK', ftString);
+  AddField(Result.FieldList, 'IS_ACTUAL', ftBoolean);
 end;
 
 function TTestLink.GetLevelID: integer;

@@ -108,15 +108,14 @@ uses
 procedure TController.DoCallTestLinkModel(aStep, aLevel: Integer);
 begin
   FData.AddOrSetValue('TestStepRest', aStep);
-  FData.AddOrSetValue('Level', aLevel);
   FData.AddOrSetValue('TestLevel', aLevel);
 
-  CallModel(TModelTester, 'GetTestPageURL');
+  CallModel(TModelTester, 'GetNextTestPage');
 end;
 
 procedure TController.OnTestPageLoaded;
 begin
-  FObjData.AddOrSetValue('Level', FObjData.Items['TestLevel']);
+  FObjData.AddOrSetValue('Level', FObjData.Items['LevelForScript']);
   FData.AddOrSetValue('JSScript', FJSScript);
   CallModel(TModelJS, 'PrepareJSScriptForLevel');
 end;
@@ -514,7 +513,12 @@ end;
 procedure TController.EventListener(aEventMsg: string);
 begin
   if aEventMsg = 'OnTestLinkPrepared' then
-    ViewRules.chrmBrowser.Load(FData.Items['URL']);
+    begin
+      if FData.Items['TestStepRest'] = 0 then
+        FGettingTestPage := False;
+
+      ViewRules.chrmBrowser.Load(FData.Items['URL']);
+    end;
 
   if aEventMsg = 'OnJSScriptPrepared' then
     ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(FData.Items['JSScript'], 'about:blank', 0);

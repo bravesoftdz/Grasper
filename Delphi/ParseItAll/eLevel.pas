@@ -47,13 +47,15 @@ type
     procedure SetLevel(aValue: integer);
     function GetBaseLink: string;
     procedure SetBaseLink(aValue: string);
+    function GetCurrentTestLink: string;
   //////////////////
   public
-    function GetTestLink(aLevel: Integer): TTestLink;
+    function GetActualTestLink(aLevel: Integer): TTestLink;
     property Level: Integer read GetLevel write SetLevel;
     property BaseLink: string read GetBaseLink write SetBaseLink;
     property RuleRels: TLevelRuleRelList read GetRuleRels;
     property TestLinks: TTestLinkList read GetTestLinks;
+    property TestLink: string read GetCurrentTestLink;
   end;
 
   TLevelList = TEntityList<TJobLevel>;
@@ -63,20 +65,32 @@ implementation
 uses
   Data.DB;
 
-function TJobLevel.GetTestLink(aLevel: Integer): TTestLink;
+function TJobLevel.GetCurrentTestLink: string;
+var
+  TestLink: TTestLink;
+begin
+  TestLink := GetActualTestLink(Level);
+
+  if TestLink = nil then
+    Result := BaseLink
+  else
+    Result := TestLink.Link;
+end;
+
+function TJobLevel.GetActualTestLink(aLevel: Integer): TTestLink;
 var
   TestLink: TTestLink;
 begin
   Result := nil;
 
   for TestLink in TestLinks do
-    if TestLink.Level = aLevel then Exit(TestLink);
+    if (TestLink.Level = aLevel) and TestLink.IsActual then Exit(TestLink);
 end;
 
 function TJobLevel.GetTestLinks: TTestLinkList;
 begin
   if not Assigned(FTestLinks) then
-    FTestLinks := TTestLinkList.Create(Self, 'LEVEL_ID', ID);
+    FTestLinks := TTestLinkList.Create(Self, 'LEVEL_ID', ID, 'IS_ACTUAL DESC');
 
   Result := FTestLinks;
 end;

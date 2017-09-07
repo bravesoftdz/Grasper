@@ -262,7 +262,7 @@ begin
 
   if GetSelectedLevel <> nil then
     begin
-      chrmBrowser.Load(GetSelectedLevel.BaseLink);
+      chrmBrowser.Load(GetSelectedLevel.TestLink);
       RenderLevelRulesTree(GetSelectedLevel.RuleRels);
     end
   else
