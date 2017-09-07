@@ -29,26 +29,38 @@ var
   jsnData: TJSONObject;
   jsnResult: TJSONArray;
   jsnRule: TJSONValue;
-  jsnRulePairList: TJSONArray;
-  jsnRulePair: TJSONValue;
-  jsnRulePairObj: TJSONObject;
+  jsnRuleResList: TJSONArray;
+  jsnRuleResAsValue: TJSONValue;
+  jsnRuleResAsObj: TJSONObject;
+  LinkLevel, TestLevel: Integer;
+  TestStepRest: Integer;
 begin
   Data := FData.Items['DataReceived'];
+  TestLevel := FData.Items['TestLevel'];
+  TestStepRest := FData.Items['TestStepRest'];
   jsnData:=TJSONObject.ParseJSONValue(Data) as TJSONObject;
+  try
+    jsnResult:=jsnData.GetValue('result') as TJSONArray;
 
-  jsnResult:=jsnData.GetValue('result') as TJSONArray;
+    for jsnRule in jsnResult do
+      begin
+        jsnRuleResList := jsnRule as TJSONArray;
 
-  for jsnRule in jsnResult do
-    begin
-      jsnRulePairList := jsnRule as TJSONArray;
+        for jsnRuleResAsValue in jsnRuleResList do
+          begin
+            jsnRuleResAsObj := jsnRuleResAsValue as TJSONObject;
 
-      for jsnRulePair in jsnRulePairList do
-        begin
+            if jsnRuleResAsObj.GetValue('type').Value = 'link' then
+              begin
+                LinkLevel := (jsnRuleResAsObj.GetValue('level') as TJSONNumber).AsInt;
+                if LinkLevel = TestLevel then Dec(TestStepRest);
 
-          jsnRulePairObj := jsnRulePair as TJSONObject;
-
-        end;
-    end;
+              end;
+          end;
+      end;
+  finally
+    jsnData.Free;
+  end;
 end;
 
 procedure TModelTester.GetTestPageURL;

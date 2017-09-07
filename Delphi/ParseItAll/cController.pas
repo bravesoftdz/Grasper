@@ -107,8 +107,9 @@ uses
 
 procedure TController.DoCallTestLinkModel(aStep, aLevel: Integer);
 begin
-  FData.AddOrSetValue('TestStep', aStep);
+  FData.AddOrSetValue('TestStepRest', aStep);
   FData.AddOrSetValue('Level', aLevel);
+  FData.AddOrSetValue('TestLevel', aLevel);
 
   CallModel(TModelTester, 'GetTestPageURL');
 end;

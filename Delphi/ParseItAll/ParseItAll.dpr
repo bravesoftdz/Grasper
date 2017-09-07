@@ -1,9 +1,5 @@
 program ParseItAll;
 
-
-
-
-
 uses
   Vcl.Forms,
   vMain in 'vMain.pas' {ViewMain},
@@ -45,6 +41,8 @@ begin
   CefSingleProcess := False;
   if not CefLoadLibDefault then
     Exit;
+
+  //ReportMemoryLeaksOnShutdown := True;
 
   Application.Initialize;
   Application.MainFormOnTaskbar := True;

@@ -333,37 +333,41 @@ var
   IsLast: Boolean;
 begin
   jsnData:=TJSONObject.ParseJSONValue(aData) as TJSONObject;
-  jsnResult:=jsnData.GetValue('result') as TJSONArray;
+  try
+    jsnResult:=jsnData.GetValue('result') as TJSONArray;
 
-  for jsnRule in jsnResult do
-    begin
-      i := 0;
-      jsnRulePairList := jsnRule as TJSONArray;
+    for jsnRule in jsnResult do
+      begin
+        i := 0;
+        jsnRulePairList := jsnRule as TJSONArray;
 
-      for jsnRulePair in jsnRulePairList do
-        begin
-          inc(i);
-          jsnRulePairObj := jsnRulePair as TJSONObject;
+        for jsnRulePair in jsnRulePairList do
+          begin
+            inc(i);
+            jsnRulePairObj := jsnRulePair as TJSONObject;
 
-          if jsnRulePairObj.GetValue('type').Value = 'link' then
-            begin
-              Link := jsnRulePairObj.GetValue('href').Value;
-              Level := (jsnRulePairObj.GetValue('level') as TJSONNumber).AsInt;
+            if jsnRulePairObj.GetValue('type').Value = 'link' then
+              begin
+                Link := jsnRulePairObj.GetValue('href').Value;
+                Level := (jsnRulePairObj.GetValue('level') as TJSONNumber).AsInt;
 
-              AddLink(Link, FCurrLink.ID, Level, i);
-            end;
+                AddLink(Link, FCurrLink.ID, Level, i);
+              end;
 
-          if jsnRulePairObj.GetValue('type').Value = 'record' then
-            begin
-              Key := jsnRulePairObj.GetValue('key').Value;
-              Value := jsnRulePairObj.GetValue('value').Value;
+            if jsnRulePairObj.GetValue('type').Value = 'record' then
+              begin
+                Key := jsnRulePairObj.GetValue('key').Value;
+                Value := jsnRulePairObj.GetValue('value').Value;
 
-              AddRecord(FCurrLink.ID, i, Key, Value);
-            end;
-        end;
-    end;
+                AddRecord(FCurrLink.ID, i, Key, Value);
+              end;
+          end;
+      end;
 
-  ProcessNextLink;
+    ProcessNextLink;
+  finally
+    jsnData.Free;
+  end;
 end;
 
 procedure TModelParser.crmProcessMessageReceived(Sender: TObject;
