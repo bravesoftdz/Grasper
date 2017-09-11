@@ -25,7 +25,8 @@ type
   //////////////////
   public
     function GetLevel(aLevel: integer): TJobLevel;
-    //function GetMinLevel: Integer;
+    function GetMaxLevel: TJobLevel;
+    function GetMinLevel: TJobLevel;
     property Caption: string read GetCaption write SetCaption;
     property ZeroLink: string read GetZeroLink write SetZeroLink;
     property Levels: TLevelList read GetLevels;
@@ -38,20 +39,35 @@ implementation
 uses
   Data.DB;
 
-{function TJob.GetMinLevel: Integer;
+function TJob.GetMinLevel: TJobLevel;
 var
   Level: TJobLevel;
 begin
   if Levels.Count > 0 then
     begin
-      Result := MaxInt;
+      Result := Levels[0];
 
       for Level in Levels do
-        if Level.Level < Result then Result := Level.Level;
+        if Result.Level > Level.Level then Result := Level;
     end
   else
-    Result := -1
-end; }
+    Result := nil;
+end;
+
+function TJob.GetMaxLevel: TJobLevel;
+var
+  Level: TJobLevel;
+begin
+  if Levels.Count > 0 then
+    begin
+      Result := Levels[0];
+
+      for Level in Levels do
+        if Result.Level < Level.Level then Result := Level;
+    end
+  else
+    Result := nil;
+end;
 
 function TJob.GetLevel(aLevel: integer): TJobLevel;
 var

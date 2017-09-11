@@ -3,7 +3,8 @@ unit eLink;
 interface
 
 uses
-  API_ORM;
+  API_ORM,
+  eRecord;
 
 type
   TLinkRel = class(TEntityAbstract)
@@ -24,9 +25,12 @@ type
   // overrides
   public
     class function GetEntityStruct: TEntityStruct; override;
+  protected
+    procedure SaveLists; override;
   ////////////////////
   private
   // Getters Setters
+    FRecords: TRecordList;
     function GetJobID: Integer;
     procedure SetJobID(aValue: Integer);
     function GetLevel: Integer;
@@ -43,6 +47,7 @@ type
     procedure SetHandled(aValue: Integer);
     function GetHandleTime: TDateTime;
     procedure SetHandleTime(aValue: TDateTime);
+    function GetRecordList: TRecordList;
   ////////////////////
   public
     property JobID: Integer read GetJobID write SetJobID;
@@ -53,12 +58,26 @@ type
     property ParentRel: TLinkRel read GetParentRel write SetParentRel;
     property Handled: Integer read GetHandled write SetHandled;
     property HandleTime: TDateTime read GetHandleTime write SetHandleTime;
+    property Records: TRecordList read GetRecordList;
   end;
 
 implementation
 
 uses
   Data.DB;
+
+procedure TLink.SaveLists;
+begin
+  if Assigned(FRecords) then FRecords.SaveList(ID);
+end;
+
+function TLink.GetRecordList: TRecordList;
+begin
+  if not Assigned(FRecords) then
+    FRecords := TRecordList.Create(Self, 'LINK_ID', ID);
+
+  Result := FRecords;
+end;
 
 function TLink.GetHandleTime: TDateTime;
 begin

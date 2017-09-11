@@ -164,6 +164,15 @@ object ViewMain: TViewMain
       TabOrder = 3
       OnClick = btnClearClick
     end
+    object btnSaveToCSV: TBitBtn
+      Left = 472
+      Top = 3
+      Width = 75
+      Height = 25
+      Caption = 'btnSaveToCSV'
+      TabOrder = 4
+      OnClick = btnSaveToCSVClick
+    end
   end
   object chrmBrowser: TChromium
     Left = 0
@@ -196,7 +205,7 @@ object ViewMain: TViewMain
     Left = 400
     Top = 97
     Bitmap = {
-      494C010101000800280010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C0101010008002C0010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       000000000000000000000000000000000000323232FF000000FF000000FF0000
       00FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF0202

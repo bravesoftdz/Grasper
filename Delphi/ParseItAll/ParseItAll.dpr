@@ -32,7 +32,8 @@ uses
   eLink in 'eLink.pas',
   eRecord in 'eRecord.pas',
   mTester in 'mTester.pas',
-  eTestLink in 'eTestLink.pas';
+  eTestLink in 'eTestLink.pas',
+  mExport in 'mExport.pas';
 
 {$R *.res}
 

@@ -31,12 +31,14 @@ type
     actlstMain: TActionList;
     acCreateJob: TAction;
     btnClear: TButton;
+    btnSaveToCSV: TBitBtn;
     procedure FormShow(Sender: TObject);
     procedure btnEditJobClick(Sender: TObject);
     procedure btnEditRulesClick(Sender: TObject);
     procedure btnGoClick(Sender: TObject);
     procedure acCreateJobExecute(Sender: TObject);
     procedure btnClearClick(Sender: TObject);
+    procedure btnSaveToCSVClick(Sender: TObject);
   private
     { Private declarations }
     function GetSelectedJobID: integer;
@@ -114,6 +116,11 @@ end;
 procedure TViewMain.btnGoClick(Sender: TObject);
 begin
   SendMessage('StartJob');
+end;
+
+procedure TViewMain.btnSaveToCSVClick(Sender: TObject);
+begin
+  SendMessage('ExportJobResultsToCSV');
 end;
 
 procedure TViewMain.FormShow(Sender: TObject);

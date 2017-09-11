@@ -29,6 +29,8 @@ type
     property Value: string read GetValue write SetValue;
   end;
 
+  TRecordList = TEntityList<TRecord>;
+
 implementation
 
 uses

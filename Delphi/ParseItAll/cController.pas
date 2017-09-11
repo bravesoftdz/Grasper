@@ -83,7 +83,11 @@ type
 
     procedure ClearJobLinks;
 
+    // Testing
     procedure GetNextTestPage;
+
+    // Exports
+    procedure ExportJobResultsToCSV;
   end;
 
 implementation
@@ -101,8 +105,18 @@ uses
   vRuleResult,
   mParser,
   mTester,
+  mExport,
 
   FireDAC.Comp.Client;
+
+procedure TController.ExportJobResultsToCSV;
+var
+  Job: TJob;
+begin
+  Job := TJob.Create(FDBEngine, ViewMain.SelectedJobID);
+  FObjData.AddOrSetValue('Job', Job);
+  CallModel(TModelExport, 'ExportToCSV');
+end;
 
 procedure TController.OnTestPageLoaded;
 begin
