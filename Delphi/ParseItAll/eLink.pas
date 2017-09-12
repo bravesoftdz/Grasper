@@ -3,6 +3,7 @@ unit eLink;
 interface
 
 uses
+  System.Generics.Collections,
   API_ORM,
   eRecord;
 
@@ -50,6 +51,7 @@ type
     function GetRecordList: TRecordList;
   ////////////////////
   public
+    function GetRecordsByKey(aKey: string; aResult: TObjectList<TRecord> = nil): TObjectList<TRecord>;
     property JobID: Integer read GetJobID write SetJobID;
     property Level: Integer read GetLevel write SetLevel;
     property Num: Integer read GetNum write SetNum;
@@ -65,6 +67,34 @@ implementation
 
 uses
   Data.DB;
+
+function TLink.GetRecordsByKey(aKey: string; aResult: TObjectList<TRecord> = nil): TObjectList<TRecord>;
+var
+  Rec: TRecord;
+  ParentLink: TLink;
+begin
+  if aResult = nil then
+    Result := TObjectList<TRecord>.Create(True)
+  else
+    Result := aResult;
+
+  for Rec in Records do
+    if Rec.Key = aKey then
+      begin
+        Records.Extract(Rec);
+        Result.Add(Rec);
+      end;
+
+  if ParentRel <> nil then
+    begin
+      ParentLink := TLink.Create(FDBEngine, ParentRel.ParentLinkID);
+      try
+        ParentLink.GetRecordsByKey(aKey, Result);
+      finally
+        ParentLink.Free;
+      end;
+    end;
+end;
 
 procedure TLink.SaveLists;
 begin

@@ -10,10 +10,14 @@ uses
 type
   TModelExport = class(TModelDB)
   private
+    FFileName: string;
     function GetRuleKeysFromLevel(aLevel: TJobLevel): TArray<string>;
     function GetKeysFromRule(aRule: TJobRule): TArray<string>;
     procedure GetLinkslist(aJobID: Integer; aKeys: TArray<string>);
     procedure ProcessLinkResults(aLinkID: Integer; aKeys:TArray<string>);
+    procedure AddToCSVString(var aString: string; aValue: string);
+    procedure AddToValueString(var aString: string; aValue: string);
+    procedure WriteToFile(aString: string);
   published
     procedure ExportToCSV;
   end;
@@ -22,17 +26,68 @@ implementation
 
 uses
   System.SysUtils,
+  System.Generics.Collections,
   FireDAC.Comp.Client,
+  API_Files,
   eJob,
-  eLink;
+  eLink,
+  eRecord;
+
+procedure TModelExport.AddToValueString(var aString: string; aValue: string);
+begin
+  if aString <> '' then
+    aString := aString + #13#10 + aValue
+  else
+    aString := aValue;
+end;
+
+procedure TModelExport.AddToCSVString(var aString: string; aValue: string);
+begin
+  if aString <> '' then
+    aString := aString + ';';
+
+  aValue := StringReplace(aValue, '"', #39, [rfReplaceAll, rfIgnoreCase]);
+  aString := aString + '"' + aValue + '"';
+end;
+
+procedure TModelExport.WriteToFile(aString: string);
+begin
+  TFilesEngine.AppendToFile(FFileName, aString);
+end;
 
 procedure TModelExport.ProcessLinkResults(aLinkID: Integer; aKeys:TArray<string>);
 var
   Link: TLink;
+  Key, Value: string;
+  CSVString, ValueStrings: string;
+  RecList: TObjectList<TRecord>;
+  Rec: TRecord;
 begin
   Link := TLink.Create(FDBEngine, aLinkID);
   try
+    CSVString := '';
 
+    for Key in aKeys do
+      begin
+        if Key = 'ctime'
+        then
+          ValueStrings := DateTimeToStr(Link.HandleTime)
+        else
+          begin
+            RecList := Link.GetRecordsByKey(Key);
+            try
+              ValueStrings := '';
+              for Rec in RecList do
+                AddToValueString(ValueStrings, Rec.Value);
+            finally
+              RecList.Free;
+            end;
+          end;
+
+        AddToCSVString(CSVString, ValueStrings);
+      end;
+
+    WriteToFile(CSVString);
   finally
     FreeAndNil(Link);
   end;
@@ -93,15 +148,27 @@ var
   Job: TJob;
   Level: TJobLevel;
   Keys: TArray<string>;
+  Key: string;
+  CSVString: string;
 begin
   Job := (FObjData.Items['Job'] as TJob);
 
-  Keys := [];
+  Keys := ['ctime'];
   for i := 0 to Job.Levels.Count - 1 do
     begin
       Level := Job.Levels[i];
       Keys := Keys + GetRuleKeysFromLevel(Level);
     end;
+
+  // create file
+  FFileName := GetCurrentDir + '\Export\' +Job.ID.ToString + '_' + IntToStr(Trunc(Now))+'.csv';
+  TFilesEngine.CreateFile(FFileName);
+
+  // header
+  CSVString := '';
+  for Key in Keys do
+    AddToCSVString(CSVString, Key);
+  WriteToFile(CSVString);
 
   GetLinkslist(Job.ID, Keys);
 end;

@@ -357,9 +357,9 @@ begin
             if jsnRulePairObj.GetValue('type').Value = 'record' then
               begin
                 Key := jsnRulePairObj.GetValue('key').Value;
-                Value := jsnRulePairObj.GetValue('value').Value;
 
-                AddRecord(FCurrLink.ID, i, Key, Value);
+                if jsnRulePairObj.TryGetValue('value', Value) then
+                  AddRecord(FCurrLink.ID, i, Key, Value);
               end;
           end;
       end;

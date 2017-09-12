@@ -244,10 +244,11 @@ function processResultNodesByRule(rule, resultNodes) {
     
     resultNodes.forEach(function (node) {
       
-        //process cuts
-        $('.PIAIgnore').css('display', 'none');
+        //process cuts     
+        var ignoreNodes = $('.PIAIgnore', node); 
+        $(ignoreNodes).css('display', 'none');
         var innerText = node.innerText;
-        $('.PIAIgnore').css('display', '');
+        $(ignoreNodes).css('display', '');
         
         //process regexps
         var content = getContentByRegExps(innerText, rule.regexps);
@@ -292,6 +293,8 @@ function getRuleResult(rule, containerNode) {
         var ruleNode = rule.nodes[i];
         var tagCollection = getTagCollection(containerNode, ruleNode.tag);
         containerNode = getNodeByRuleNode(ruleNode, tagCollection, true);
+        
+        if (containerNode == null) break;
     }
 
     if (containerNode != null) {
