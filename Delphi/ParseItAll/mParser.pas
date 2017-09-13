@@ -79,6 +79,7 @@ begin
     begin
       jsnRule.AddPair('type', 'record');
       jsnRule.AddPair('key', aRule.Rec.Key);
+      jsnRule.AddPair('grab_type', TJSONNumber.Create(aRule.Rec.GrabType));
     end;
 
   if aRule.Cut <> nil then
@@ -359,7 +360,7 @@ begin
                 Key := jsnRulePairObj.GetValue('key').Value;
 
                 if jsnRulePairObj.TryGetValue('value', Value) then
-                  AddRecord(FCurrLink.ID, i, Key, Value);
+                  AddRecord(FCurrLink.ID, i, Key, Trim(Value));
               end;
           end;
       end;

@@ -9,21 +9,22 @@ function getNormalizeString(str) {
 }
 
 function checkClassMatch(ruleNode, node) {
-    
-    if (ruleNode.className == null) ruleNode.className = '';  
-    
+
+    if (ruleNode.className == null)
+        ruleNode.className = '';
+
     var clName = ruleNode.className.toString();
     var clArr = clName.split(' ');
     clName = getNormalizeString(node.className);
-    
+
     var isMatch = false;
     clArr.forEach(function (item) {
         var reg = new RegExp(item, 'g');
         if (clName.match(reg) != null)
             isMatch = true;
-    });    
-    
-    return isMatch; 
+    });
+
+    return isMatch;
 }
 
 function checkNodeMatches(matches, ruleNode, node) {
@@ -42,9 +43,9 @@ function checkNodeMatches(matches, ruleNode, node) {
         matches.IDMatch = true;
 
     // class match (true even one class name matched)
-    if (checkClassMatch(ruleNode, node)) 
-        matches.ClassMatch = true;    
-    
+    if (checkClassMatch(ruleNode, node))
+        matches.ClassMatch = true;
+
     // name match
     if (ruleNode.name === undefined)
         ruleNode.name = null;
@@ -72,8 +73,9 @@ function getNodeByClass(ruleNode, tagCollection, matches) {
     if (ruleNode.className !== "") {
         for (var i = 0; i < tagCollection.length; i++) {
             var node = tagCollection[i];
-    
-            if (checkClassMatch(ruleNode, node)) break;
+
+            if (checkClassMatch(ruleNode, node))
+                break;
         }
     }
 
@@ -182,122 +184,162 @@ function getInsideContainerNodes(containerNode, ruleNodes) {
     return nodes;
 }
 
-function getContentByRegExps(content, regexps) {
-
-    var results = []; 
+function getContentByRegExps(grabData, rule) {
+   
+    var regexps = rule.regexps;
+    var results = [];
     var hasRegEx = {
         match: false,
         replace: false,
         ignore: false
     };
     
+    // case text grab
+    if (rule.grab_type == 1) var sourceText = grabData.innerText;  
+
+    // case href grab
+    if (rule.grab_type == 2) sourceText = grabData.innerText;
+
+    // case html grab
+    if (rule.grab_type == 3) sourceText = grabData.innerHTML;
+    
+    if (sourceText == null) sourceText = grabData.innerText;
+
     // type 3 - ignore
     var isIgnoreExit = false;
     regexps.forEach(function (regex) {
-    
+        
         if (regex.type == 3) {
             hasRegEx.ignore = true;
             var reg = new RegExp(regex.regexp, 'g');
-            var matches = content.match(reg); 
-            
-            if (matches != null) isIgnoreExit = true; 
+            var matches = sourceText.match(reg);
+
+            if (matches != null)
+                isIgnoreExit = true;
         }
-        
-    });    
-    if (isIgnoreExit) return results; 
-    
+
+    });
+    if (isIgnoreExit)
+        return results;
+
     // type 1 - matches
     regexps.forEach(function (regex) {
-    
+        
         if (regex.type == 1) {
             hasRegEx.match = true;
             var reg = new RegExp(regex.regexp, 'g');
-            var matches = content.match(reg); 
-            
-            matches.forEach(function (match) {
-                results.push(match);
-            });
+            var matches = sourceText.match(reg);
+
+            if (matches != null)
+                matches.forEach(function (match) {
+                    results.push(match);
+                });
         }
     });
-    if (!hasRegEx.match) results = [content];  
-    
+    if (!hasRegEx.match)
+        results = [sourceText];
+
     // type 2 - replaces
     regexps.forEach(function (regex) {
-    
+        
         if (regex.type == 2) {
             hasRegEx.replace = true;
-            if (regex.replace == null) regex.replace = '';
-            
+            if (regex.replace == null)
+                regex.replace = '';
+
             var replacedResults = results.map(function (result) {
                 var reg = new RegExp(regex.regexp, 'g');
                 return result.replace(reg, regex.replace);
             });
-            results = replacedResults; 
+            results = replacedResults;
         }
     });
     
-    return results;    
+    // case href grab
+    if (rule.grab_type == 2 && results.length > 0) results = [grabData.href];
+    
+    return results;
 }
 
 function processResultNodesByRule(rule, resultNodes) {
     var objResults = [];
-    
+
     resultNodes.forEach(function (node) {
-      
-        //process cuts     
-        var ignoreNodes = $('.PIAIgnore', node); 
+
+        var grabData = {};
+        
+        //switch on cuts     
+        var ignoreNodes = $('.PIAIgnore', node);
         $(ignoreNodes).css('display', 'none');
-        var innerText = node.innerText;
+        
+        if (node.innerText != null)
+             grabData.innerText = node.innerText;
+         else
+             grabData.innerText = '';
+        
+        if (node.href != null)
+            grabData.href = node.href;
+        else
+            grabData.href = '';
+        
+        if (node.innerHTML != null)
+            grabData.innerHTML = node.innerHTML;
+        else
+            grabData.innerHTML = '';
+        
+        //switch off cuts 
         $(ignoreNodes).css('display', '');
+                
+        //process grab type and regexps
+        var regExResults = getContentByRegExps(grabData, rule);
         
-        //process regexps
-        var content = getContentByRegExps(innerText, rule.regexps);
-        
-        content.forEach(function (matchText) { 
-            
+        regExResults.forEach(function (matchText) {
+
             var objNodeRes = {};
-            
+
             if (rule.type == 'link') {
                 objNodeRes.type = 'link';
-                objNodeRes.href = node.href; 
+                objNodeRes.href = node.href;
                 objNodeRes.level = rule.level;
             }
-            
+
             if (rule.type == 'record') {
                 objNodeRes.type = 'record';
                 objNodeRes.key = rule.key;
-                objNodeRes.value = matchText; 
+                objNodeRes.value = matchText;
             }
 
             objResults.push(objNodeRes);
         });
 
     });
-    
-    return objResults; 
+
+    return objResults;
 }
 
 function setPIAClass(rule, node) {
-    
+
     $(node).addClass('PIAColor');
     $(node).css('background-color', rule.color);
     //$('.PIAColor').children().css('background-color', 'inherit'); 
-    
-    if (rule.type == 'cut') $(node).addClass('PIAIgnore'); 
+
+    if (rule.type == 'cut')
+        $(node).addClass('PIAIgnore');
 }
 
 function getRuleResult(rule, containerNode) {
-    
+
     var containerSize = rule.nodes.length - rule.container_offset;
     for (var i = 0; i < containerSize; i++) {
         var ruleNode = rule.nodes[i];
         var tagCollection = getTagCollection(containerNode, ruleNode.tag);
         containerNode = getNodeByRuleNode(ruleNode, tagCollection, true);
-        
-        if (containerNode == null) break;
+
+        if (containerNode == null)
+            break;
     }
 
-    if (containerNode != null) {
+    if (containerNode != null && containerNode != document) {
         if (rule.container_offset > 0) {
 
             var insideRuleNodes = [];
@@ -310,28 +352,29 @@ function getRuleResult(rule, containerNode) {
         } else {
             resultNodes = [containerNode];
         }
-    } else resultNodes = [];  
-    
+    } else
+        resultNodes = [];
+
     resultNodes.forEach(function (node) {
         // set PIA class to selected elements
         setPIAClass(rule, node);
-       
+
         if (rule.rules != null) {
             rule.rules.forEach(function (rule) {
                 getRuleResult(rule, node);
             });
-        }    
-    });       
-    
+        }
+    });
+
     var arrRuleResult = processResultNodesByRule(rule, resultNodes);
-    
-    return arrRuleResult; 
+
+    return arrRuleResult;
 }
 
 function parseDOMbyLevel(level) {
 
     var objResult = {result: []};
-    
+
     level.rules.forEach(function (rule) {
         var objRuleResult = getRuleResult(rule, document);
         objResult.result.push(objRuleResult);

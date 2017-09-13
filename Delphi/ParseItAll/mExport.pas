@@ -73,6 +73,9 @@ begin
         then
           ValueStrings := DateTimeToStr(Link.HandleTime)
         else
+        if Key = 'ru_source' then
+          ValueStrings := Link.Link
+        else
           begin
             RecList := Link.GetRecordsByKey(Key);
             try
@@ -159,6 +162,7 @@ begin
       Level := Job.Levels[i];
       Keys := Keys + GetRuleKeysFromLevel(Level);
     end;
+  Keys := Keys + ['ru_source'];
 
   // create file
   FFileName := GetCurrentDir + '\Export\' +Job.ID.ToString + '_' + IntToStr(Trunc(Now))+'.csv';
