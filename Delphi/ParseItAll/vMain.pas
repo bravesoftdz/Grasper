@@ -32,6 +32,7 @@ type
     acCreateJob: TAction;
     btnClear: TButton;
     btnSaveToCSV: TBitBtn;
+    btnCopy: TBitBtn;
     procedure FormShow(Sender: TObject);
     procedure btnEditJobClick(Sender: TObject);
     procedure btnEditRulesClick(Sender: TObject);
@@ -39,6 +40,7 @@ type
     procedure acCreateJobExecute(Sender: TObject);
     procedure btnClearClick(Sender: TObject);
     procedure btnSaveToCSVClick(Sender: TObject);
+    procedure btnCopyClick(Sender: TObject);
   private
     { Private declarations }
     function GetSelectedJobID: integer;
@@ -61,6 +63,11 @@ implementation
 uses
   WinProcs,
   cController;
+
+procedure TViewMain.btnCopyClick(Sender: TObject);
+begin
+ SendMessage('TempCopy');
+end;
 
 procedure TViewMain.SetJobsGrid(aJobs: TJobList);
 var

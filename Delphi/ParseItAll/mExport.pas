@@ -81,7 +81,10 @@ begin
             try
               ValueStrings := '';
               for Rec in RecList do
-                AddToValueString(ValueStrings, Rec.Value);
+                begin
+                  AddToValueString(ValueStrings, Rec.Value);
+                  if Key = 'site' then break;
+                end;
             finally
               RecList.Free;
             end;
@@ -108,7 +111,8 @@ begin
       'where not exists (select Id from link2link l2l where l2l.parent_link_id = l.Id) ' +
       'and exists (select Id from records r where r.link_id = l.Id) ' +
       'and l.job_id = :JobID ' +
-      'order by l.id';
+    //  'order by l.id';
+      'order by l.handle_time';
     dsQuery.ParamByName('JobID').AsInteger := aJobID;
     FDBEngine.OpenQuery(dsQuery, False);
 
@@ -162,7 +166,7 @@ begin
       Level := Job.Levels[i];
       Keys := Keys + GetRuleKeysFromLevel(Level);
     end;
-  Keys := Keys + ['ru_source'];
+  Keys := Keys + ['ru_source', 'en_source', 'ua_source'];
 
   // create file
   FFileName := GetCurrentDir + '\Export\' +Job.ID.ToString + '_' + IntToStr(Trunc(Now))+'.csv';

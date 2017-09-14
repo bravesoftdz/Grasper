@@ -30,8 +30,8 @@ type
     procedure SaveLists; override;
   ////////////////////
   private
-  // Getters Setters
     FRecords: TRecordList;
+  // Getters Setters
     function GetJobID: Integer;
     procedure SetJobID(aValue: Integer);
     function GetLevel: Integer;
@@ -141,7 +141,7 @@ end;
 
 procedure TLink.SetParentRel(aValue: TLinkRel);
 begin
-  FRelations.AddOrSetValue('LINK2LINK', aValue);
+  FOneRelations.AddOrSetValue('LINK2LINK', aValue);
 end;
 
 function TLinkRel.GetParentLinkID: Integer;
@@ -156,7 +156,7 @@ end;
 
 function TLink.GetParentRel: TLinkRel;
 begin
-  Result := FRelations.Items['LINK2LINK'] as TLinkRel;
+  Result := FOneRelations.Items['LINK2LINK'] as TLinkRel;
 end;
 
 class function TLinkRel.GetEntityStruct: TEntityStruct;
@@ -219,7 +219,7 @@ begin
   AddField(Result.FieldList, 'HANDLED', ftInteger);
   AddField(Result.FieldList, 'HANDLE_TIME', ftDateTime);
 
-  AddRelation(Result.RelatedList, 'CHILD_LINK_ID', '', TLinkRel);
+  AddOneRelation(Result.OneRelatedList, 'CHILD_LINK_ID', '', TLinkRel);
 end;
 
 end.

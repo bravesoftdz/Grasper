@@ -97,12 +97,12 @@ end;
 
 function TLevelRuleRel.GetRule: TJobRule;
 begin
-  Result := FRelations.Items['JOB_RULES'] as TJobRule;
+  Result := FOneRelations.Items['JOB_RULES'] as TJobRule;
 end;
 
 procedure TLevelRuleRel.SetRule(aValue: TJobRule);
 begin
-  FRelations.AddOrSetValue('JOB_RULES', aValue);
+  FOneRelations.AddOrSetValue('JOB_RULES', aValue);
 end;
 
 function TLevelRuleRel.GetRuleID: Integer;
@@ -131,7 +131,7 @@ begin
   AddField(Result.FieldList, 'LEVEL_ID', ftInteger);
   AddField(Result.FieldList, 'RULE_ID', ftInteger);
 
-  AddRelation(Result.RelatedList, 'ID', 'RULE_ID', TJobRule);
+  AddOneRelation(Result.OneRelatedList, 'ID', 'RULE_ID', TJobRule);
 end;
 
 procedure TJobLevel.SaveLists;

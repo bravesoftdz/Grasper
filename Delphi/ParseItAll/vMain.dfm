@@ -129,8 +129,8 @@ object ViewMain: TViewMain
       ShowHint = True
     end
     object btnEditJob: TBitBtn
-      Left = 375
-      Top = 8
+      Left = 298
+      Top = 9
       Width = 75
       Height = 25
       Caption = 'btnEditJob'
@@ -138,7 +138,7 @@ object ViewMain: TViewMain
       OnClick = btnEditJobClick
     end
     object btnEditRules: TBitBtn
-      Left = 63
+      Left = 55
       Top = 3
       Width = 75
       Height = 25
@@ -147,7 +147,7 @@ object ViewMain: TViewMain
       OnClick = btnEditRulesClick
     end
     object btnGo: TBitBtn
-      Left = 152
+      Left = 135
       Top = 3
       Width = 75
       Height = 25
@@ -156,7 +156,7 @@ object ViewMain: TViewMain
       OnClick = btnGoClick
     end
     object btnClear: TButton
-      Left = 248
+      Left = 216
       Top = 3
       Width = 75
       Height = 25
@@ -165,13 +165,22 @@ object ViewMain: TViewMain
       OnClick = btnClearClick
     end
     object btnSaveToCSV: TBitBtn
-      Left = 472
+      Left = 379
       Top = 3
       Width = 75
       Height = 25
       Caption = 'btnSaveToCSV'
       TabOrder = 4
       OnClick = btnSaveToCSVClick
+    end
+    object btnCopy: TBitBtn
+      Left = 472
+      Top = 3
+      Width = 75
+      Height = 25
+      Caption = 'btnCopy'
+      TabOrder = 5
+      OnClick = btnCopyClick
     end
   end
   object chrmBrowser: TChromium
@@ -205,7 +214,7 @@ object ViewMain: TViewMain
     Left = 400
     Top = 97
     Bitmap = {
-      494C0101010008002C0010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C010101000800300010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       000000000000000000000000000000000000323232FF000000FF000000FF0000
       00FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF0202

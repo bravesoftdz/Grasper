@@ -40,6 +40,7 @@ type
   // overrides
   public
     class function GetEntityStruct: TEntityStruct; override;
+    procedure Assign(aSourceEntity: TEntityAbstract); override;
   protected
     procedure SaveLists; override;
   ////////////////////
@@ -94,6 +95,19 @@ implementation
 uses
   Data.DB;
 
+procedure TJobRule.Assign(aSourceEntity: TEntityAbstract);
+begin
+  inherited;
+
+  // Copy One To Many Relations
+  if aSourceEntity is TJobRule then
+    begin
+      Nodes.Assign(TJobRule(aSourceEntity).Nodes);
+      ChildRuleRels.Assign(TJobRule(aSourceEntity).ChildRuleRels);
+      RegExps.Assign(TJobRule(aSourceEntity).RegExps);
+    end;
+end;
+
 function TJobRule.IndexOfChildRule(aJobRule: TJobRule): Integer;
 var
   RuleRuleRel: TRuleRuleRel;
@@ -121,12 +135,12 @@ end;
 
 procedure TRuleRuleRel.SetChildRule(aValue: TJobRule);
 begin
-  FRelations.AddOrSetValue('JOB_RULES', aValue);
+  FOneRelations.AddOrSetValue('JOB_RULES', aValue);
 end;
 
 function TRuleRuleRel.GetChildRule: TJobRule;
 begin
-  Result := FRelations.Items['JOB_RULES'] as TJobRule;
+  Result := FOneRelations.Items['JOB_RULES'] as TJobRule;
 end;
 
 function TJobRule.GetChildRules: TRuleRuleRelList;
@@ -164,37 +178,37 @@ begin
   AddField(Result.FieldList, 'PARENT_RULE_ID', ftInteger);
   AddField(Result.FieldList, 'CHILD_RULE_ID', ftInteger);
 
-  AddRelation(Result.RelatedList, 'ID', 'CHILD_RULE_ID', TJobRule);
+  AddOneRelation(Result.OneRelatedList, 'ID', 'CHILD_RULE_ID', TJobRule);
 end;
 
 procedure TJobRule.SetCut(aValue: TJobCut);
 begin
-  FRelations.AddOrSetValue('JOB_RULE_CUTS', aValue);
+  FOneRelations.AddOrSetValue('JOB_RULE_CUTS', aValue);
 end;
 
 function TJobRule.GetCut: TJobCut;
 begin
-  Result := FRelations.Items['JOB_RULE_CUTS'] as TJobCut;
+  Result := FOneRelations.Items['JOB_RULE_CUTS'] as TJobCut;
 end;
 
 function TJobRule.GetRec: TJobRecord;
 begin
-  Result := FRelations.Items['JOB_RULE_RECORDS'] as TJobRecord;
+  Result := FOneRelations.Items['JOB_RULE_RECORDS'] as TJobRecord;
 end;
 
 procedure TJobRule.SetRec(aValue: TJobRecord);
 begin
-  FRelations.AddOrSetValue('JOB_RULE_RECORDS', aValue);
+  FOneRelations.AddOrSetValue('JOB_RULE_RECORDS', aValue);
 end;
 
 function TJobRule.GetLink: TJobLink;
 begin
-  Result := FRelations.Items['JOB_RULE_LINKS'] as TJobLink;
+  Result := FOneRelations.Items['JOB_RULE_LINKS'] as TJobLink;
 end;
 
 procedure TJobRule.SetLink(aValue: TJobLink);
 begin
-  FRelations.AddOrSetValue('JOB_RULE_LINKS', aValue);
+  FOneRelations.AddOrSetValue('JOB_RULE_LINKS', aValue);
 end;
 
 function TJobRule.GetOrderNum: Integer;
@@ -277,9 +291,9 @@ begin
   AddField(Result.FieldList, 'VISUAL_COLOR', ftInteger);
   AddField(Result.FieldList, 'ORDER_NUM', ftInteger);
 
-  AddRelation(Result.RelatedList, 'JOB_RULE_ID', '', TJobLink);
-  AddRelation(Result.RelatedList, 'JOB_RULE_ID', '', TJobRecord);
-  AddRelation(Result.RelatedList, 'JOB_RULE_ID', '', TJobCut);
+  AddOneRelation(Result.OneRelatedList, 'JOB_RULE_ID', '', TJobLink);
+  AddOneRelation(Result.OneRelatedList, 'JOB_RULE_ID', '', TJobRecord);
+  AddOneRelation(Result.OneRelatedList, 'JOB_RULE_ID', '', TJobCut);
 end;
 
 function TJobRule.GetLevelID: Integer;

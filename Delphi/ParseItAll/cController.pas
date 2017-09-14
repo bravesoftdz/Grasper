@@ -88,6 +88,8 @@ type
 
     // Exports
     procedure ExportJobResultsToCSV;
+
+    procedure TempCopy;
   end;
 
 implementation
@@ -108,6 +110,31 @@ uses
   mExport,
 
   FireDAC.Comp.Client;
+
+procedure TController.TempCopy;
+var
+  SourceLevel, EngLevel: TJobLevel;
+  RuleRel, NewRuleRel: TLevelRuleRel;
+begin
+  // copy Levels
+  SourceLevel := TJobLevel.Create(FDBEngine, 3);
+  EngLevel := TJobLevel.Create(FDBEngine, 4);
+  try
+    for RuleRel in SourceLevel.RuleRels do
+      begin
+        NewRuleRel := TLevelRuleRel.Create(FDBEngine);
+        NewRuleRel.Rule := TJobRule.Create(FDBEngine);
+        NewRuleRel.Rule.Assign(RuleRel.Rule);
+
+        EngLevel.RuleRels.Add(NewRuleRel);
+      end;
+
+    EngLevel.SaveAll;
+  finally
+    SourceLevel.Free;
+    EngLevel.Free;
+  end;
+end;
 
 procedure TController.ExportJobResultsToCSV;
 var
