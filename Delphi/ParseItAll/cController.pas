@@ -118,7 +118,7 @@ var
 begin
   // copy Levels
   SourceLevel := TJobLevel.Create(FDBEngine, 3);
-  EngLevel := TJobLevel.Create(FDBEngine, 4);
+  EngLevel := TJobLevel.Create(FDBEngine, 5);
   try
     for RuleRel in SourceLevel.RuleRels do
       begin

@@ -76,6 +76,12 @@ begin
         if Key = 'ru_source' then
           ValueStrings := Link.Link
         else
+        if Key = 'en_source' then
+          ValueStrings := Link.Link
+        else
+        if Key = 'ua_source' then
+          ValueStrings := Link.Link
+        else
           begin
             RecList := Link.GetRecordsByKey(Key);
             try
@@ -108,11 +114,14 @@ begin
     dsQuery.SQL.Text :=
       'select l.Id ' +
       'from links l ' +
+      'join link2link l2l on l2l.child_link_id = l.id ' +
       'where not exists (select Id from link2link l2l where l2l.parent_link_id = l.Id) ' +
       'and exists (select Id from records r where r.link_id = l.Id) ' +
       'and l.job_id = :JobID ' +
+      'group by l2l.parent_link_id '+
     //  'order by l.id';
-      'order by l.handle_time';
+      'order by l.handle_time, level';
+
     dsQuery.ParamByName('JobID').AsInteger := aJobID;
     FDBEngine.OpenQuery(dsQuery, False);
 
