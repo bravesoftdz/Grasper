@@ -141,15 +141,17 @@ function getNodeByRuleNode(ruleNode, tagCollection, keepSearch) {
     return node;
 }
 
-function getTagCollection(node, tag) {
+function getTagCollection(node, ruleNode) {
 
     var collection = [];
 
     for (var i = 0; i < node.children.length; i++) {
-        if (node.children[i].tagName === tag)
+        
+        if (node.children[i].tagName === ruleNode.tag)
             collection.push(node.children[i]);
+    
     }
-
+    
     return collection;
 }
 
@@ -164,7 +166,7 @@ function getInsideContainerNodes(containerNode, ruleNodes) {
 
         nodes.forEach(function (node) {
 
-            var tagCollection = getTagCollection(node, ruleNode.tag);
+            var tagCollection = getTagCollection(node, ruleNode);
 
             // list each child nodes - search for matching
             tagCollection.forEach(function (node, i) {
@@ -185,7 +187,7 @@ function getInsideContainerNodes(containerNode, ruleNodes) {
 }
 
 function getContentByRegExps(grabData, rule) {
-   
+
     var regexps = rule.regexps;
     var results = [];
     var hasRegEx = {
@@ -193,22 +195,26 @@ function getContentByRegExps(grabData, rule) {
         replace: false,
         ignore: false
     };
-    
+
     // case text grab
-    if (rule.grab_type == 1) var sourceText = grabData.innerText;  
+    if (rule.grab_type == 1)
+        var sourceText = grabData.innerText;
 
     // case href grab
-    if (rule.grab_type == 2) sourceText = grabData.innerText;
+    if (rule.grab_type == 2)
+        sourceText = grabData.innerText;
 
     // case html grab
-    if (rule.grab_type == 3) sourceText = grabData.innerHTML;
-    
-    if (sourceText == null) sourceText = grabData.innerText;
+    if (rule.grab_type == 3)
+        sourceText = grabData.innerHTML;
+
+    if (sourceText == null)
+        sourceText = grabData.innerText;
 
     // type 3 - ignore
     var isIgnoreExit = false;
     regexps.forEach(function (regex) {
-        
+
         if (regex.type == 3) {
             hasRegEx.ignore = true;
             var reg = new RegExp(regex.regexp, 'g');
@@ -224,7 +230,7 @@ function getContentByRegExps(grabData, rule) {
 
     // type 1 - matches
     regexps.forEach(function (regex) {
-        
+
         if (regex.type == 1) {
             hasRegEx.match = true;
             var reg = new RegExp(regex.regexp, 'g');
@@ -241,7 +247,7 @@ function getContentByRegExps(grabData, rule) {
 
     // type 2 - replaces
     regexps.forEach(function (regex) {
-        
+
         if (regex.type == 2) {
             hasRegEx.replace = true;
             if (regex.replace == null)
@@ -254,10 +260,11 @@ function getContentByRegExps(grabData, rule) {
             results = replacedResults;
         }
     });
-    
+
     // case href grab
-    if (rule.grab_type == 2 && results.length > 0) results = [grabData.href];
-    
+    if (rule.grab_type == 2 && results.length > 0)
+        results = [grabData.href];
+
     return results;
 }
 
@@ -267,32 +274,33 @@ function processResultNodesByRule(rule, resultNodes) {
     resultNodes.forEach(function (node) {
 
         var grabData = {};
-        
+
         //switch on cuts     
         var ignoreNodes = $('.PIAIgnore', node);
         $(ignoreNodes).css('display', 'none');
-        
+
         if (node.innerText != null)
-             grabData.innerText = node.innerText;
-         else
-             grabData.innerText = '';
-        
-        if (node.href != null)
-            grabData.href = node.href;
+            grabData.innerText = node.innerText;
+        else
+            grabData.innerText = '';
+
+        var href = $('a', node).attr('href'); 
+        if (href != null)
+            grabData.href = href;
         else
             grabData.href = '';
-        
+
         if (node.innerHTML != null)
             grabData.innerHTML = node.innerHTML;
         else
             grabData.innerHTML = '';
-        
+
         //switch off cuts 
         $(ignoreNodes).css('display', '');
-                
+
         //process grab type and regexps
         var regExResults = getContentByRegExps(grabData, rule);
-        
+
         regExResults.forEach(function (matchText) {
 
             var objNodeRes = {};
@@ -332,7 +340,7 @@ function getRuleResult(rule, containerNode) {
     var containerSize = rule.nodes.length - rule.container_offset;
     for (var i = 0; i < containerSize; i++) {
         var ruleNode = rule.nodes[i];
-        var tagCollection = getTagCollection(containerNode, ruleNode.tag);
+        var tagCollection = getTagCollection(containerNode, ruleNode);
         containerNode = getNodeByRuleNode(ruleNode, tagCollection, true);
 
         if (containerNode == null)

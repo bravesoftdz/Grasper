@@ -359,8 +359,8 @@ begin
               begin
                 Key := jsnRulePairObj.GetValue('key').Value;
 
-                if jsnRulePairObj.TryGetValue('value', Value) then
-                  AddRecord(FCurrLink.ID, i, Key, Trim(Value));
+0                if jsnRulePairObj.TryGetValue('value', Value) then
+                  AddRecord(FCurrLink.ID, i, Key, Value);
               end;
           end;
       end;
