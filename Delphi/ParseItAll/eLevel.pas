@@ -36,6 +36,7 @@ type
     procedure SaveLists; override;
   public
     class function GetEntityStruct: TEntityStruct; override;
+    procedure Assign(aSourceEntity: TEntityAbstract); override;
   ////////////////////
   private
     FRuleRels: TLevelRuleRelList;
@@ -64,6 +65,17 @@ implementation
 
 uses
   Data.DB;
+
+procedure TJobLevel.Assign(aSourceEntity: TEntityAbstract);
+begin
+  inherited;
+
+  // Copy One To Many Relations
+  if aSourceEntity is TJobLevel then
+    begin
+      RuleRels.Assign(TJobLevel(aSourceEntity).RuleRels);
+    end;
+end;
 
 function TJobLevel.GetCurrentTestLink: string;
 var

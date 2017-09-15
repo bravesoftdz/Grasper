@@ -17,10 +17,15 @@ type
   // Getters Setters
     function GetParentLinkID: Integer;
     procedure SetParentLinkID(aValue: Integer);
+    function GetChildLinkID: Integer;
+    procedure SetChildLinkID(aValue: Integer);
   ////////////////////
   public
     property ParentLinkID: Integer read GetParentLinkID write SetParentLinkID;
+    property ChildLinkID: Integer read GetChildLinkID write SetChildLinkID;
   end;
+
+  TLinkRelList = TEntityList<TLinkRel>;
 
   TLink = class(TEntityAbstract)
   // overrides
@@ -31,6 +36,7 @@ type
   ////////////////////
   private
     FRecords: TRecordList;
+    FChildLinkRels: TLinkRelList;
   // Getters Setters
     function GetJobID: Integer;
     procedure SetJobID(aValue: Integer);
@@ -49,9 +55,10 @@ type
     function GetHandleTime: TDateTime;
     procedure SetHandleTime(aValue: TDateTime);
     function GetRecordList: TRecordList;
+    function GetChildLinkRels: TLinkRelList;
   ////////////////////
   public
-    function GetRecordsByKey(aKey: string; aResult: TObjectList<TRecord> = nil): TObjectList<TRecord>;
+    function GetRecordsByKey(aKey: string; aResult: TObjectList<TRecord> = nil; aOrignLink: TLink = nil): TObjectList<TRecord>;
     property JobID: Integer read GetJobID write SetJobID;
     property Level: Integer read GetLevel write SetLevel;
     property Num: Integer read GetNum write SetNum;
@@ -61,6 +68,7 @@ type
     property Handled: Integer read GetHandled write SetHandled;
     property HandleTime: TDateTime read GetHandleTime write SetHandleTime;
     property Records: TRecordList read GetRecordList;
+    property ChildLinkRels: TLinkRelList read GetChildLinkRels;
   end;
 
 implementation
@@ -68,15 +76,40 @@ implementation
 uses
   Data.DB;
 
-function TLink.GetRecordsByKey(aKey: string; aResult: TObjectList<TRecord> = nil): TObjectList<TRecord>;
+function TLinkRel.GetChildLinkID: Integer;
+begin
+  Result := FData.Items['CHILD_LINK_ID'];
+end;
+
+procedure TLinkRel.SetChildLinkID(aValue: Integer);
+begin
+  FData.AddOrSetValue('CHILD_LINK_ID', aValue);
+end;
+
+function TLink.GetChildLinkRels: TLinkRelList;
+begin
+  if not Assigned(FChildLinkRels) then
+    FChildLinkRels := TLinkRelList.Create(Self, 'PARENT_LINK_ID', ID);
+
+  Result := FChildLinkRels;
+end;
+
+function TLink.GetRecordsByKey(aKey: string; aResult: TObjectList<TRecord> = nil; aOrignLink: TLink = nil): TObjectList<TRecord>;
 var
   Rec: TRecord;
-  ParentLink: TLink;
+  ParentLink, ChildLink: TLink;
+  ChildLinkRel: TLinkRel;
+  OrignLink: TLink;
 begin
   if aResult = nil then
     Result := TObjectList<TRecord>.Create(True)
   else
     Result := aResult;
+
+  if aOrignLink = nil then
+    OrignLink := Self
+  else
+    OrignLink := aOrignLink;
 
   for Rec in Records do
     if Rec.Key = aKey then
@@ -85,20 +118,40 @@ begin
         Result.Add(Rec);
       end;
 
-  if ParentRel <> nil then
-    begin
-      ParentLink := TLink.Create(FDBEngine, ParentRel.ParentLinkID);
-      try
-        ParentLink.GetRecordsByKey(aKey, Result);
-      finally
-        ParentLink.Free;
+  if (Result.Count = 0) and (aOrignLink <> nil) then
+    if ID = aOrignLink.ParentRel.ParentLinkID then
+      for ChildLinkRel in ChildLinkRels do
+        begin
+          ChildLink := TLink.Create(FDBEngine, ChildLinkRel.ChildLinkID);
+          try
+            if ChildLink.Level < aOrignLink.Level then
+              for Rec in ChildLink.Records do
+                if Rec.Key = aKey then
+                  begin
+                    ChildLink.Records.Extract(Rec);
+                    Result.Add(Rec);
+                  end;
+          finally
+            ChildLink.Free;
+          end;
+        end;
+
+  if Result.Count = 0 then
+    if ParentRel <> nil then
+      begin
+        ParentLink := TLink.Create(FDBEngine, ParentRel.ParentLinkID);
+        try
+          ParentLink.GetRecordsByKey(aKey, Result, OrignLink);
+        finally
+          ParentLink.Free;
+        end;
       end;
-    end;
 end;
 
 procedure TLink.SaveLists;
 begin
   if Assigned(FRecords) then FRecords.SaveList(ID);
+  if Assigned(FChildLinkRels) then FChildLinkRels.SaveList(ID);
 end;
 
 function TLink.GetRecordList: TRecordList;

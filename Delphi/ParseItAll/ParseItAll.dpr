@@ -33,7 +33,8 @@ uses
   eRecord in 'eRecord.pas',
   mTester in 'mTester.pas',
   eTestLink in 'eTestLink.pas',
-  mExport in 'mExport.pas';
+  mExport in 'mExport.pas',
+  API_Yandex in '..\..\..\Libraries\Delphi\API_Yandex.pas';
 
 {$R *.res}
 
@@ -43,7 +44,7 @@ begin
   if not CefLoadLibDefault then
     Exit;
 
-  //ReportMemoryLeaksOnShutdown := True;
+  ReportMemoryLeaksOnShutdown := True;
 
   Application.Initialize;
   Application.MainFormOnTaskbar := True;

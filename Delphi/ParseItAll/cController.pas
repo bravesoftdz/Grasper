@@ -90,6 +90,9 @@ type
     procedure ExportJobResultsToCSV;
 
     procedure TempCopy;
+
+    // Test
+    procedure Test;
   end;
 
 implementation
@@ -111,13 +114,26 @@ uses
 
   FireDAC.Comp.Client;
 
+procedure TController.Test;
+var
+  Node: TJobNode;
+begin
+  Node := TJobNode.Create(FDBEngine);
+  try
+
+  finally
+    Node.Free;
+  end;
+end;
+
 procedure TController.TempCopy;
 var
-  SourceLevel, EngLevel: TJobLevel;
+  SourceLevel, DestLevel: TJobLevel;
   RuleRel, NewRuleRel: TLevelRuleRel;
+  SourceJob, DestJob: TJob;
 begin
-  // copy Levels
-  SourceLevel := TJobLevel.Create(FDBEngine, 3);
+  // copy Levels Rules
+  {SourceLevel := TJobLevel.Create(FDBEngine, 3);
   EngLevel := TJobLevel.Create(FDBEngine, 5);
   try
     for RuleRel in SourceLevel.RuleRels do
@@ -133,7 +149,21 @@ begin
   finally
     SourceLevel.Free;
     EngLevel.Free;
-  end;
+  end;  }
+
+  // copy all Levels
+  SourceJob := TJob.Create(FDBEngine, 1);
+  DestJob := TJob.Create(FDBEngine, 4);
+
+  for SourceLevel in SourceJob.Levels do
+    begin
+      DestLevel := TJobLevel.Create(FDBEngine);
+      DestLevel.Assign(SourceLevel);
+
+      DestJob.Levels.Add(DestLevel);
+    end;
+
+  DestJob.SaveAll;
 end;
 
 procedure TController.ExportJobResultsToCSV;

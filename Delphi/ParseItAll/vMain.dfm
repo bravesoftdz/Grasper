@@ -179,7 +179,6 @@ object ViewMain: TViewMain
       Width = 75
       Height = 25
       Caption = 'btnCopy'
-      Enabled = False
       TabOrder = 5
       OnClick = btnCopyClick
     end
@@ -192,6 +191,15 @@ object ViewMain: TViewMain
     Align = alClient
     DefaultUrl = 'about:blank'
     TabOrder = 2
+  end
+  object btn1: TButton
+    Left = 471
+    Top = 257
+    Width = 75
+    Height = 25
+    Caption = 'btn1'
+    TabOrder = 3
+    OnClick = btn1Click
   end
   object mmMenu: TMainMenu
     Images = ilIcons
@@ -215,7 +223,7 @@ object ViewMain: TViewMain
     Left = 400
     Top = 97
     Bitmap = {
-      494C010101000800340010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C010101000800380010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       000000000000000000000000000000000000323232FF000000FF000000FF0000
       00FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF0202

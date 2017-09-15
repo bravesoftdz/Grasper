@@ -33,6 +33,7 @@ type
     btnClear: TButton;
     btnSaveToCSV: TBitBtn;
     btnCopy: TBitBtn;
+    btn1: TButton;
     procedure FormShow(Sender: TObject);
     procedure btnEditJobClick(Sender: TObject);
     procedure btnEditRulesClick(Sender: TObject);
@@ -41,6 +42,7 @@ type
     procedure btnClearClick(Sender: TObject);
     procedure btnSaveToCSVClick(Sender: TObject);
     procedure btnCopyClick(Sender: TObject);
+    procedure btn1Click(Sender: TObject);
   private
     { Private declarations }
     function GetSelectedJobID: integer;
@@ -103,6 +105,11 @@ end;
 procedure TViewMain.acCreateJobExecute(Sender: TObject);
 begin
   SendMessage('CreateJob');
+end;
+
+procedure TViewMain.btn1Click(Sender: TObject);
+begin
+  SendMessage('Test');
 end;
 
 procedure TViewMain.btnClearClick(Sender: TObject);

@@ -4,13 +4,18 @@ interface
 
 uses
   API_MVC_DB,
+  API_Yandex,
   eLevel,
-  eRule;
+  eRule,
+  eLink;
 
 type
   TModelExport = class(TModelDB)
   private
     FFileName: string;
+
+    FTranslater: TYaTranslater;
+
     function GetRuleKeysFromLevel(aLevel: TJobLevel): TArray<string>;
     function GetKeysFromRule(aRule: TJobRule): TArray<string>;
     procedure GetLinkslist(aJobID: Integer; aKeys: TArray<string>);
@@ -18,6 +23,8 @@ type
     procedure AddToCSVString(var aString: string; aValue: string);
     procedure AddToValueString(var aString: string; aValue: string);
     procedure WriteToFile(aString: string);
+
+    procedure TryGetTranslate(var aValueStrings: string; aKey: string; aLink: TLink);
   published
     procedure ExportToCSV;
   end;
@@ -30,8 +37,44 @@ uses
   FireDAC.Comp.Client,
   API_Files,
   eJob,
-  eLink,
   eRecord;
+
+procedure TModelExport.TryGetTranslate(var aValueStrings: string; aKey: string; aLink: TLink);
+var
+  ruKey, ruValue: string;
+  Lang: string;
+  Rec: TRecord;
+begin
+  if aValueStrings <> '' then Exit;
+
+  if aKey = 'en_title' then ruKey := 'ru_title';
+  if aKey = 'en_content' then ruKey := 'ru_content';
+  if aKey = 'en_country' then ruKey := 'ru_country';
+  if aKey = 'en_address' then ruKey := 'ru_address';
+
+  if aKey = 'ua_title' then ruKey := 'ru_title';
+  if aKey = 'ua_content' then ruKey := 'ru_content';
+  if aKey = 'ua_country' then ruKey := 'ru_country';
+  if aKey = 'ua_address' then ruKey := 'ru_address';
+
+  if ruKey = '' then Exit;
+
+  for Rec in aLink.GetRecordsByKey(ruKey) do
+    begin
+      ruValue := Rec.Value;
+      Break;
+    end;
+
+  if aKey.Contains('en_') then Lang := 'en';
+  if aKey.Contains('ua_') then Lang := 'uk';
+
+  if ruValue <> '' then
+    try
+      aValueStrings := FTranslater.Translate(Lang, ruValue);
+    except
+
+    end;
+end;
 
 procedure TModelExport.AddToValueString(var aString: string; aValue: string);
 begin
@@ -89,12 +132,15 @@ begin
               for Rec in RecList do
                 begin
                   AddToValueString(ValueStrings, Rec.Value);
-                  if Key = 'site' then break;
+                  break;
                 end;
             finally
               RecList.Free;
             end;
           end;
+
+        // translate
+        TryGetTranslate(ValueStrings, Key, Link);
 
         AddToCSVString(CSVString, ValueStrings);
       end;
@@ -186,6 +232,9 @@ begin
   for Key in Keys do
     AddToCSVString(CSVString, Key);
   WriteToFile(CSVString);
+
+  // traslater
+  FTranslater := TYaTranslater.Create;
 
   GetLinkslist(Job.ID, Keys);
 end;
