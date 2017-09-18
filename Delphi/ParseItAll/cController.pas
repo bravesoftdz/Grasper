@@ -137,30 +137,68 @@ end;
 
 procedure TController.Test;
 var
+  SampleJob, NewJob: TJob;
   Level: TJobLevel;
   RuleRel: TLevelRuleRel;
-  TestLink: TTestLink;
+  RegEx: TJobRegExp;
+  jsnData: TJSONArray;
+  jsnJobValue: TJSONValue;
+  jsnJobData: TJSONObject;
+  FileText: string;
+  i, j: Integer;
 begin
-  Level := TJobLevel.Create(FDBEngine, 2);
+  SampleJob := TJob.Create(FDBEngine, 1);
   try
+    FileText := TFilesEngine.GetTextFromFile('D:\Git\ParseItAll\Dox\jobs.json');
+    jsnData := TJSONObject.ParseJSONValue(FileText) as TJSONArray;
 
-    {for TestLink in Level.TestLinks do
+    i := 0;
+    for jsnJobValue in jsnData do
       begin
+        Inc(i);
+        if i < 3 then Continue;
+        jsnJobData := jsnJobValue as TJSONObject;
 
-      end; }
+        NewJob := TJob.Create(FDBEngine);
+        try
+          NewJob.Assign(SampleJob);
+          NewJob.Caption := Format('Wikipedia %s', [jsnJobData.GetValue('FIELD1').Value]);
+          NewJob.ZeroLink := jsnJobData.GetValue('FIELD3').Value;
 
-    for RuleRel in Level.RuleRels do
-      begin
+          Level := NewJob.GetLevel(1);
+          for RuleRel in Level.RuleRels do
+            begin
+              if RuleRel.Rule.Rec <> nil then
+                begin
+                  if RuleRel.Rule.Rec.Key = 'category_identifier' then
+                    begin
+                      j := 0;
+                      for RegEx in RuleRel.Rule.RegExps do
+                        begin
+                          inc(j);
+                          if j = 1 then
+                            RegEx.RegExp := 'Страницы в категории';
 
+                          if j = 2 then
+                            begin
+                              RegEx.RegExp := 'Страницы в категории';
+                              RegEx.ReplaceValue := jsnJobData.GetValue('FIELD2').Value;
+                            end;
+                        end;
+                    end;
+                end;
+            end;
+
+        finally
+          NewJob.SaveAll;
+          NewJob.Free;
+        end;
+
+        //break;
       end;
-
-    for TestLink in Level.TestLinks do
-      begin
-
-      end;
-
   finally
-    Level.Free;
+    SampleJob.Free;
+    jsnData.Free;
   end;
 end;
 

@@ -28,12 +28,6 @@ object ViewMain: TViewMain
     ExplicitTop = 171
     ExplicitWidth = 119
   end
-  object Image1: TImage
-    Left = 504
-    Top = 112
-    Width = 105
-    Height = 105
-  end
   object pnlJobs: TPanel
     Left = 0
     Top = 73
@@ -71,7 +65,6 @@ object ViewMain: TViewMain
       DefaultFixedCellStyle.Font.Style = []
       DefaultFixedCellStyle.BGColor = clBtnFace
       LineDesign.LineUpColor = clWhite
-      ExplicitHeight = 126
       ColWidths = (
         35
         318)
@@ -210,13 +203,11 @@ object ViewMain: TViewMain
     Align = alClient
     DefaultUrl = 'about:blank'
     TabOrder = 2
-    ExplicitTop = 223
-    ExplicitHeight = 67
   end
   object mmMenu: TMainMenu
     Images = ilIcons
-    Left = 499
-    Top = 96
+    Left = 356
+    Top = 150
     object mniProject: TMenuItem
       Caption = 'Projects'
       object mniNewProject: TMenuItem
@@ -226,16 +217,16 @@ object ViewMain: TViewMain
     end
   end
   object xpmnfstXP: TXPManifest
-    Left = 448
-    Top = 96
+    Left = 505
+    Top = 150
   end
   object ilIcons: TImageList
     ColorDepth = cd32Bit
     DrawingStyle = dsTransparent
-    Left = 400
-    Top = 97
+    Left = 456
+    Top = 150
     Bitmap = {
-      494C0101010008003C0010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C010101000800400010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       000000000000000000000000000000000000323232FF000000FF000000FF0000
       00FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF0202
@@ -375,12 +366,16 @@ object ViewMain: TViewMain
       000000000000}
   end
   object actlstMain: TActionList
-    Left = 351
-    Top = 97
+    Left = 408
+    Top = 150
     object acCreateJob: TAction
       Hint = 'New Project'
       ImageIndex = 0
       OnExecute = acCreateJobExecute
     end
+  end
+  object tmrJobsGridUpdate: TTimer
+    Left = 40
+    Top = 155
   end
 end

@@ -13,6 +13,7 @@ type
     procedure SaveLists; override;
   public
     class function GetEntityStruct: TEntityStruct; override;
+    procedure Assign(aSourceEntity: TEntityAbstract); override;
   ////////////////////
   private
     FLevels: TLevelList;
@@ -38,6 +39,17 @@ implementation
 
 uses
   Data.DB;
+
+procedure TJob.Assign(aSourceEntity: TEntityAbstract);
+begin
+  inherited;
+
+  // Copy One To Many Relations
+  if aSourceEntity is TJob then
+    begin
+      Levels.Assign(TJob(aSourceEntity).Levels);
+    end;
+end;
 
 function TJob.GetMinLevel: TJobLevel;
 var

@@ -275,9 +275,8 @@ var
   SQL: string;
   dsQuery: TFDQuery;
 begin
-  SQL := 'select  '#13#10 +
-         '  links.*, '#13#10 +
-         '  (select count(*) from links t where t.job_id = links.job_id) links_count '#13#10 +
+  SQL := 'select '#13#10 +
+         'links.* '#13#10 +
          'from links '#13#10 +
          'where job_id = :JobID '#13#10 +
          'and handled in (0, 1) '#13#10 +

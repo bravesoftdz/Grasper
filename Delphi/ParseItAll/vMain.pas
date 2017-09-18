@@ -25,7 +25,6 @@ type
     splJobBrowser: TSplitter;
     chrmBrowser: TChromium;
     btnCreateJob: TSpeedButton;
-    Image1: TImage;
     ilIcons: TImageList;
     strgrdJobs: TZColorStringGrid;
     actlstMain: TActionList;
@@ -35,6 +34,7 @@ type
     btnCopy: TBitBtn;
     btnTest: TButton;
     btnStop: TBitBtn;
+    tmrJobsGridUpdate: TTimer;
     procedure FormShow(Sender: TObject);
     procedure btnEditJobClick(Sender: TObject);
     procedure btnEditRulesClick(Sender: TObject);
