@@ -19,7 +19,7 @@ object ViewMain: TViewMain
   TextHeight = 13
   object splJobBrowser: TSplitter
     Left = 0
-    Top = 159
+    Top = 233
     Width = 554
     Height = 3
     Cursor = crVSplit
@@ -36,9 +36,9 @@ object ViewMain: TViewMain
   end
   object pnlJobs: TPanel
     Left = 0
-    Top = 29
+    Top = 73
     Width = 554
-    Height = 130
+    Height = 160
     Align = alTop
     BevelOuter = bvNone
     TabOrder = 0
@@ -46,7 +46,7 @@ object ViewMain: TViewMain
       Left = 0
       Top = 0
       Width = 554
-      Height = 130
+      Height = 160
       Align = alClient
       ColCount = 2
       DefaultRowHeight = 18
@@ -71,6 +71,7 @@ object ViewMain: TViewMain
       DefaultFixedCellStyle.Font.Style = []
       DefaultFixedCellStyle.BGColor = clBtnFace
       LineDesign.LineUpColor = clWhite
+      ExplicitHeight = 126
       ColWidths = (
         35
         318)
@@ -83,7 +84,7 @@ object ViewMain: TViewMain
     Left = 0
     Top = 0
     Width = 554
-    Height = 29
+    Height = 73
     Align = alTop
     BevelOuter = bvNone
     Color = clWindow
@@ -129,9 +130,9 @@ object ViewMain: TViewMain
       ShowHint = True
     end
     object btnEditJob: TBitBtn
-      Left = 298
-      Top = 9
-      Width = 75
+      Left = 8
+      Top = 32
+      Width = 41
       Height = 25
       Caption = 'btnEditJob'
       TabOrder = 0
@@ -140,34 +141,34 @@ object ViewMain: TViewMain
     object btnEditRules: TBitBtn
       Left = 55
       Top = 3
-      Width = 75
+      Width = 74
       Height = 25
       Caption = 'btnEditRules'
       TabOrder = 1
       OnClick = btnEditRulesClick
     end
     object btnGo: TBitBtn
-      Left = 135
+      Left = 151
       Top = 3
-      Width = 75
+      Width = 50
       Height = 25
       Caption = 'btnGo'
       TabOrder = 2
       OnClick = btnGoClick
     end
     object btnClear: TButton
-      Left = 216
+      Left = 344
       Top = 3
-      Width = 75
+      Width = 57
       Height = 25
       Caption = 'btnClear'
       TabOrder = 3
       OnClick = btnClearClick
     end
     object btnSaveToCSV: TBitBtn
-      Left = 379
+      Left = 407
       Top = 3
-      Width = 75
+      Width = 59
       Height = 25
       Caption = 'btnSaveToCSV'
       TabOrder = 4
@@ -182,24 +183,35 @@ object ViewMain: TViewMain
       TabOrder = 5
       OnClick = btnCopyClick
     end
+    object btnTest: TButton
+      Left = 472
+      Top = 34
+      Width = 75
+      Height = 25
+      Caption = 'btnTest'
+      TabOrder = 6
+      OnClick = btnTestClick
+    end
+    object btnStop: TBitBtn
+      Left = 207
+      Top = 3
+      Width = 50
+      Height = 25
+      Caption = 'btnStop'
+      TabOrder = 7
+      OnClick = btnStopClick
+    end
   end
   object chrmBrowser: TChromium
     Left = 0
-    Top = 162
+    Top = 236
     Width = 554
-    Height = 128
+    Height = 54
     Align = alClient
     DefaultUrl = 'about:blank'
     TabOrder = 2
-  end
-  object btn1: TButton
-    Left = 471
-    Top = 257
-    Width = 75
-    Height = 25
-    Caption = 'btn1'
-    TabOrder = 3
-    OnClick = btn1Click
+    ExplicitTop = 223
+    ExplicitHeight = 67
   end
   object mmMenu: TMainMenu
     Images = ilIcons
@@ -223,7 +235,7 @@ object ViewMain: TViewMain
     Left = 400
     Top = 97
     Bitmap = {
-      494C010101000800380010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C0101010008003C0010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       000000000000000000000000000000000000323232FF000000FF000000FF0000
       00FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF0202

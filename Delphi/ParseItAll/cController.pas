@@ -93,6 +93,10 @@ type
 
     // Test
     procedure Test;
+
+    // Start/Stop Job
+    procedure StartJob;
+    procedure StopJob;
   end;
 
 implementation
@@ -112,17 +116,51 @@ uses
   mTester,
   mExport,
 
-  FireDAC.Comp.Client;
+  FireDAC.Comp.Client,
+  eTestLink;
+
+procedure TController.StartJob;
+begin
+  FData.AddOrSetValue('JSScript', FJSScript);
+  FData.AddOrSetValue('IsJobStopped', False);
+
+  FObjData.AddOrSetValue('Chromium', ViewMain.chrmBrowser);
+  FObjData.AddOrSetValue('Job', TJob.Create(FDBEngine, ViewMain.SelectedJobID));
+
+  CallAsyncModel(TModelParser, 'StartJob');
+end;
+
+procedure TController.StopJob;
+begin
+  FData.AddOrSetValue('IsJobStopped', True);
+end;
 
 procedure TController.Test;
 var
-  Node: TJobNode;
+  Level: TJobLevel;
+  RuleRel: TLevelRuleRel;
+  TestLink: TTestLink;
 begin
-  Node := TJobNode.Create(FDBEngine);
+  Level := TJobLevel.Create(FDBEngine, 2);
   try
 
+    {for TestLink in Level.TestLinks do
+      begin
+
+      end; }
+
+    for RuleRel in Level.RuleRels do
+      begin
+
+      end;
+
+    for TestLink in Level.TestLinks do
+      begin
+
+      end;
+
   finally
-    Node.Free;
+    Level.Free;
   end;
 end;
 
@@ -149,7 +187,7 @@ begin
   finally
     SourceLevel.Free;
     EngLevel.Free;
-  end;  }
+  end;   }
 
   // copy all Levels
   SourceJob := TJob.Create(FDBEngine, 1);
@@ -316,6 +354,7 @@ end;
 
 procedure TController.ParseDataReceived(aData: string);
 begin
+  if Assigned(FLastParseResult) then FreeAndNil(FLastParseResult);
   FLastParseResult := TJSONObject.ParseJSONValue(aData) as TJSONObject;
 
   if FGettingTestPage then
@@ -596,14 +635,7 @@ begin
   if aMsg = 'ViewRulesClosed' then
     begin
       FObjData.Items['Job'].Free;
-    end;
-
-  if aMsg = 'StartJob' then
-    begin
-      FData.AddOrSetValue('JobID', ViewMain.SelectedJobID);
-      FData.AddOrSetValue('JSScript', FJSScript);
-      FObjData.AddOrSetValue('Chromium', ViewMain.chrmBrowser);
-      CallModel(TModelParser, 'StartJob');
+      if Assigned(FLastParseResult) then FLastParseResult.Free;
     end;
 end;
 

@@ -41,6 +41,7 @@ type
             const message: ICefProcessMessage; out Result: Boolean);
     procedure ProcessDataReceived(aData: string);
     procedure SetCurrLinkHandle(aValue: Integer);
+    procedure StopJob;
     function GetNextlink: TLink;
     function AddLink(aLink: string; aParentLinkID, aLevel: Integer; aNum: Integer = 1): Integer;
     function AddRecord(aLinkId, aRecordNum: integer; aKey, aValue: string): integer;
@@ -56,6 +57,14 @@ uses
   System.Hash,
   FireDAC.Comp.Client,
   API_Files;
+
+procedure TModelParser.StopJob;
+begin
+  FJob.Free;
+
+  FCurrLink.Free;
+  Self.Free;
+end;
 
 procedure TModelJS.AddRuleToJSON(aRule: TJobRule; ajsnArray: TJSONArray);
 var
@@ -271,7 +280,7 @@ begin
          '  (select count(*) from links t where t.job_id = links.job_id) links_count '#13#10 +
          'from links '#13#10 +
          'where job_id = :JobID '#13#10 +
-         'and handled = 0 '#13#10 +
+         'and handled in (0, 1) '#13#10 +
          'order by level desc, id '#13#10 +
          'limit 1';
 
@@ -297,16 +306,21 @@ end;
 
 procedure TModelParser.ProcessNextLink;
 begin
-  if Assigned(FCurrLink) then
+  if FData.Items['IsJobStopped'] then
+    StopJob
+  else
     begin
-      FCurrLink.HandleTime := Now;
-      SetCurrLinkHandle(2);
-      FreeAndNil(FCurrLink);
-    end;
+      if Assigned(FCurrLink) then
+        begin
+          FCurrLink.HandleTime := Now;
+          SetCurrLinkHandle(2);
+          FreeAndNil(FCurrLink);
+        end;
 
-  FCurrLink := GetNextlink;
-  SetCurrLinkHandle(1);
-  FChromium.Load(FCurrLink.Link);
+      FCurrLink := GetNextlink;
+      SetCurrLinkHandle(1);
+      FChromium.Load(FCurrLink.Link);
+    end;
 end;
 
 procedure TModelParser.StartJob;
@@ -315,7 +329,8 @@ begin
   FChromium.OnLoadEnd := crmLoadEnd;
   FChromium.OnProcessMessageReceived := crmProcessMessageReceived;
 
-  FJob := TJob.Create(FDBEngine, FData.Items['JobID']);
+  FJob := FObjData.Items['Job'] as TJob;
+
   ProcessNextLink;
 end;
 
