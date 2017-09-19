@@ -35,6 +35,9 @@ type
     btnTest: TButton;
     btnStop: TBitBtn;
     tmrJobsGridUpdate: TTimer;
+    mniService: TMenuItem;
+    mniVacuumCommand: TMenuItem;
+    mniClearSequences: TMenuItem;
     procedure FormShow(Sender: TObject);
     procedure btnEditJobClick(Sender: TObject);
     procedure btnEditRulesClick(Sender: TObject);
@@ -45,6 +48,9 @@ type
     procedure btnCopyClick(Sender: TObject);
     procedure btnTestClick(Sender: TObject);
     procedure btnStopClick(Sender: TObject);
+    procedure tmrJobsGridUpdateTimer(Sender: TObject);
+    procedure mniVacuumCommandClick(Sender: TObject);
+    procedure mniClearSequencesClick(Sender: TObject);
   private
     { Private declarations }
     function GetSelectedJobID: integer;
@@ -54,6 +60,7 @@ type
   public
     { Public declarations }
     procedure SetJobsGrid(aJobs: TJobList);
+    procedure SetJobProgressInfo(aJobID, aHandledCount, aTotalCount: Integer);
     property SelectedJobID: Integer read GetSelectedJobID;
   end;
 
@@ -67,6 +74,20 @@ implementation
 uses
   WinProcs,
   cController;
+
+procedure TViewMain.SetJobProgressInfo(aJobID, aHandledCount, aTotalCount: Integer);
+var
+  i: Integer;
+begin
+  for i := 0 to strgrdJobs.RowCount - 1 do
+    if strgrdJobs.Cells[0, i] = aJobID.ToString then
+      begin
+        strgrdJobs.CellStyle[2, i].HorizontalAlignment := taRightJustify;
+        strgrdJobs.Cells[2, i] := aHandledCount.ToString;
+        strgrdJobs.CellStyle[3, i].HorizontalAlignment := taRightJustify;
+        strgrdJobs.Cells[3, i] := aTotalCount.ToString;
+      end;
+end;
 
 procedure TViewMain.btnCopyClick(Sender: TObject);
 begin
@@ -89,6 +110,11 @@ begin
     end;
 end;
 
+procedure TViewMain.tmrJobsGridUpdateTimer(Sender: TObject);
+begin
+  SendMessage('UpdateProcessInfo');
+end;
+
 function TViewMain.GetSelectedJobID: Integer;
 begin
   Result := StrToInt(strgrdJobs.Cells[0, strgrdJobs.Row]);
@@ -102,6 +128,24 @@ begin
 
   strgrdJobs.Cells[1,0] := 'Title';
   strgrdJobs.CellStyle[1,0].HorizontalAlignment := taCenter;
+
+  strgrdJobs.ColWidths[2] := 70;
+  strgrdJobs.Cells[2,0] := 'Handled Links';
+  strgrdJobs.CellStyle[2,0].HorizontalAlignment := taCenter;
+
+  strgrdJobs.ColWidths[3] := 70;
+  strgrdJobs.Cells[3,0] := 'Total Links';
+  strgrdJobs.CellStyle[3,0].HorizontalAlignment := taCenter;
+end;
+
+procedure TViewMain.mniClearSequencesClick(Sender: TObject);
+begin
+  SendMessage('DBClearSeq');
+end;
+
+procedure TViewMain.mniVacuumCommandClick(Sender: TObject);
+begin
+  SendMessage('DBVacuum');
 end;
 
 procedure TViewMain.acCreateJobExecute(Sender: TObject);

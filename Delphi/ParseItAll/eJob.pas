@@ -35,6 +35,11 @@ type
 
   TJobList = TEntityList<TJob>;
 
+  TJobState = record
+    JobID: integer;
+    StateID: integer;
+  end;
+
 implementation
 
 uses

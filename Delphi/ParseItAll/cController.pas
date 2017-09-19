@@ -35,11 +35,13 @@ type
     FLastParseResult: TJSONObject;
     FSelectNewLevelLink: Boolean;
     FGettingTestPage: Boolean;
+    JobStates: TArray<TJobState>;
     procedure crmLoadEnd(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame; httpStatusCode: Integer);
     procedure crmProcessMessageReceived(Sender: TObject;
             const browser: ICefBrowser; sourceProcess: TCefProcessId;
             const message: ICefProcessMessage; out Result: Boolean);
     procedure SyncParentChildRuleNodes(aNodes, aParentNodes: TNodeList);
+    procedure UpdateJobState(aJobID: integer);
     function CanAddLevel(aJobRule: TJobLink): Boolean;
     function GetJob: TJob;
   protected
@@ -97,6 +99,12 @@ type
     // Start/Stop Job
     procedure StartJob;
     procedure StopJob;
+
+    procedure UpdateProcessInfo;
+
+    // DB Services
+    procedure DBVacuum;
+    procedure DBClearSeq;
   end;
 
 implementation
@@ -119,13 +127,98 @@ uses
   FireDAC.Comp.Client,
   eTestLink;
 
-procedure TController.StartJob;
+procedure TController.DBVacuum;
+var
+  dsQuery: TFDQuery;
 begin
+  dsQuery := TFDQuery.Create(nil);
+  try
+    dsQuery.SQL.Text := 'vacuum;';
+    FDBEngine.ExecQuery(dsQuery);
+  finally
+    dsQuery.Free;
+  end;
+end;
+
+procedure TController.DBClearSeq;
+var
+  dsQuery: TFDQuery;
+  Tables: TArray<string>;
+  Table: string;
+begin
+  Tables := Tables + ['links'];
+  Tables := Tables + ['records'];
+  Tables := Tables + ['jobs'];
+  Tables := Tables + ['link2link'];
+
+  dsQuery := TFDQuery.Create(nil);
+  try
+    dsQuery.SQL.Text := 'delete from SQLITE_SEQUENCE where name = :table;';
+
+    for Table in Tables do
+      begin
+        dsQuery.ParamByName('table').AsString := Table;
+        FDBEngine.ExecQuery(dsQuery);
+      end;
+  finally
+    dsQuery.Free;
+  end;
+end;
+
+procedure TController.UpdateProcessInfo;
+var
+  JobState: TJobState;
+begin
+  for JobState in JobStates do
+    begin
+      if JobState.StateID = 1 then
+        begin
+          FData.AddOrSetValue('JobID', JobState.JobID);
+          CallModel(TModelParser, 'GetJobProgress');
+
+          ViewMain.SetJobProgressInfo(JobState.JobID, FData.Items['HandledCount'], FData.Items['TotalCount']);
+        end;
+    end;
+end;
+
+procedure TController.UpdateJobState(aJobID: integer);
+var
+  HasFound: Boolean;
+  JobState: TJobState;
+  i: Integer;
+begin
+  HasFound := False;
+  for i := 0 to High(JobStates) do
+    begin
+      JobState := JobStates[i];
+      if JobState.JobID = aJobID then
+        begin
+          JobState.StateID := 1;
+          HasFound := True;
+          Break;
+        end;
+    end;
+
+  if not HasFound then
+    begin
+      JobState.JobID := aJobID;
+      JobState.StateID := 1;
+      JobStates := JobStates + [JobState];
+    end;
+end;
+
+procedure TController.StartJob;
+var
+  JobID: Integer;
+begin
+  JobID := ViewMain.SelectedJobID;
+  UpdateJobState(JobID);
+
   FData.AddOrSetValue('JSScript', FJSScript);
   FData.AddOrSetValue('IsJobStopped', False);
 
   FObjData.AddOrSetValue('Chromium', ViewMain.chrmBrowser);
-  FObjData.AddOrSetValue('Job', TJob.Create(FDBEngine, ViewMain.SelectedJobID));
+  FObjData.AddOrSetValue('Job', TJob.Create(FDBEngine, JobID));
 
   CallAsyncModel(TModelParser, 'StartJob');
 end;

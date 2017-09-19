@@ -42,7 +42,7 @@ object ViewMain: TViewMain
       Width = 554
       Height = 160
       Align = alClient
-      ColCount = 2
+      ColCount = 4
       DefaultRowHeight = 18
       DefaultDrawing = False
       DoubleBuffered = True
@@ -67,7 +67,9 @@ object ViewMain: TViewMain
       LineDesign.LineUpColor = clWhite
       ColWidths = (
         35
-        318)
+        318
+        59
+        55)
       RowHeights = (
         18
         18)
@@ -173,6 +175,7 @@ object ViewMain: TViewMain
       Width = 75
       Height = 25
       Caption = 'btnCopy'
+      Enabled = False
       TabOrder = 5
       OnClick = btnCopyClick
     end
@@ -182,6 +185,7 @@ object ViewMain: TViewMain
       Width = 75
       Height = 25
       Caption = 'btnTest'
+      Enabled = False
       TabOrder = 6
       OnClick = btnTestClick
     end
@@ -215,6 +219,17 @@ object ViewMain: TViewMain
         Caption = 'New Project'
       end
     end
+    object mniService: TMenuItem
+      Caption = 'Service'
+      object mniVacuumCommand: TMenuItem
+        Caption = 'Vacuum Command'
+        OnClick = mniVacuumCommandClick
+      end
+      object mniClearSequences: TMenuItem
+        Caption = 'Clear Sequences'
+        OnClick = mniClearSequencesClick
+      end
+    end
   end
   object xpmnfstXP: TXPManifest
     Left = 505
@@ -226,7 +241,7 @@ object ViewMain: TViewMain
     Left = 456
     Top = 150
     Bitmap = {
-      494C010101000800400010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C010101000800440010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       000000000000000000000000000000000000323232FF000000FF000000FF0000
       00FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF0202
@@ -375,6 +390,8 @@ object ViewMain: TViewMain
     end
   end
   object tmrJobsGridUpdate: TTimer
+    Interval = 2500
+    OnTimer = tmrJobsGridUpdateTimer
     Left = 40
     Top = 155
   end

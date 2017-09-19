@@ -47,6 +47,7 @@ type
     function AddRecord(aLinkId, aRecordNum: integer; aKey, aValue: string): integer;
   published
     procedure StartJob;
+    procedure GetJobProgress;
   end;
 
 implementation
@@ -57,6 +58,27 @@ uses
   System.Hash,
   FireDAC.Comp.Client,
   API_Files;
+
+procedure TModelParser.GetJobProgress;
+var
+  dsQuery: TFDQuery;
+  sql: string;
+begin
+  dsQuery := TFDQuery.Create(nil);
+  try
+    sql := 'select ' +
+           '(select count(*) from links l where l.job_id = :JobID) total, ' +
+           '(select count(*) from links l where l.job_id = :JobID and l.handled = 2) handled';
+    dsQuery.SQL.Text := sql;
+    dsQuery.ParamByName('JobID').AsInteger := FData.Items['JobID'];
+    FDBEngine.OpenQuery(dsQuery);
+
+    FData.AddOrSetValue('TotalCount', dsQuery.FieldByName('total').AsInteger);
+    FData.AddOrSetValue('HandledCount', dsQuery.FieldByName('handled').AsInteger);
+  finally
+    dsQuery.Free;
+  end;
+end;
 
 procedure TModelParser.StopJob;
 begin
