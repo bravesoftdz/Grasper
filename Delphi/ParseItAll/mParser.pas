@@ -39,12 +39,15 @@ type
     procedure crmProcessMessageReceived(Sender: TObject;
             const browser: ICefBrowser; sourceProcess: TCefProcessId;
             const message: ICefProcessMessage; out Result: Boolean);
+    procedure crmResourceRedirect(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
+            const request: ICefRequest; var newUrl: ustring);
     procedure ProcessDataReceived(aData: string);
     procedure SetCurrLinkHandle(aValue: Integer);
     procedure StopJob;
     function GetNextlink: TLink;
     function AddLink(aLink: string; aParentLinkID, aLevel: Integer; aNum: Integer = 1): Integer;
     function AddRecord(aLinkId, aRecordNum: integer; aKey, aValue: string): integer;
+    function GetLinksCount(aJobID: Integer; aHandled: Integer = -1): Integer;
   published
     procedure StartJob;
     procedure GetJobProgress;
@@ -59,25 +62,43 @@ uses
   FireDAC.Comp.Client,
   API_Files;
 
-procedure TModelParser.GetJobProgress;
+procedure TModelParser.crmResourceRedirect(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
+            const request: ICefRequest; var newUrl: ustring);
+begin
+  FCurrLink.Link := newUrl;
+end;
+
+function TModelParser.GetLinksCount(aJobID: Integer; aHandled: Integer = -1): Integer;
 var
   dsQuery: TFDQuery;
-  sql: string;
+  sql: String;
 begin
   dsQuery := TFDQuery.Create(nil);
   try
-    sql := 'select ' +
-           '(select count(*) from links l where l.job_id = :JobID) total, ' +
-           '(select count(*) from links l where l.job_id = :JobID and l.handled = 2) handled';
+    sql := 'select count(*) link_count from links l where l.job_id = :JobID %s';
+    if aHandled > -1 then sql := Format(sql, ['and l.handled = :handled'])
+    else sql := Format(sql, ['']);
+
     dsQuery.SQL.Text := sql;
-    dsQuery.ParamByName('JobID').AsInteger := FData.Items['JobID'];
+    dsQuery.ParamByName('JobID').AsInteger := aJobID;
+    if aHandled > -1 then dsQuery.ParamByName('handled').AsInteger := aHandled;
+
     FDBEngine.OpenQuery(dsQuery);
 
-    FData.AddOrSetValue('TotalCount', dsQuery.FieldByName('total').AsInteger);
-    FData.AddOrSetValue('HandledCount', dsQuery.FieldByName('handled').AsInteger);
+    Result := dsQuery.FieldByName('link_count').AsInteger;
   finally
     dsQuery.Free;
   end;
+end;
+
+procedure TModelParser.GetJobProgress;
+var
+  JobID: Integer;
+begin
+  JobID := FData.Items['JobID'];
+
+  FData.AddOrSetValue('TotalCount', GetLinksCount(JobID));
+  FData.AddOrSetValue('HandledCount', GetLinksCount(JobID, 2));
 end;
 
 procedure TModelParser.StopJob;
@@ -283,7 +304,7 @@ procedure TModelParser.crmLoadEnd(Sender: TObject; const browser: ICefBrowser;
 var
   InjectJS: string;
 begin
-  if frame.Url = FCurrLink.Link then
+  if (frame.Url = FCurrLink.Link) and frame.IsMain then
     begin
       InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\jquery-3.1.1.js');
       frame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
@@ -311,12 +332,15 @@ begin
     dsQuery.ParamByName('JobID').AsInteger := FJob.ID;
     FDBEngine.OpenQuery(dsQuery);
 
-    // first start - no links else
-    //if dsQuery.FieldByName('links_count').AsInteger = 0 then
     if dsQuery.EOF then
       begin
-        AddLink(FJob.ZeroLink, 0, 1);
-        Exit(GetNextlink);
+        if GetLinksCount(FJob.ID) = 0 then // first start - no links else
+          begin
+            AddLink(FJob.ZeroLink, 0, 1);
+            Exit(GetNextlink);
+          end
+        else
+          Exit(nil); // all links are handled
       end;
 
     Result := TLink.Create(FDBEngine, dsQuery.FieldByName('Id').AsInteger);
@@ -339,8 +363,17 @@ begin
         end;
 
       FCurrLink := GetNextlink;
-      SetCurrLinkHandle(1);
-      FChromium.Load(FCurrLink.Link);
+      if FCurrLink <> nil then
+        begin
+          SetCurrLinkHandle(1);
+          FChromium.Load(FCurrLink.Link);
+        end
+      else
+        begin
+          CreateEvent('OnJobDone');
+          FJob.Free;
+          Self.Free;
+        end;
     end;
 end;
 
@@ -349,6 +382,7 @@ begin
   FChromium := FObjData.Items['Chromium'] as TChromium;
   FChromium.OnLoadEnd := crmLoadEnd;
   FChromium.OnProcessMessageReceived := crmProcessMessageReceived;
+  FChromium.OnResourceRedirect := crmResourceRedirect;
 
   FJob := FObjData.Items['Job'] as TJob;
 

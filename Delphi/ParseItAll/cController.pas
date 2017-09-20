@@ -99,6 +99,7 @@ type
     // Start/Stop Job
     procedure StartJob;
     procedure StopJob;
+    procedure OnJobDone;
 
     procedure UpdateProcessInfo;
 
@@ -126,6 +127,11 @@ uses
 
   FireDAC.Comp.Client,
   eTestLink;
+
+procedure TController.OnJobDone;
+begin
+
+end;
 
 procedure TController.DBVacuum;
 var
@@ -746,6 +752,8 @@ end;
 
 procedure TController.EventListener(aEventMsg: string);
 begin
+  if aEventMsg = 'OnJobDone' then OnJobDone;
+
   if aEventMsg = 'OnTestLinkPrepared' then
     begin
       if FData.Items['TestStepRest'] = 0 then

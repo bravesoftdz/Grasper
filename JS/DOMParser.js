@@ -391,12 +391,16 @@ function parseDOMbyLevel(level) {
     return JSON.stringify(objResult);
 }
 
-// clear previous selection
-var paintedElements = $('.PIAColor');
-paintedElements.css('background-color', '');
-paintedElements.removeClass('PIAColor');
-$('.PIAIgnore').removeClass('PIAIgnore');
+$(function() {
 
-app.parsedataback(parseDOMbyLevel(level));
+    // clear previous selection
+    var paintedElements = $('.PIAColor');
+    paintedElements.css('background-color', '');
+    paintedElements.removeClass('PIAColor');
+    $('.PIAIgnore').removeClass('PIAIgnore');
 
-console.log('done');
+    app.parsedataback(parseDOMbyLevel(level));
+
+    console.log('done');
+
+});
