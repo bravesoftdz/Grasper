@@ -32,7 +32,7 @@ type
     FJob: TJob;
     FCurrLink: TLink;
     FChromium: TChromium;
-    procedure ProcessNextLink;
+    procedure ProcessNextLink(aPrivLinkHandled: Integer = 2);
     procedure crmLoadEnd(Sender: TObject; const browser: ICefBrowser;
         const frame: ICefFrame; httpStatusCode: Integer);
     procedure ProcessJSOnFrame(aFrame: ICefFrame);
@@ -45,8 +45,9 @@ type
     procedure SetCurrLinkHandle(aValue: Integer);
     procedure StopJob;
     function GetNextlink: TLink;
-    function AddLink(aLink: string; aParentLinkID, aLevel: Integer; aNum: Integer = 1): Integer;
-    function AddRecord(aLinkId, aRecordNum: integer; aKey, aValue: string): integer;
+    procedure AddLink(aLink: string; aParentLinkID, aLevel: Integer; aNum: Integer = 1);
+    procedure AddRecord(aLinkId, aRecordNum: integer; aKey, aValue: string);
+    procedure AddError(aLinkID, aErrTypeID: Integer; aErrText: string);
     function GetLinksCount(aJobID: Integer; aHandled: Integer = -1): Integer;
   published
     procedure StartJob;
@@ -60,7 +61,25 @@ uses
   System.Generics.Collections,
   System.Hash,
   FireDAC.Comp.Client,
-  API_Files;
+  API_Files,
+  eError;
+
+procedure TModelParser.AddError(aLinkID, aErrTypeID: Integer; aErrText: string);
+var
+  Error: TError;
+begin
+  Error := TError.Create(FDBEngine);
+  try
+    Error.ErrorTime := Now;
+    Error.LinkID := aLinkID;
+    Error.ErrorTypeID := aErrTypeID;
+    Error.Text := aErrText;
+
+    Error.SaveEntity;
+  finally
+    Error.Free;
+  end;
+end;
 
 procedure TModelParser.crmResourceRedirect(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
             const request: ICefRequest; var newUrl: ustring);
@@ -154,7 +173,7 @@ begin
   ajsnArray.AddElement(jsnRule);
 end;
 
-function TModelParser.AddRecord(aLinkId, aRecordNum: integer; aKey, aValue: string): integer;
+procedure TModelParser.AddRecord(aLinkId, aRecordNum: integer; aKey, aValue: string);
 var
   Rec: TRecord;
 begin
@@ -177,7 +196,7 @@ begin
   FCurrLink.SaveEntity;
 end;
 
-function TModelParser.AddLink(aLink: string; aParentLinkID, aLevel: Integer; aNum: Integer = 1): Integer;
+procedure TModelParser.AddLink(aLink: string; aParentLinkID, aLevel: Integer; aNum: Integer = 1);
 var
   Link: TLink;
 begin
@@ -200,8 +219,6 @@ begin
     except
 
     end;
-
-    Result := Link.ID;
   finally
     Link.Free;
   end;
@@ -310,15 +327,20 @@ var
   InjectJS: string;
 begin
   try
-  if httpStatusCode <> 200 then raise Exception.Create('not 200');
+    if (httpStatusCode = 200) and (frame.Url = FCurrLink.Link) and frame.IsMain then
+      begin
+        InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\jquery-3.1.1.js');
+        frame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
 
-  if (frame.Url = FCurrLink.Link) and frame.IsMain then
-    begin
-      InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\jquery-3.1.1.js');
-      frame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
+        ProcessJSOnFrame(frame);
+      end;
 
-      ProcessJSOnFrame(frame);
-    end;
+    if httpStatusCode = 404 then
+      begin
+        AddError(FCurrLink.ID, 4, 'Page Not Found 404');
+        ProcessNextLink(3);
+        Exit;
+      end;
   finally
     TFilesEngine.CreateFile('LoadEnd.log');
     TFilesEngine.SaveTextToFile('LoadEnd.log', httpStatusCode.ToString);
@@ -361,7 +383,7 @@ begin
   end;
 end;
 
-procedure TModelParser.ProcessNextLink;
+procedure TModelParser.ProcessNextLink(aPrivLinkHandled: Integer = 2);
 begin
   if FData.Items['IsJobStopped'] then
     StopJob
@@ -370,7 +392,7 @@ begin
       if Assigned(FCurrLink) then
         begin
           FCurrLink.HandleTime := Now;
-          SetCurrLinkHandle(2);
+          SetCurrLinkHandle(aPrivLinkHandled);
           FreeAndNil(FCurrLink);
         end;
 

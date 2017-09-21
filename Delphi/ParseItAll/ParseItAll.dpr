@@ -34,7 +34,8 @@ uses
   mTester in 'mTester.pas',
   eTestLink in 'eTestLink.pas',
   mExport in 'mExport.pas',
-  API_Yandex in '..\..\..\Libraries\Delphi\API_Yandex.pas';
+  API_Yandex in '..\..\..\Libraries\Delphi\API_Yandex.pas',
+  eError in 'eError.pas';
 
 {$R *.res}
 
