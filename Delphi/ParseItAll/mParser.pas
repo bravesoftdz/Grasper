@@ -263,7 +263,12 @@ procedure TModelParser.crmProcessMessageReceived(Sender: TObject;
         const browser: ICefBrowser; sourceProcess: TCefProcessId;
         const message: ICefProcessMessage; out Result: Boolean);
 begin
+  try
   if message.Name = 'parsedataback' then ProcessDataReceived(message.ArgumentList.GetString(0));
+  finally
+    TFilesEngine.CreateFile('ProcessMessageReceived.log');
+    TFilesEngine.SaveTextToFile('ProcessMessageReceived.log', message.ArgumentList.GetString(0));
+  end;
 end;
 
 procedure TModelParser.ProcessJSOnFrame(aFrame: ICefFrame);
@@ -304,6 +309,9 @@ procedure TModelParser.crmLoadEnd(Sender: TObject; const browser: ICefBrowser;
 var
   InjectJS: string;
 begin
+  try
+  if httpStatusCode <> 200 then raise Exception.Create('not 200');
+
   if (frame.Url = FCurrLink.Link) and frame.IsMain then
     begin
       InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\jquery-3.1.1.js');
@@ -311,6 +319,10 @@ begin
 
       ProcessJSOnFrame(frame);
     end;
+  finally
+    TFilesEngine.CreateFile('LoadEnd.log');
+    TFilesEngine.SaveTextToFile('LoadEnd.log', httpStatusCode.ToString);
+  end;
 end;
 
 function TModelParser.GetNextlink: TLink;
