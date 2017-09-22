@@ -65,6 +65,8 @@ type
     acAddRegExp: TAction;
     mniAddRegExp: TMenuItem;
     btnGetTestPage: TBitBtn;
+    btnAddContainer: TSpeedButton;
+    acAddContainer: TAction;
     procedure btnCancelClick(Sender: TObject);
     procedure btnApplyClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -88,6 +90,7 @@ type
     procedure acAddRegExpExecute(Sender: TObject);
     procedure udContainerStepClick(Sender: TObject; Button: TUDBtnType);
     procedure btnGetTestPageClick(Sender: TObject);
+    procedure acAddContainerExecute(Sender: TObject);
   private
     { Private declarations }
     FDevToolsEnabled: Boolean;
@@ -193,6 +196,11 @@ begin
   SendMessage('AddChildRecord');
 end;
 
+procedure TViewRules.acAddContainerExecute(Sender: TObject);
+begin
+  SendMessage('AddContainer');
+end;
+
 procedure TViewRules.acAddCutExecute(Sender: TObject);
 begin
   SendMessage('AddChildCut');
@@ -237,18 +245,21 @@ begin
     begin
       RuleNode.ImageIndex := 0;
       RuleNode.SelectedIndex := 0;
-    end;
-
-  if aRule.Rec <> nil then
+    end
+  else if aRule.Rec <> nil then
     begin
       RuleNode.ImageIndex := 1;
       RuleNode.SelectedIndex := 1;
-    end;
-
-  if aRule.Cut <> nil then
+    end
+  else if aRule.Cut <> nil then
     begin
       RuleNode.ImageIndex := 2;
       RuleNode.SelectedIndex := 2;
+    end
+  else
+    begin
+      RuleNode.ImageIndex := 4;
+      RuleNode.SelectedIndex := 4;
     end;
 
   if ParentNode <> nil then ParentNode.Expand(True);

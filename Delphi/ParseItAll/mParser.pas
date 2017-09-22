@@ -330,7 +330,7 @@ begin
     if (httpStatusCode = 200) and (frame.Url = FCurrLink.Link) and frame.IsMain then
       begin
         InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\jquery-3.1.1.js');
-        frame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
+        frame.ExecuteJavaScript(InjectJS, '', 0);
 
         ProcessJSOnFrame(frame);
       end;

@@ -63,6 +63,8 @@ type
     procedure CreateLevel(frame: ICefFrame);
     procedure DeleteLevel;
 
+    procedure AddContainer;
+
     procedure AddLink;
     procedure AddChildLink;
 
@@ -127,6 +129,20 @@ uses
 
   FireDAC.Comp.Client,
   eTestLink;
+
+procedure TController.AddContainer;
+var
+  Level: TJobLevel;
+  RuleRel: TLevelRuleRel;
+begin
+  RuleRel := TLevelRuleRel.Create(FDBEngine);
+  RuleRel.Rule := TJobRule.Create(FDBEngine);
+
+  Level := ViewRules.GetSelectedLevel;
+  Level.RuleRels.Add(RuleRel);
+
+  ViewRules.AddRuleToTree(nil, RuleRel.Rule);
+end;
 
 procedure TController.OnJobDone;
 begin
@@ -481,7 +497,7 @@ begin
           if jsnRuleObj.TryGetValue('href', value) then
             value := jsnRuleObj.GetValue('href').Value;
 
-          if jsnRuleObj.TryGetValue('value', value) then
+          if value.IsEmpty and jsnRuleObj.TryGetValue('value', value) then
             value := jsnRuleObj.GetValue('value').Value;
 
           ViewRuleResult.redtResults.Lines.Add(value);
@@ -506,7 +522,7 @@ var
   InjectJS: string;
 begin
   InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\jquery-3.1.1.js');
-  ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
+  ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, '', 0);
 
   if FSelectNewLevelLink then
     begin

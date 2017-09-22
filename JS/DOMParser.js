@@ -335,7 +335,7 @@ function setPIAClass(rule, node) {
         $(node).addClass('PIAIgnore');
 }
 
-function getRuleResult(rule, containerNode) {
+function getRuleResult(rule, containerNode, result) {
 
     var containerSize = rule.nodes.length - rule.container_offset;
     for (var i = 0; i < containerSize; i++) {
@@ -362,21 +362,21 @@ function getRuleResult(rule, containerNode) {
         }
     } else
         resultNodes = [];
-
+    
     resultNodes.forEach(function (node) {
         // set PIA class to selected elements
         setPIAClass(rule, node);
 
         if (rule.rules != null) {
             rule.rules.forEach(function (rule) {
-                getRuleResult(rule, node);
+                result.unshift(getRuleResult(rule, node, result));
             });
         }
     });
 
     var arrRuleResult = processResultNodesByRule(rule, resultNodes);
 
-    return arrRuleResult;
+    return result.unshift(arrRuleResult);
 }
 
 function parseDOMbyLevel(level) {
@@ -384,8 +384,11 @@ function parseDOMbyLevel(level) {
     var objResult = {result: []};
 
     level.rules.forEach(function (rule) {
-        var objRuleResult = getRuleResult(rule, document);
-        objResult.result.push(objRuleResult);
+        
+        var objRuleResult = []; 
+        objRuleResult = getRuleResult(rule, document, objRuleResult);
+        objResult.result.unshift(objRuleResult);
+        
     });
 
     return JSON.stringify(objResult);
