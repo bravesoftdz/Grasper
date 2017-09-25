@@ -17,13 +17,10 @@ type
     procedure SetJobRuleID(aValue: integer);
     function GetActionTypeID: Integer;
     procedure SetActionTypeID(aValue: integer);
-    function GetReGrabAfterAction: Boolean;
-    procedure SetReGrabAfterAction(aValue: Boolean);
   //////////////////
   public
     property JobRuleID: Integer read GetJobRuleID write SetJobRuleID;
     property ActionTypeID: Integer read GetActionTypeID write SetActionTypeID;
-    property ReGrabAfterAction: Boolean read GetReGrabAfterAction write SetReGrabAfterAction;
   end;
 
 implementation
@@ -67,7 +64,6 @@ begin
 
   AddField(Result.FieldList, 'JOB_RULE_ID', ftInteger);
   AddField(Result.FieldList, 'ACTION_TYPE_ID', ftInteger);
-  AddField(Result.FieldList, 'REGRAB_AFTER_ACTION', ftBoolean);
 end;
 
 end.

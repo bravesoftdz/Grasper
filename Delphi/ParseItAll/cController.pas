@@ -166,7 +166,7 @@ end;
 procedure TController.crmGetResourceHandler(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
             const request: ICefRequest; out Result: ICefResourceHandler);
 begin
-  ViewRules.chrmBrowser.Browser.MainFrame.VisitDom();
+
 end;
 
 procedure TController.AddContainer;
