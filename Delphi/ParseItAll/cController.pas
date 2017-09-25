@@ -15,6 +15,7 @@ uses
   eRuleLink,
   eRuleRecords,
   eRuleCut,
+  eRuleAction,
   eRegExp,
   eNodes;
 
@@ -36,14 +37,20 @@ type
     FSelectNewLevelLink: Boolean;
     FGettingTestPage: Boolean;
     JobStates: TArray<TJobState>;
+
     procedure crmLoadEnd(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame; httpStatusCode: Integer);
     procedure crmProcessMessageReceived(Sender: TObject;
             const browser: ICefBrowser; sourceProcess: TCefProcessId;
             const message: ICefProcessMessage; out Result: Boolean);
+
+    procedure crmGetResourceHandler(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
+            const request: ICefRequest; out Result: ICefResourceHandler);
+
     procedure SyncParentChildRuleNodes(aNodes, aParentNodes: TNodeList);
     procedure UpdateJobState(aJobID: integer);
     function CanAddLevel(aJobRule: TJobLink): Boolean;
     function GetJob: TJob;
+    function AddRule: TJobRule;
   protected
     procedure InitDB; override;
     procedure PerfomViewMessage(aMsg: string); override;
@@ -72,6 +79,8 @@ type
     procedure AddChildRecord;
 
     procedure AddChildCut;
+
+    procedure AddAction;
 
     procedure AddRegExp;
 
@@ -130,7 +139,7 @@ uses
   FireDAC.Comp.Client,
   eTestLink;
 
-procedure TController.AddContainer;
+function TController.AddRule: TJobRule;
 var
   Level: TJobLevel;
   RuleRel: TLevelRuleRel;
@@ -141,7 +150,31 @@ begin
   Level := ViewRules.GetSelectedLevel;
   Level.RuleRels.Add(RuleRel);
 
-  ViewRules.AddRuleToTree(nil, RuleRel.Rule);
+  Result := RuleRel.Rule;
+end;
+
+procedure TController.AddAction;
+var
+  Rule: TJobRule;
+begin
+  Rule := AddRule;
+  Rule.Action := TJobAction.Create(FDBEngine);
+
+  ViewRules.AddRuleToTree(nil, Rule);
+end;
+
+procedure TController.crmGetResourceHandler(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
+            const request: ICefRequest; out Result: ICefResourceHandler);
+begin
+  ViewRules.chrmBrowser.Browser.MainFrame.VisitDom();
+end;
+
+procedure TController.AddContainer;
+var
+  Rule: TJobRule;
+begin
+  Rule := AddRule;
+  ViewRules.AddRuleToTree(nil, Rule);
 end;
 
 procedure TController.OnJobDone;
@@ -481,8 +514,10 @@ begin
   FObjData.AddOrSetValue('Level', ViewRules.GetSelectedLevel);
   FObjData.AddOrSetValue('Rule', ViewRules.GetSelectedRule);
   FData.AddOrSetValue('JSScript', FJSScript);
+  FData.AddOrSetValue('SkipActions', True);
   CallModel(TModelJS, 'PrepareJSScriptForLevel');
 
+  ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(FData.Items['JSScript'], 'about:blank', 0);
   //FObjData.AddOrSetValue('Rule', ViewRules.GetSelectedRule);
   //FData.AddOrSetValue('JSScript', FJSScript);
   //FData.AddOrSetValue('CanAddLevel', CanAddLevel(ViewRules.GetSelectedRule.Link));
@@ -690,17 +725,12 @@ end;
 
 procedure TController.AddLink;
 var
-  Level: TJobLevel;
-  RuleRel: TLevelRuleRel;
+  Rule: TJobRule;
 begin
-  RuleRel := TLevelRuleRel.Create(FDBEngine);
-  RuleRel.Rule := TJobRule.Create(FDBEngine);
-  RuleRel.Rule.Link := TJobLink.Create(FDBEngine);
+  Rule := AddRule;
+  Rule.Link := TJobLink.Create(FDBEngine);
 
-  Level := ViewRules.GetSelectedLevel;
-  Level.RuleRels.Add(RuleRel);
-
-  ViewRules.AddRuleToTree(nil, RuleRel.Rule);
+  ViewRules.AddRuleToTree(nil, Rule);
 end;
 
 procedure TController.AddChildRecord;
@@ -720,14 +750,12 @@ end;
 
 procedure TController.AddRecord;
 var
-  RuleRel: TLevelRuleRel;
+  Rule: TJobRule;
 begin
-  RuleRel := TLevelRuleRel.Create(FDBEngine);
-  RuleRel.Rule := TJobRule.Create(FDBEngine);
-  RuleRel.Rule.Rec := TJobRecord.Create(FDBEngine);
+  Rule := AddRule;
+  Rule.Rec := TJobRecord.Create(FDBEngine);
 
-  ViewRules.GetSelectedLevel.RuleRels.Add(RuleRel);
-  ViewRules.AddRuleToTree(nil, RuleRel.Rule);
+  ViewRules.AddRuleToTree(nil, Rule);
 end;
 
 procedure TController.GetJobList;
@@ -761,8 +789,11 @@ begin
     end;
 
   CallView(TViewRules);
+
   ViewRules.chrmBrowser.OnProcessMessageReceived := crmProcessMessageReceived;
   ViewRules.chrmBrowser.OnLoadEnd := crmLoadEnd;
+  ViewRules.chrmBrowser.OnGetResourceHandler := crmGetResourceHandler;
+
   ViewRules.SetLevels(GetJob.Levels);
 end;
 
@@ -786,9 +817,6 @@ begin
 
       ViewRules.chrmBrowser.Load(FData.Items['URL']);
     end;
-
-  if aEventMsg = 'OnJSScriptPrepared' then
-    ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(FData.Items['JSScript'], 'about:blank', 0);
 end;
 
 procedure TController.PerfomViewMessage(aMsg: string);

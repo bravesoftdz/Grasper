@@ -67,6 +67,8 @@ type
     btnGetTestPage: TBitBtn;
     btnAddContainer: TSpeedButton;
     acAddContainer: TAction;
+    acAddAction: TAction;
+    btnAddAction: TSpeedButton;
     procedure btnCancelClick(Sender: TObject);
     procedure btnApplyClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -91,6 +93,7 @@ type
     procedure udContainerStepClick(Sender: TObject; Button: TUDBtnType);
     procedure btnGetTestPageClick(Sender: TObject);
     procedure acAddContainerExecute(Sender: TObject);
+    procedure acAddActionExecute(Sender: TObject);
   private
     { Private declarations }
     FDevToolsEnabled: Boolean;
@@ -256,6 +259,11 @@ begin
       RuleNode.ImageIndex := 2;
       RuleNode.SelectedIndex := 2;
     end
+  else if aRule.Action <> nil then
+    begin
+      RuleNode.ImageIndex := 5;
+      RuleNode.SelectedIndex := 5;
+    end
   else
     begin
       RuleNode.ImageIndex := 4;
@@ -293,6 +301,11 @@ end;
 function TViewRules.GetLevelIndex: integer;
 begin
   Result := cbbLevel.ItemIndex;
+end;
+
+procedure TViewRules.acAddActionExecute(Sender: TObject);
+begin
+  SendMessage('AddAction');
 end;
 
 procedure TViewRules.acAddChildCutExecute(Sender: TObject);

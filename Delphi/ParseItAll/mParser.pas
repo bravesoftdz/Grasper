@@ -189,6 +189,13 @@ begin
   if aRule.Cut <> nil then
     jsnRule.AddPair('type', 'cut');
 
+  if aRule.Action <> nil then
+    begin
+      jsnRule.AddPair('type', 'action');
+      jsnRule.AddPair('act_type', TJSONNumber.Create(aRule.Action.ActionTypeID));
+      jsnRule.AddPair('regrab_after_action', TJSONBool.Create(aRule.Action.ReGrabAfterAction));
+    end;
+
   if not jsnRule.TryGetValue('type', Value) then
     jsnRule.AddPair('type', 'container');
 
@@ -271,8 +278,11 @@ var
   Key, Value: string;
   GroupBinds: TArray<TGroupBind>;
   GroupID, DataGroupNum: Integer;
+  ReGrabAfterAction: Boolean;
 begin
+  ReGrabAfterAction := False;
   jsnData:=TJSONObject.ParseJSONValue(aData) as TJSONObject;
+
   try
     jsnResult:=jsnData.GetValue('result') as TJSONArray;
 
@@ -298,9 +308,18 @@ begin
             if jsnRuleObj.TryGetValue('value', Value) then
               AddRecord(FCurrLink.ID, GroupID, Key, Value);
           end;
+
+        if jsnRuleObj.GetValue('type').Value = 'action' then
+          begin
+            if jsnRuleObj.TryGetValue<Boolean>('regrab_after_action', ReGrabAfterAction) then
+              ReGrabAfterAction := True;
+          end;
       end;
 
-    ProcessNextLink;
+    if ReGrabAfterAction then
+      ProcessJSOnFrame(nil)
+    else
+      ProcessNextLink;
   finally
     jsnData.Free;
   end;
@@ -341,7 +360,10 @@ begin
     try
       ModelJS.PrepareJSScriptForLevel;
       JSScript := Data.Items['JSScript'];
-      aFrame.ExecuteJavaScript(JSScript, 'about:blank', 0);
+      if Assigned(aFrame) then
+        aFrame.ExecuteJavaScript(JSScript, 'about:blank', 0)
+      else
+        FChromium.Browser.MainFrame.ExecuteJavaScript(JSScript, 'about:blank', 0);
     finally
       ModelJS.Free;
     end;
@@ -509,6 +531,8 @@ var
   jsnLevel: TJSONObject;
   jsnRules: TJSONArray;
   JSScript: string;
+  SkipActions: Boolean;
+  Value: Variant;
 begin
   Level := FObjData.Items['Level'] as TJobLevel;
 
@@ -522,10 +546,15 @@ begin
 
     jsnLevel.AddPair('rules', jsnRules);
 
+    if FData.TryGetValue('SkipActions', Value) then
+      begin
+        SkipActions := Value;
+        jsnLevel.AddPair('skip_actions', TJSONBool.Create(SkipActions));
+      end;
+
     JSScript := FData.Items['JSScript'];
     JSScript := Format(JSScript, [jsnLevel.ToJSON]);
     FData.AddOrSetValue('JSScript', JSScript);
-    CreateEvent('OnJSScriptPrepared');
   finally
     jsnLevel.Free;
   end;

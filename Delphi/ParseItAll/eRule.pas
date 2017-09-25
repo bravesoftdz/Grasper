@@ -8,6 +8,7 @@ uses
   eRuleLink,
   eRuleRecords,
   eRuleCut,
+  eRuleAction,
   eRegExp,
   eNodes;
 
@@ -68,6 +69,8 @@ type
     procedure SetRec(aValue: TJobRecord);
     function GetCut: TJobCut;
     procedure SetCut(aValue: TJobCut);
+    function GetAction: TJobAction;
+    procedure SetAction(aValue: TJobAction);
     function GetChildRules: TRuleRuleRelList;
     function GetRegExps: TJobRegExpList;
   //////////////////
@@ -83,6 +86,7 @@ type
     property Link: TJobLink read GetLink write SetLink;
     property Rec: TJobRecord read GetRec write SetRec;
     property Cut: TJobCut read GetCut write SetCut;
+    property Action: TJobAction read GetAction write SetAction;
     property Nodes: TNodeList read GetNodeList;
     property ChildRuleRels: TRuleRuleRelList read GetChildRules;
     property RegExps: TJobRegExpList read GetRegExps;
@@ -94,6 +98,16 @@ implementation
 
 uses
   Data.DB;
+
+function TJobRule.GetAction: TJobAction;
+begin
+  Result := FOneRelations.Items['JOB_RULE_ACTIONS'] as TJobAction;
+end;
+
+procedure TJobRule.SetAction(aValue: TJobAction);
+begin
+  FOneRelations.AddOrSetValue('JOB_RULE_ACTIONS', aValue);
+end;
 
 procedure TJobRule.Assign(aSourceEntity: TEntityAbstract);
 begin
@@ -294,6 +308,7 @@ begin
   AddOneRelation(Result.OneRelatedList, 'JOB_RULE_ID', '', TJobLink);
   AddOneRelation(Result.OneRelatedList, 'JOB_RULE_ID', '', TJobRecord);
   AddOneRelation(Result.OneRelatedList, 'JOB_RULE_ID', '', TJobCut);
+  AddOneRelation(Result.OneRelatedList, 'JOB_RULE_ID', '', TJobAction);
 end;
 
 function TJobRule.GetLevelID: Integer;

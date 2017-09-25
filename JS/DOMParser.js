@@ -2,6 +2,7 @@ console.log('domparser');
 
 var level = %s;
 var groupNum = 1;
+var skipActions = false;
 
 function getNormalizeString(str) {
     str = str.replace(/\n/g, "");
@@ -322,6 +323,12 @@ function processResultNodesByRule(rule, resultNodes) {
                 objNodeRes.key = rule.key;
                 objNodeRes.value = matchText;
             }
+            
+            if (rule.type == 'action') {
+                objNodeRes.type = 'action';
+                objNodeRes.act_type = rule.act_type;
+                objNodeRes.regrab_after_action = rule.regrab_after_action;
+            }
 
             result.push(objNodeRes);
         });
@@ -329,6 +336,22 @@ function processResultNodesByRule(rule, resultNodes) {
     });
 
     return result;
+}
+
+function processActionsByRule(rule, resultNodes) {
+    
+    if (skipActions) return false;
+    
+    if (rule.type == 'action') {
+        
+        resultNodes.forEach(function (node) {
+        
+            if (rule.act_type == 1) $(node)[0].click();
+        
+        });
+        
+    }
+    
 }
 
 function setPIAClass(rule, node) {
@@ -370,6 +393,7 @@ function getRuleResult(rule, containerNode) {
         resultNodes = [];
     
     var result = processResultNodesByRule(rule, resultNodes);
+    processActionsByRule(rule, resultNodes);
     
     resultNodes.forEach(function (node) {
         // set PIA class to selected elements
@@ -393,6 +417,8 @@ function parseDOMbyLevel(level) {
 
     var objResult = {result: []};
 
+    if (level.skip_actions != null) skipActions = level.skip_actions; 
+        
     level.rules.forEach(function (rule) {
         
         var objRuleResult = getRuleResult(rule, document);

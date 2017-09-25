@@ -36,7 +36,8 @@ uses
   mExport in 'mExport.pas',
   API_Yandex in '..\..\..\Libraries\Delphi\API_Yandex.pas',
   eError in 'eError.pas',
-  eGroup in 'eGroup.pas';
+  eGroup in 'eGroup.pas',
+  eRuleAction in 'eRuleAction.pas';
 
 {$R *.res}
 
