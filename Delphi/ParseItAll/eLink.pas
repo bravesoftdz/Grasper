@@ -38,12 +38,10 @@ type
     FRecords: TRecordList;
     FChildLinkRels: TLinkRelList;
   // Getters Setters
-    function GetJobID: Integer;
-    procedure SetJobID(aValue: Integer);
     function GetLevel: Integer;
     procedure SetLevel(aValue: Integer);
-    function GetNum: Integer;
-    procedure SetNum(aValue: Integer);
+    function GetGroupID: Integer;
+    procedure SetGroupID(aValue: Integer);
     function GetLink: string;
     procedure SetLink(aValue: string);
     function GetLinkHash: string;
@@ -59,9 +57,8 @@ type
   ////////////////////
   public
     function GetRecordsByKey(aKey: string; aResult: TObjectList<TRecord> = nil; aOrignLink: TLink = nil): TObjectList<TRecord>;
-    property JobID: Integer read GetJobID write SetJobID;
+    property GroupID: Integer read GetGroupID write SetGroupID;
     property Level: Integer read GetLevel write SetLevel;
-    property Num: Integer read GetNum write SetNum;
     property Link: string read GetLink write SetLink;
     property LinkHash: string read GetLinkHash write SetLinkHash;
     property ParentRel: TLinkRel read GetParentRel write SetParentRel;
@@ -230,14 +227,14 @@ begin
   FData.AddOrSetValue('LINK', aValue);
 end;
 
-function TLink.GetNum: Integer;
+function TLink.GetGroupID: Integer;
 begin
-  Result := FData.Items['NUM'];
+  Result := FData.Items['GROUP_ID'];
 end;
 
-procedure TLink.SetNum(aValue: Integer);
+procedure TLink.SetGroupID(aValue: Integer);
 begin
-  FData.AddOrSetValue('NUM', aValue);
+  FData.AddOrSetValue('GROUP_ID', aValue);
 end;
 
 function TLink.GetLevel: Integer;
@@ -250,23 +247,12 @@ begin
   FData.AddOrSetValue('LEVEL', aValue);
 end;
 
-function TLink.GetJobID: Integer;
-begin
-  Result := FData.Items['JOB_ID'];
-end;
-
-procedure TLink.SetJobID(aValue: Integer);
-begin
-  FData.AddOrSetValue('JOB_ID', aValue);
-end;
-
 class function TLink.GetEntityStruct: TEntityStruct;
 begin
   Result.TableName := 'LINKS';
 
-  AddField(Result.FieldList, 'JOB_ID', ftInteger);
+  AddField(Result.FieldList, 'GROUP_ID', ftInteger);
   AddField(Result.FieldList, 'LEVEL', ftInteger);
-  AddField(Result.FieldList, 'NUM', ftInteger);
   AddField(Result.FieldList, 'LINK', ftString);
   AddField(Result.FieldList, 'LINK_HASH', ftString);
   AddField(Result.FieldList, 'HANDLED', ftInteger);

@@ -35,7 +35,8 @@ uses
   eTestLink in 'eTestLink.pas',
   mExport in 'mExport.pas',
   API_Yandex in '..\..\..\Libraries\Delphi\API_Yandex.pas',
-  eError in 'eError.pas';
+  eError in 'eError.pas',
+  eGroup in 'eGroup.pas';
 
 {$R *.res}
 

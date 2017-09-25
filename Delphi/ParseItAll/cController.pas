@@ -168,10 +168,21 @@ var
   Tables: TArray<string>;
   Table: string;
 begin
+  Tables := Tables + ['groups'];
   Tables := Tables + ['links'];
   Tables := Tables + ['records'];
   Tables := Tables + ['jobs'];
   Tables := Tables + ['link2link'];
+  Tables := Tables + ['job_level2rule'];
+  Tables := Tables + ['job_levels'];
+  Tables := Tables + ['job_nodes'];
+  Tables := Tables + ['job_regexps'];
+  Tables := Tables + ['job_rule2rule'];
+  Tables := Tables + ['job_rules'];
+  Tables := Tables + ['job_rule_cuts'];
+  Tables := Tables + ['job_rule_links'];
+  Tables := Tables + ['job_rule_records'];
+  Tables := Tables + ['job_test_links'];
 
   dsQuery := TFDQuery.Create(nil);
   try
@@ -389,7 +400,7 @@ var
 begin
   dsQuery := TFDQuery.Create(nil);
   try
-    dsQuery.SQL.Text := 'delete from links where job_id = :jobid';
+    dsQuery.SQL.Text := 'delete from groups where job_id = :jobid';
     dsQuery.ParamByName('jobid').AsInteger := ViewMain.SelectedJobID;
     FDBEngine.ExecQuery(dsQuery);
   finally
@@ -415,7 +426,10 @@ begin
         if    (Node.Tag = LastParentNode.Tag)
           and (Node.Index = LastParentNode.Index)
           and (Node.TagID = LastParentNode.TagID)
-          and (Node.ClassName.Contains(LastParentNode.ClassName))
+          and (
+               (Node.ClassName.Contains(LastParentNode.ClassName))
+            or (Node.ClassName.IsEmpty and LastParentNode.ClassName.IsEmpty)
+          )
           and (Node.Name = LastParentNode.Name)
         then
           isClearMode := True;
@@ -478,30 +492,25 @@ end;
 procedure TController.ShowRuleResult;
 var
   jsnResultArray: TJSONArray;
-  jsnGroupArray: TJSONArray;
   jsnRuleObj: TJSONObject;
-  jsnGroupValue, jsnRuleValue: TJSONValue;
+  jsnRuleValue: TJSONValue;
   value: string;
 begin
   CallView(TViewRuleResult);
 
   jsnResultArray := FLastParseResult.GetValue('result') as TJSONArray;
 
-  for jsnGroupValue in jsnResultArray do
+  for jsnRuleValue in jsnResultArray do
     begin
-      jsnGroupArray := jsnGroupValue as TJSONArray;
-      for jsnRuleValue in jsnGroupArray do
-        begin
-          jsnRuleObj := jsnRuleValue as TJSONObject;
+      jsnRuleObj := jsnRuleValue as TJSONObject;
 
-          if jsnRuleObj.TryGetValue('href', value) then
-            value := jsnRuleObj.GetValue('href').Value;
+      if jsnRuleObj.TryGetValue('href', value) then
+        value := jsnRuleObj.GetValue('href').Value;
 
-          if value.IsEmpty and jsnRuleObj.TryGetValue('value', value) then
-            value := jsnRuleObj.GetValue('value').Value;
+      if value.IsEmpty and jsnRuleObj.TryGetValue('value', value) then
+        value := jsnRuleObj.GetValue('value').Value;
 
-          ViewRuleResult.redtResults.Lines.Add(value);
-        end;
+      ViewRuleResult.redtResults.Lines.Add(value);
     end;
 end;
 
@@ -790,7 +799,7 @@ begin
   if aMsg = 'ViewRulesClosed' then
     begin
       FObjData.Items['Job'].Free;
-      if Assigned(FLastParseResult) then FLastParseResult.Free;
+      if Assigned(FLastParseResult) then FreeAndNil(FLastParseResult);
     end;
 end;
 

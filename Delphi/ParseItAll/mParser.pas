@@ -17,6 +17,11 @@ uses
   eRecord;
 
 type
+  TGroupBind = record
+    DataGroupNum: Integer;
+    GroupID: Integer;
+  end;
+
   TModelJS = class(TModelDB)
   private
     function ColorToHex(color: TColor): String;
@@ -39,15 +44,15 @@ type
     procedure crmProcessMessageReceived(Sender: TObject;
             const browser: ICefBrowser; sourceProcess: TCefProcessId;
             const message: ICefProcessMessage; out Result: Boolean);
-    procedure crmResourceRedirect(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
-            const request: ICefRequest; var newUrl: ustring);
     procedure ProcessDataReceived(aData: string);
     procedure SetCurrLinkHandle(aValue: Integer);
     procedure StopJob;
     function GetNextlink: TLink;
-    procedure AddLink(aLink: string; aParentLinkID, aLevel: Integer; aNum: Integer = 1);
-    procedure AddRecord(aLinkId, aRecordNum: integer; aKey, aValue: string);
+    function AddGroup: Integer;
+    procedure AddLink(aLink: string; aParentLinkID, aLevel, aGroupID: Integer);
+    procedure AddRecord(aLinkId, aGroupID: integer; aKey, aValue: string);
     procedure AddError(aLinkID, aErrTypeID: Integer; aErrText: string);
+    function GetGroupID(var aGroupBinds: TArray<TGroupBind>; aDataGroupNum: Integer): Integer;
     function GetLinksCount(aJobID: Integer; aHandled: Integer = -1): Integer;
   published
     procedure StartJob;
@@ -62,7 +67,37 @@ uses
   System.Hash,
   FireDAC.Comp.Client,
   API_Files,
-  eError;
+  eError,
+  eGroup;
+
+function TModelParser.GetGroupID(var aGroupBinds: TArray<TGroupBind>; aDataGroupNum: Integer): Integer;
+var
+  GroupBind: TGroupBind;
+begin
+  for GroupBind in aGroupBinds do
+    if GroupBind.DataGroupNum = aDataGroupNum then
+      Exit(GroupBind.GroupID);
+
+  GroupBind.GroupID := AddGroup;
+  GroupBind.DataGroupNum := aDataGroupNum;
+  aGroupBinds := aGroupBinds + [GroupBind];
+  Exit(GroupBind.GroupID);
+end;
+
+function TModelParser.AddGroup: Integer;
+var
+  Group: TGroup;
+begin
+  Group := TGroup.Create(FDBEngine);
+  try
+    Group.JobID := FJob.ID;
+    Group.SaveEntity;
+
+    Result := Group.ID;
+  finally
+    Group.Free;
+  end;
+end;
 
 procedure TModelParser.AddError(aLinkID, aErrTypeID: Integer; aErrText: string);
 var
@@ -81,12 +116,6 @@ begin
   end;
 end;
 
-procedure TModelParser.crmResourceRedirect(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
-            const request: ICefRequest; var newUrl: ustring);
-begin
-  FCurrLink.Link := newUrl;
-end;
-
 function TModelParser.GetLinksCount(aJobID: Integer; aHandled: Integer = -1): Integer;
 var
   dsQuery: TFDQuery;
@@ -94,7 +123,11 @@ var
 begin
   dsQuery := TFDQuery.Create(nil);
   try
-    sql := 'select count(*) link_count from links l where l.job_id = :JobID %s';
+    sql := 'select count(*) link_count ' +
+           'from links l ' +
+           'join groups g on g.Id = l.group_id ' +
+           'where g.job_id = :JobID %s ';
+
     if aHandled > -1 then sql := Format(sql, ['and l.handled = :handled'])
     else sql := Format(sql, ['']);
 
@@ -133,6 +166,7 @@ var
   jsnRule: TJSONObject;
   jsnRules: TJSONArray;
   RuleRel: TRuleRuleRel;
+  Value: string;
 begin
   jsnRule := TJSONObject.Create;
   jsnRule.AddPair('id', TJSONNumber.Create(aRule.ID));
@@ -155,6 +189,9 @@ begin
   if aRule.Cut <> nil then
     jsnRule.AddPair('type', 'cut');
 
+  if not jsnRule.TryGetValue('type', Value) then
+    jsnRule.AddPair('type', 'container');
+
   jsnRules := TJSONArray.Create;
   for RuleRel in aRule.ChildRuleRels do
     begin
@@ -173,14 +210,14 @@ begin
   ajsnArray.AddElement(jsnRule);
 end;
 
-procedure TModelParser.AddRecord(aLinkId, aRecordNum: integer; aKey, aValue: string);
+procedure TModelParser.AddRecord(aLinkId, aGroupID: integer; aKey, aValue: string);
 var
   Rec: TRecord;
 begin
   Rec := TRecord.Create(FDBEngine);
   try
     Rec.LinkID := aLinkId;
-    Rec.Num := aRecordNum;
+    Rec.GroupID := aGroupID;
     Rec.Key := aKey;
     Rec.Value := aValue;
 
@@ -196,15 +233,14 @@ begin
   FCurrLink.SaveEntity;
 end;
 
-procedure TModelParser.AddLink(aLink: string; aParentLinkID, aLevel: Integer; aNum: Integer = 1);
+procedure TModelParser.AddLink(aLink: string; aParentLinkID, aLevel, aGroupID: Integer);
 var
   Link: TLink;
 begin
   Link := TLink.Create(FDBEngine);
   try
-    Link.JobID := FJob.ID;
+    Link.GroupID := aGroupID;
     Link.Level := aLevel;
-    Link.Num := aNum;
     Link.Link := aLink;
     Link.LinkHash := THashMD5.GetHashString(aLink);
 
@@ -228,45 +264,39 @@ procedure TModelParser.ProcessDataReceived(aData: string);
 var
   jsnData: TJSONObject;
   jsnResult: TJSONArray;
-  jsnRule: TJSONValue;
-  jsnRulePair: TJSONValue;
-  jsnRulePairObj: TJSONObject;
-  jsnRulePairList: TJSONArray;
+  jsnRuleVal: TJSONValue;
+  jsnRuleObj: TJSONObject;
   Link: string;
   Level: Integer;
   Key, Value: string;
-  i: Integer;
-  IsLast: Boolean;
+  GroupBinds: TArray<TGroupBind>;
+  GroupID, DataGroupNum: Integer;
 begin
   jsnData:=TJSONObject.ParseJSONValue(aData) as TJSONObject;
   try
     jsnResult:=jsnData.GetValue('result') as TJSONArray;
 
-    for jsnRule in jsnResult do
+    for jsnRuleVal in jsnResult do
       begin
-        i := 0;
-        jsnRulePairList := jsnRule as TJSONArray;
+        jsnRuleObj := jsnRuleVal as TJSONObject;
 
-        for jsnRulePair in jsnRulePairList do
+        DataGroupNum := (jsnRuleObj.GetValue('group') as TJSONNumber).AsInt;
+        GroupID := GetGroupID(GroupBinds, DataGroupNum);
+
+        if jsnRuleObj.GetValue('type').Value = 'link' then
           begin
-            inc(i);
-            jsnRulePairObj := jsnRulePair as TJSONObject;
+            Link := jsnRuleObj.GetValue('href').Value;
+            Level := (jsnRuleObj.GetValue('level') as TJSONNumber).AsInt;
 
-            if jsnRulePairObj.GetValue('type').Value = 'link' then
-              begin
-                Link := jsnRulePairObj.GetValue('href').Value;
-                Level := (jsnRulePairObj.GetValue('level') as TJSONNumber).AsInt;
+            AddLink(Link, FCurrLink.ID, Level, GroupID);
+          end;
 
-                AddLink(Link, FCurrLink.ID, Level, i);
-              end;
+        if jsnRuleObj.GetValue('type').Value = 'record' then
+          begin
+            Key := jsnRuleObj.GetValue('key').Value;
 
-            if jsnRulePairObj.GetValue('type').Value = 'record' then
-              begin
-                Key := jsnRulePairObj.GetValue('key').Value;
-
-                if jsnRulePairObj.TryGetValue('value', Value) then
-                  AddRecord(FCurrLink.ID, i, Key, Value);
-              end;
+            if jsnRuleObj.TryGetValue('value', Value) then
+              AddRecord(FCurrLink.ID, GroupID, Key, Value);
           end;
       end;
 
@@ -327,7 +357,10 @@ var
   InjectJS: string;
 begin
   try
-    if (httpStatusCode = 200) and (frame.Url = FCurrLink.Link) and frame.IsMain then
+    if    (httpStatusCode = 200)
+      //and (frame.Url = FCurrLink.Link)
+      and frame.IsMain
+    then
       begin
         InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\jquery-3.1.1.js');
         frame.ExecuteJavaScript(InjectJS, '', 0);
@@ -351,13 +384,15 @@ function TModelParser.GetNextlink: TLink;
 var
   SQL: string;
   dsQuery: TFDQuery;
+  GroupID: integer;
 begin
   SQL := 'select '#13#10 +
-         'links.* '#13#10 +
-         'from links '#13#10 +
-         'where job_id = :JobID '#13#10 +
-         'and handled in (0, 1) '#13#10 +
-         'order by level desc, id '#13#10 +
+         'l.* '#13#10 +
+         'from links l '#13#10 +
+         'join groups g on g.Id = l.group_id '#13#10 +
+         'where g.job_id = :JobID '#13#10 +
+         'and l.handled in (0, 1) '#13#10 +
+         'order by l.level desc, l.id '#13#10 +
          'limit 1';
 
   dsQuery := TFDQuery.Create(nil);
@@ -370,7 +405,9 @@ begin
       begin
         if GetLinksCount(FJob.ID) = 0 then // first start - no links else
           begin
-            AddLink(FJob.ZeroLink, 0, 1);
+            GroupID := AddGroup;
+
+            AddLink(FJob.ZeroLink, 0, 1, GroupID);
             Exit(GetNextlink);
           end
         else
@@ -416,7 +453,6 @@ begin
   FChromium := FObjData.Items['Chromium'] as TChromium;
   FChromium.OnLoadEnd := crmLoadEnd;
   FChromium.OnProcessMessageReceived := crmProcessMessageReceived;
-  FChromium.OnResourceRedirect := crmResourceRedirect;
 
   FJob := FObjData.Items['Job'] as TJob;
 

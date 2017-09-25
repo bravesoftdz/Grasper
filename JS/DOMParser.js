@@ -1,6 +1,7 @@
 console.log('domparser');
 
 var level = %s;
+var groupNum = 1;
 
 function getNormalizeString(str) {
     str = str.replace(/\n/g, "");
@@ -269,7 +270,10 @@ function getContentByRegExps(grabData, rule) {
 }
 
 function processResultNodesByRule(rule, resultNodes) {
-    var objResults = [];
+    
+    if (rule.type == 'container') return [];
+    
+    var result = [];
 
     resultNodes.forEach(function (node) {
 
@@ -304,6 +308,8 @@ function processResultNodesByRule(rule, resultNodes) {
         regExResults.forEach(function (matchText) {
 
             var objNodeRes = {};
+            objNodeRes.ruleID = rule.id;
+            objNodeRes.group = groupNum;
 
             if (rule.type == 'link') {
                 objNodeRes.type = 'link';
@@ -317,12 +323,12 @@ function processResultNodesByRule(rule, resultNodes) {
                 objNodeRes.value = matchText;
             }
 
-            objResults.push(objNodeRes);
+            result.push(objNodeRes);
         });
 
     });
 
-    return objResults;
+    return result;
 }
 
 function setPIAClass(rule, node) {
@@ -335,7 +341,7 @@ function setPIAClass(rule, node) {
         $(node).addClass('PIAIgnore');
 }
 
-function getRuleResult(rule, containerNode, result) {
+function getRuleResult(rule, containerNode) {
 
     var containerSize = rule.nodes.length - rule.container_offset;
     for (var i = 0; i < containerSize; i++) {
@@ -363,20 +369,24 @@ function getRuleResult(rule, containerNode, result) {
     } else
         resultNodes = [];
     
+    var result = processResultNodesByRule(rule, resultNodes);
+    
     resultNodes.forEach(function (node) {
         // set PIA class to selected elements
         setPIAClass(rule, node);
 
         if (rule.rules != null) {
+            
+            groupNum++;
             rule.rules.forEach(function (rule) {
-                result.unshift(getRuleResult(rule, node, result));
+                result = result.concat(getRuleResult(rule, node));
             });
+            
         }
+        
     });
 
-    var arrRuleResult = processResultNodesByRule(rule, resultNodes);
-
-    return result.unshift(arrRuleResult);
+    return result;
 }
 
 function parseDOMbyLevel(level) {
@@ -385,9 +395,8 @@ function parseDOMbyLevel(level) {
 
     level.rules.forEach(function (rule) {
         
-        var objRuleResult = []; 
-        objRuleResult = getRuleResult(rule, document, objRuleResult);
-        objResult.result.unshift(objRuleResult);
+        var objRuleResult = getRuleResult(rule, document);
+        objResult.result = objResult.result.concat(objRuleResult);
         
     });
 

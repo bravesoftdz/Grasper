@@ -15,8 +15,8 @@ type
   // Getters Setters
     function GetLinkID: Integer;
     procedure SetLinkID(aValue: Integer);
-    function GetNum: Integer;
-    procedure SetNum(aValue: Integer);
+    function GetGroupID: Integer;
+    procedure SetGroupID(aValue: Integer);
     function GetKey: String;
     procedure SetKey(aValue: String);
     function GetValue: String;
@@ -24,7 +24,7 @@ type
   ///////////////////////
   public
     property LinkID: Integer read GetLinkID write SetLinkID;
-    property Num: Integer read GetNum write SetNum;
+    property GroupID: Integer read GetGroupID write SetGroupID;
     property Key: string read GetKey write SetKey;
     property Value: string read GetValue write SetValue;
   end;
@@ -36,14 +36,14 @@ implementation
 uses
   Data.DB;
 
-function TRecord.GetNum: Integer;
+function TRecord.GetGroupID: Integer;
 begin
-  Result := FData.Items['NUM'];
+  Result := FData.Items['GROUP_ID'];
 end;
 
-procedure TRecord.SetNum(aValue: Integer);
+procedure TRecord.SetGroupID(aValue: Integer);
 begin
-  FData.AddOrSetValue('NUM', aValue);
+  FData.AddOrSetValue('GROUP_ID', aValue);
 end;
 
 function TRecord.GetKey: String;
@@ -81,7 +81,7 @@ begin
   Result.TableName := 'RECORDS';
 
   AddField(Result.FieldList, 'LINK_ID', ftInteger);
-  AddField(Result.FieldList, 'NUM', ftInteger);
+  AddField(Result.FieldList, 'GROUP_ID', ftInteger);
   AddField(Result.FieldList, 'KEY', ftString);
   AddField(Result.FieldList, 'VALUE', ftString);
 end;

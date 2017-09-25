@@ -6,6 +6,9 @@ function getXPathJSON(element) {
 
     for (; element && element.nodeType == 1; element = element.parentNode) {
 
+        $(element).removeClass('PIAColor');
+        $(element).removeClass('PIAIgnore');
+        
         var index = $(element.parentNode).children(element.tagName).index(element) + 1;
 
         xpath.unshift({
@@ -23,7 +26,7 @@ function getXPathJSON(element) {
 $(document).find('body').one('click', function (e) {
 
     e.preventDefault();
-
+       
     var xpath = getXPathJSON(e.target);
     app.selectdataback(xpath);
 });
