@@ -29,7 +29,7 @@ type
     function EncodeRegExpsToJSON(aRegExpList: TJobRegExpList): TJSONArray;
     procedure AddRuleToJSON(aRule: TJobRule; ajsnArray: TJSONArray);
   published
-    procedure PrepareJSScriptForLevel;
+    procedure PrepareParseScript;
   end;
 
   TModelParser = class(TModelDB)
@@ -193,7 +193,6 @@ begin
     begin
       jsnRule.AddPair('type', 'action');
       jsnRule.AddPair('act_type', TJSONNumber.Create(aRule.Action.ActionTypeID));
-      jsnRule.AddPair('regrab_after_action', TJSONBool.Create(aRule.Action.ReGrabAfterAction));
     end;
 
   if not jsnRule.TryGetValue('type', Value) then
@@ -351,14 +350,14 @@ begin
     ObjData.AddOrSetValue('DBEngine', FDBEngine);
 
     Level := FJob.GetLevel(FCurrLink.Level);
-    if Level.RuleRels.Count = 0 then Exit;
+    //if Level.RuleRels.Count = 0 then Exit;
 
     Data.AddOrSetValue('JSScript', FData.Items['JSScript']);
     ObjData.AddOrSetValue('Level', Level);
 
     ModelJS := TModelJS.Create(Data, ObjData);
     try
-      ModelJS.PrepareJSScriptForLevel;
+      ModelJS.PrepareParseScript;
       JSScript := Data.Items['JSScript'];
       if Assigned(aFrame) then
         aFrame.ExecuteJavaScript(JSScript, 'about:blank', 0)
@@ -524,14 +523,14 @@ begin
     end;
 end;
 
-procedure TModelJS.PrepareJSScriptForLevel;
+procedure TModelJS.PrepareParseScript;
 var
   Level: TJobLevel;
-  RuleRel: TLevelRuleRel;
   jsnLevel: TJSONObject;
   jsnRules: TJSONArray;
   JSScript: string;
   SkipActions: Boolean;
+  MarkNodes: Boolean;
   Value: Variant;
 begin
   Level := FObjData.Items['Level'] as TJobLevel;
@@ -539,10 +538,7 @@ begin
   jsnLevel := TJSONObject.Create;
   jsnRules := TJSONArray.Create;
   try
-    for RuleRel in Level.RuleRels do
-      begin
-        AddRuleToJSON(RuleRel.Rule, jsnRules);
-      end;
+    AddRuleToJSON(Level.BodyRule, jsnRules);
 
     jsnLevel.AddPair('rules', jsnRules);
 
@@ -550,6 +546,12 @@ begin
       begin
         SkipActions := Value;
         jsnLevel.AddPair('skip_actions', TJSONBool.Create(SkipActions));
+      end;
+
+    if FData.TryGetValue('MarkNodes', Value) then
+      begin
+        MarkNodes := Value;
+        jsnLevel.AddPair('mark_nodes', TJSONBool.Create(MarkNodes));
       end;
 
     JSScript := FData.Items['JSScript'];

@@ -8,53 +8,34 @@ uses
   eTestLink;
 
 type
-  TLevelRuleRel = class(TEntityAbstract)
-  // overrides
-  public
-    class function GetEntityStruct: TEntityStruct; override;
-  ////////////////////
-  private
-  // Getters Setters
-    function GetLevelID: Integer;
-    procedure SetLevelID(aValue: Integer);
-    function GetRuleID: Integer;
-    procedure SetRuleID(aValue: Integer);
-    function GetRule: TJobRule;
-    procedure SetRule(aValue: TJobRule);
-  //////////////////
-  public
-    property LevelID: Integer read GetLevelID write SetLevelID;
-    property RuleID: Integer read GetRuleID write SetRuleID;
-    property Rule: TJobRule read GetRule write SetRule;
-  end;
-
-  TLevelRuleRelList = TEntityList<TLevelRuleRel>;
-
   TJobLevel = class(TEntityAbstract)
   // overrides
   private
     procedure SaveLists; override;
   public
     class function GetEntityStruct: TEntityStruct; override;
-    procedure Assign(aSourceEntity: TEntityAbstract); override;
   ////////////////////
   private
-    FRuleRels: TLevelRuleRelList;
     FTestLinks: TTestLinkList;
   // Getters Setters
     function GetTestLinks: TTestLinkList;
-    function GetRuleRels: TLevelRuleRelList;
     function GetLevel: integer;
     procedure SetLevel(aValue: integer);
     function GetBaseLink: string;
     procedure SetBaseLink(aValue: string);
+    function GetBodyRuleID: Integer;
+    procedure SetBodyRuleID(aValue: integer);
+    function GetBodyRule: TJobRule;
+    procedure SetBodyRule(aValue: TJobRule);
     function GetCurrentTestLink: string;
   //////////////////
+    function CreateBodyRule: TJobRule;
   public
     function GetActualTestLink(aLevel: Integer): TTestLink;
     property Level: Integer read GetLevel write SetLevel;
     property BaseLink: string read GetBaseLink write SetBaseLink;
-    property RuleRels: TLevelRuleRelList read GetRuleRels;
+    property BodyRuleID: Integer read GetBodyRuleID write SetBodyRuleID;
+    property BodyRule: TJobRule read GetBodyRule write SetBodyRule;
     property TestLinks: TTestLinkList read GetTestLinks;
     property TestLink: string read GetCurrentTestLink;
   end;
@@ -64,17 +45,56 @@ type
 implementation
 
 uses
-  Data.DB;
+  System.UITypes,
+  Data.DB,
+  eNodes;
 
-procedure TJobLevel.Assign(aSourceEntity: TEntityAbstract);
+function TJobLevel.CreateBodyRule: TJobRule;
+var
+  Node: TJobNode;
 begin
-  inherited;
+  Result := TJobRule.Create(FDBEngine);
+  Result.Notes := 'Body';
+  Result.CriticalType := 1;
+  Result.VisualColor := TColor($FFFFFF);
 
-  // Copy One To Many Relations
-  if aSourceEntity is TJobLevel then
+  Node := TJobNode.Create(FDBEngine);
+  Node.Tag := 'HTML';
+  Node.Index := 1;
+  Result.Nodes.Add(Node);
+
+  Node := TJobNode.Create(FDBEngine);
+  Node.Tag := 'BODY';
+  Node.Index := 1;
+  Result.Nodes.Add(Node);
+end;
+
+function TJobLevel.GetBodyRule: TJobRule;
+begin
+  Result := FOneRelations.Items['JOB_RULES'] as TJobRule;
+
+  if Result = nil then
     begin
-      RuleRels.Assign(TJobLevel(aSourceEntity).RuleRels);
+      SetBodyRule(CreateBodyRule);
+      Result := GetBodyRule;
     end;
+
+  Result.IsBodyRule := True;
+end;
+
+procedure TJobLevel.SetBodyRule(aValue: TJobRule);
+begin
+  FOneRelations.AddOrSetValue('JOB_RULES', aValue);
+end;
+
+function TJobLevel.GetBodyRuleID: Integer;
+begin
+  Result := FData.Items['BODY_RULE_ID'];
+end;
+
+procedure TJobLevel.SetBodyRuleID(aValue: integer);
+begin
+  FData.AddOrSetValue('BODY_RULE_ID', aValue);
 end;
 
 function TJobLevel.GetCurrentTestLink: string;
@@ -107,57 +127,9 @@ begin
   Result := FTestLinks;
 end;
 
-function TLevelRuleRel.GetRule: TJobRule;
-begin
-  Result := FOneRelations.Items['JOB_RULES'] as TJobRule;
-end;
-
-procedure TLevelRuleRel.SetRule(aValue: TJobRule);
-begin
-  FOneRelations.AddOrSetValue('JOB_RULES', aValue);
-end;
-
-function TLevelRuleRel.GetRuleID: Integer;
-begin
-  Result := FData.Items['RULE_ID'];
-end;
-
-procedure TLevelRuleRel.SetRuleID(aValue: Integer);
-begin
-  FData.AddOrSetValue('RULE_ID', aValue);
-end;
-
-function TLevelRuleRel.GetLevelID: Integer;
-begin
-  Result := FData.Items['LEVEL_ID'];
-end;
-
-procedure TLevelRuleRel.SetLevelID(aValue: integer);
-begin
-  FData.AddOrSetValue('LEVEL_ID', aValue);
-end;
-
-class function TLevelRuleRel.GetEntityStruct: TEntityStruct;
-begin
-  Result.TableName := 'JOB_LEVEL2RULE';
-  AddField(Result.FieldList, 'LEVEL_ID', ftInteger);
-  AddField(Result.FieldList, 'RULE_ID', ftInteger);
-
-  AddOneRelation(Result.OneRelatedList, 'ID', 'RULE_ID', TJobRule);
-end;
-
 procedure TJobLevel.SaveLists;
 begin
-  if Assigned(FRuleRels) then FRuleRels.SaveList(ID);
   if Assigned(FTestLinks) then FTestLinks.SaveList(ID);
-end;
-
-function TJobLevel.GetRuleRels: TLevelRuleRelList;
-begin
-  if not Assigned(FRuleRels) then
-    FRuleRels := TLevelRuleRelList.Create(Self, 'LEVEL_ID', ID);
-
-  Result := FRuleRels;
 end;
 
 function TJobLevel.GetBaseLink: string;
@@ -186,6 +158,9 @@ begin
   AddField(Result.FieldList, 'JOB_ID', ftInteger);
   AddField(Result.FieldList, 'LEVEL', ftInteger);
   AddField(Result.FieldList, 'BASE_LINK', ftString);
+  AddField(Result.FieldList, 'BODY_RULE_ID', ftInteger);
+
+  AddOneRelation(Result.OneRelatedList, 'ID', 'BODY_RULE_ID', TJobRule);
 end;
 
 end.

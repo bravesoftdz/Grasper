@@ -49,6 +49,7 @@ type
     FNodes: TNodeList;
     FChildRules: TRuleRuleRelList;
     FRegExps: TJobRegExpList;
+    FIsBodyRule: Boolean;
   // Getters Setters
     function GetLevelID: Integer;
     procedure SetLevelID(aValue: integer);
@@ -90,6 +91,7 @@ type
     property Nodes: TNodeList read GetNodeList;
     property ChildRuleRels: TRuleRuleRelList read GetChildRules;
     property RegExps: TJobRegExpList read GetRegExps;
+    property IsBodyRule: Boolean read FIsBodyRule write FIsBodyRule;
   end;
 
   TRuleList = TEntityList<TJobRule>;

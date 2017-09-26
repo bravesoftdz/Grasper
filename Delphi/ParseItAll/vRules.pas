@@ -6,6 +6,7 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, cefvcl, Vcl.StdCtrls, Vcl.Buttons, Vcl.ComCtrls,
   Vcl.ImgList,
+  System.JSON,
   API_MVC,
   API_ORM,
   API_ORM_Cntrls,
@@ -13,7 +14,7 @@ uses
   eLevel,
   eRule,
   eRegExp,
-  System.ImageList, System.Actions, Vcl.ActnList, Vcl.Menus;
+  System.ImageList, System.Actions, Vcl.ActnList, Vcl.Menus, Vcl.ToolWin;
 
 type
   TEntityPanel = class(TEntityPanelAbstract)
@@ -29,75 +30,80 @@ type
     cbbLevel: TComboBox;
     lbllevel: TLabel;
     btnAddLevel: TBitBtn;
-    pnlTree: TPanel;
-    pnlFields: TPanel;
-    tvTree: TTreeView;
-    ilButtons: TImageList;
-    pnlXPath: TPanel;
-    btnSelectHTML: TBitBtn;
+    pnlRules: TPanel;
+    tvRules: TTreeView;
     chdtDevTools: TChromiumDevTools;
-    Splitter: TSplitter;
+    splBrw2Dev: TSplitter;
     ActionList: TActionList;
     acDevToolsActivate: TAction;
     pnlButtons: TPanel;
     btnCancel: TButton;
     btnApply: TButton;
-    udContainerStep: TUpDown;
-    pmTreeItemPopup: TPopupMenu;
-    mniAddCut: TMenuItem;
     btnDLv: TBitBtn;
-    udChildStep: TUpDown;
-    btnAddURL: TSpeedButton;
-    acAddLink: TAction;
-    imgIcons: TImage;
-    ilIcons: TImageList;
-    btnAddRecord: TSpeedButton;
-    acAddRecord: TAction;
-    btnRemove: TSpeedButton;
-    acRemove: TAction;
-    acAddChildLink: TAction;
-    mniAddLinkSameGroup: TMenuItem;
-    acAddChildRecord: TAction;
-    mniAddRecSameGroup: TMenuItem;
-    acAddChildCut: TAction;
-    btnAddCut: TSpeedButton;
-    acAddCut: TAction;
-    acAddRegExp: TAction;
-    mniAddRegExp: TMenuItem;
+    ilRuleIcons: TImageList;
+    splBrw2Cntrls: TSplitter;
+    pnlTest: TPanel;
     btnGetTestPage: TBitBtn;
-    btnAddContainer: TSpeedButton;
+    pgcRuleSections: TPageControl;
+    splTree2Sects: TSplitter;
+    tsFields: TTabSheet;
+    tsDOM: TTabSheet;
+    pnlXPath: TPanel;
+    btnSelectHTML: TBitBtn;
+    udContainerStep: TUpDown;
+    udChildStep: TUpDown;
+    tsResults: TTabSheet;
+    tlbRuleButtons: TToolBar;
+    alRuleActions: TActionList;
     acAddContainer: TAction;
+    btnContainers: TToolButton;
+    acAddCut: TAction;
+    acAddLink: TAction;
+    btnAddCut: TToolButton;
+    btnSep1: TToolButton;
+    btnAddLink: TToolButton;
+    btnAddRecord: TToolButton;
+    acAddRecord: TAction;
+    btnSep2: TToolButton;
+    btnAddAction: TToolButton;
     acAddAction: TAction;
-    btnAddAction: TSpeedButton;
+    btnSep3: TToolButton;
+    btnAddRegExp: TToolButton;
+    acAddRegExp: TAction;
+    btnSep4: TToolButton;
+    btnRemove: TToolButton;
+    acRemoveRule: TAction;
+    btn1: TButton;
+    tvNodesFull: TTreeView;
     procedure btnCancelClick(Sender: TObject);
     procedure btnApplyClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
-    procedure tvTreeChange(Sender: TObject; Node: TTreeNode);
-    procedure btnALClick(Sender: TObject);
+    procedure tvRulesChange(Sender: TObject; Node: TTreeNode);
     procedure btnSelectHTMLClick(Sender: TObject);
     procedure DevToolsActivate(Sender: Tobject);
     procedure AfterEntityPanelChange(aControl: TControl);
     //procedure udContainerStepClick(Sender: TObject; Button: TUDBtnType);
     procedure btnAddLevelClick(Sender: TObject);
     procedure cbbLevelChange(Sender: TObject);
-    procedure tvTreeDblClick(Sender: TObject);
+    procedure tvRulesDblClick(Sender: TObject);
     procedure btnDLvClick(Sender: TObject);
-    procedure acAddLinkExecute(Sender: TObject);
-    procedure acAddRecordExecute(Sender: TObject);
-    procedure acRemoveExecute(Sender: TObject);
-    procedure acAddChildLinkExecute(Sender: TObject);
-    procedure acAddChildRecordExecute(Sender: TObject);
-    procedure acAddChildCutExecute(Sender: TObject);
-    procedure acAddCutExecute(Sender: TObject);
-    procedure acAddRegExpExecute(Sender: TObject);
     procedure udContainerStepClick(Sender: TObject; Button: TUDBtnType);
     procedure btnGetTestPageClick(Sender: TObject);
     procedure acAddContainerExecute(Sender: TObject);
+    procedure acAddCutExecute(Sender: TObject);
+    procedure acAddLinkExecute(Sender: TObject);
+    procedure acAddRecordExecute(Sender: TObject);
     procedure acAddActionExecute(Sender: TObject);
+    procedure acAddRegExpExecute(Sender: TObject);
+    procedure acRemoveRuleExecute(Sender: TObject);
+    procedure btn1Click(Sender: TObject);
   private
     { Private declarations }
     FDevToolsEnabled: Boolean;
+    procedure RecourseTreeBranch(aRule: TJobRule);
     procedure AfterLevelSelected;
+    procedure DefineRuleActionAllow(aEntity: TEntityAbstract);
+    procedure AddNodeToTree(aTreeNode: TTreeNode; ajsnNode: TJSONObject);
   protected
     procedure InitView; override;
   public
@@ -109,14 +115,17 @@ type
     function GetParentEntity: TEntityAbstract;
 
     function GetSelectedRule: TJobRule;
+    function GetSelectedRegExp: TJobRegExp;
     function GetSelectedRootRule: TJobRule;
     function TreeIndex: Integer;
 
-    procedure SetLevels(aLevelList: TLevelList; aIndex: Integer = 0);
-    procedure RenderLevelRulesTree(aLevelRules: TLevelRuleRelList);
-    procedure RecourseTreeBranch(aRule: TJobRule);
+    procedure RenderLevels(aLevelList: TLevelList; aIndex: Integer = 0);
+    procedure RenderRulesTree(aBodyRule: TJobRule);
+    procedure RenderNodesTree(ajsnNodes: TJSONObject);
+
     procedure AddRuleToTree(aParentRule: TJobRule; aRule: TJobRule);
     procedure AddRegExpToTree(aParentRule: TJobRule; aRegExp: TJobRegExp);
+
     procedure RemoveTreeNode;
     procedure ClearRuleTree;
   end;
@@ -131,14 +140,45 @@ implementation
 uses
   System.UITypes;
 
+procedure TViewRules.AddNodeToTree(aTreeNode: TTreeNode; ajsnNode: TJSONObject);
+var
+  Node: TTreeNode;
+begin
+  Node := tvNodesFull.Items.AddChild(aTreeNode, ajsnNode.GetValue('tagName').Value);
+end;
+
+procedure TViewRules.RenderNodesTree(ajsnNodes: TJSONObject);
+begin
+  AddNodeToTree(nil, ajsnNodes);
+end;
+
+procedure TViewRules.DefineRuleActionAllow(aEntity: TEntityAbstract);
+var
+  Action: TContainedAction;
+  Rule: TJobRule;
+begin
+  for Action in alRuleActions do
+    begin
+      Action.Enabled := True;
+    end;
+
+  if aEntity is TJobRule then
+    begin
+      Rule := aEntity as TJobRule;
+
+      if Rule.IsBodyRule then
+        acRemoveRule.Enabled := False;
+    end;
+end;
+
 procedure TViewRules.ClearRuleTree;
 var
   Node: TTreeNode;
 begin
-  for Node in tvTree.Items do
+  for Node in tvRules.Items do
     FBind.RemoveBind(Node);
 
-  tvTree.Items.Clear;
+  tvRules.Items.Clear;
 end;
 
 function TViewRules.GetSelectedRootRule: TJobRule;
@@ -148,7 +188,7 @@ var
 begin
   Result := nil;
   isRootLevel := False;
-  CurrNode := tvTree.Selected;
+  CurrNode := tvRules.Selected;
 
   repeat
     if CurrNode.Level = 0 then
@@ -163,25 +203,20 @@ end;
 
 function TViewRules.TreeIndex: Integer;
 begin
-  Result := tvTree.Selected.Index;
+  Result := tvRules.Selected.Index;
 end;
 
 function TViewRules.GetParentEntity: TEntityAbstract;
 var
   Node: TTreeNode;
 begin
-  Node := tvTree.Selected.Parent;
+  Node := tvRules.Selected.Parent;
   Result := FBind.GetEntityByControl(Node);
 end;
 
 procedure TViewRules.RemoveTreeNode;
 begin
-  tvTree.Selected.Delete;
-end;
-
-procedure TViewRules.acAddChildLinkExecute(Sender: TObject);
-begin
-  SendMessage('AddChildLink');
+  tvRules.Selected.Delete;
 end;
 
 procedure TViewRules.acAddRecordExecute(Sender: TObject);
@@ -194,9 +229,21 @@ begin
   SendMessage('AddRegExp');
 end;
 
-procedure TViewRules.acAddChildRecordExecute(Sender: TObject);
+procedure TViewRules.acRemoveRuleExecute(Sender: TObject);
+var
+  Entity: TEntityAbstract;
 begin
-  SendMessage('AddChildRecord');
+  Entity := FBind.GetEntityByControl(tvRules.Selected);
+
+  if Entity is TJobRule then
+    SendMessage('RemoveRule')
+  else if Entity is TJobRegExp then
+    SendMessage('RemoveRegExp');
+end;
+
+procedure TViewRules.acAddActionExecute(Sender: TObject);
+begin
+  SendMessage('AddAction');
 end;
 
 procedure TViewRules.acAddContainerExecute(Sender: TObject);
@@ -206,17 +253,12 @@ end;
 
 procedure TViewRules.acAddCutExecute(Sender: TObject);
 begin
-  SendMessage('AddChildCut');
+  SendMessage('AddCut');
 end;
 
-procedure TViewRules.acRemoveExecute(Sender: TObject);
-var
-  Entity: TEntityAbstract;
+procedure TViewRules.acAddLinkExecute(Sender: TObject);
 begin
-  Entity := FBind.GetEntityByControl(tvTree.Selected);
-
-  if Entity is TJobRule then
-    SendMessage('RemoveRule');
+  SendMessage('AddLink');
 end;
 
 procedure TViewRules.AddRegExpToTree(aParentRule: TJobRule; aRegExp: TJobRegExp);
@@ -224,7 +266,7 @@ var
   RegExpNode, ParentNode: TTreeNode;
 begin
   ParentNode := TTreeNode(FBind.GetControlByEntity(aParentRule));
-  RegExpNode := tvTree.Items.AddChild(ParentNode, aRegExp.Notes);
+  RegExpNode := tvRules.Items.AddChild(ParentNode, aRegExp.Notes);
 
   RegExpNode.ImageIndex := 3;
   RegExpNode.SelectedIndex := 3;
@@ -242,7 +284,7 @@ begin
   else
     ParentNode := nil;
 
-  RuleNode := tvTree.Items.AddChild(ParentNode, aRule.Notes);
+  RuleNode := tvRules.Items.AddChild(ParentNode, aRule.Notes);
 
   if aRule.Link <> nil then
     begin
@@ -282,15 +324,34 @@ begin
   if GetSelectedLevel <> nil then
     begin
       chrmBrowser.Load(GetSelectedLevel.TestLink);
-      RenderLevelRulesTree(GetSelectedLevel.RuleRels);
+      RenderRulesTree(GetSelectedLevel.BodyRule);
     end
   else
     ClearRuleTree;
 end;
 
 function TViewRules.GetSelectedRule: TJobRule;
+var
+  Entity: TEntityAbstract;
 begin
-  Result := FBind.GetEntityByControl(tvTree.Selected) as TJobRule;
+  Entity := FBind.GetEntityByControl(tvRules.Selected);
+
+  if Entity is TJobRule then
+    Result := Entity as TJobRule
+  else
+    Result := nil;
+end;
+
+function TViewRules.GetSelectedRegExp: TJobRegExp;
+var
+  Entity: TEntityAbstract;
+begin
+  Entity := FBind.GetEntityByControl(tvRules.Selected);
+
+  if Entity is TJobRegExp then
+    Result := Entity as TJobRegExp
+  else
+    Result := nil;
 end;
 
 function TViewRules.GetSelectedLevel: TJobLevel;
@@ -303,28 +364,13 @@ begin
   Result := cbbLevel.ItemIndex;
 end;
 
-procedure TViewRules.acAddActionExecute(Sender: TObject);
-begin
-  SendMessage('AddAction');
-end;
-
-procedure TViewRules.acAddChildCutExecute(Sender: TObject);
-begin
-  SendMessage('AddChildCut');
-end;
-
-procedure TViewRules.acAddLinkExecute(Sender: TObject);
-begin
-  SendMessage('AddLink');
-end;
-
 procedure TViewRules.AfterEntityPanelChange(aControl: TControl);
 begin
   if aControl.Name = 'cntrlVISUAL_COLOR' then
     SendMessage('TreeNodeSelected');
 
   if aControl.Name = 'cntrlNOTES' then
-    tvTree.Selected.Text := (aControl as TEdit).Text;
+    tvRules.Selected.Text := (aControl as TEdit).Text;
 end;
 
 procedure TEntityPanel.InitPanel;
@@ -348,27 +394,14 @@ begin
     end;
 end;
 
-procedure TViewRules.RenderLevelRulesTree(aLevelRules: TLevelRuleRelList);
-var
-  LevelRuleRel: TLevelRuleRel;
-  CurrentRule: TJobRule;
-  RegExp: TJobRegExp;
+procedure TViewRules.RenderRulesTree(aBodyRule: TJobRule);
 begin
   ClearRuleTree;
-
-  for LevelRuleRel in aLevelRules do
-    begin
-      CurrentRule := LevelRuleRel.Rule;
-      AddRuleToTree(nil, CurrentRule);
-
-      for RegExp in CurrentRule.RegExps do
-        AddRegExpToTree(CurrentRule, RegExp);
-
-      RecourseTreeBranch(CurrentRule);
-    end;
+  AddRuleToTree(nil, aBodyRule);
+  RecourseTreeBranch(aBodyRule);
 end;
 
-procedure TViewRules.SetLevels(aLevelList: TLevelList; aIndex: Integer = 0);
+procedure TViewRules.RenderLevels(aLevelList: TLevelList; aIndex: Integer = 0);
 var
   Level: TJobLevel;
   i: Integer;
@@ -385,7 +418,7 @@ begin
   AfterLevelSelected;
 end;
 
-procedure TViewRules.tvTreeChange(Sender: TObject; Node: TTreeNode);
+procedure TViewRules.tvRulesChange(Sender: TObject; Node: TTreeNode);
 var
   Entity, ParentEntity: TEntityAbstract;
 begin
@@ -396,6 +429,8 @@ begin
   Entity := FBind.GetEntityByControl(Node);
   pnlEntityFields.ClearControls;
   pnlEntityFields.BuildControls(Entity);
+
+  DefineRuleActionAllow(Entity);
 
   if Entity is TJobRule then
     begin
@@ -414,7 +449,7 @@ begin
     end;
 end;
 
-procedure TViewRules.tvTreeDblClick(Sender: TObject);
+procedure TViewRules.tvRulesDblClick(Sender: TObject);
 begin
   SendMessage('ShowRuleResult');
 end;
@@ -433,6 +468,11 @@ begin
   SendMessage('OnRuleSelected');
 end;
 
+procedure TViewRules.btn1Click(Sender: TObject);
+begin
+  SendMessage('Test');
+end;
+
 procedure TViewRules.btnAddLevelClick(Sender: TObject);
 begin
   SendMessage('SelectNewLevelLink');
@@ -441,11 +481,6 @@ end;
 procedure TViewRules.btnApplyClick(Sender: TObject);
 begin
   SendMessage('StoreJobRules');
-end;
-
-procedure TViewRules.btnALClick(Sender: TObject);
-begin
-  SendMessage('CreateLink');
 end;
 
 procedure TViewRules.btnCancelClick(Sender: TObject);
@@ -475,7 +510,7 @@ end;
 
 procedure TViewRules.FormCreate(Sender: TObject);
 begin
-  pnlEntityFields := TEntityPanel.Create(pnlFields);
+  pnlEntityFields := TEntityPanel.Create(tsFields);
 end;
 
 procedure TViewRules.DevToolsActivate(Sender: Tobject);
@@ -483,7 +518,7 @@ begin
   if FDevToolsEnabled then
     begin
       chdtDevTools.CloseDevTools(chrmBrowser.Browser);
-      Splitter.Visible := False;
+      splBrw2Dev.Visible := False;
       chdtDevTools.Visible := False;
 
       FDevToolsEnabled := False;
@@ -491,7 +526,7 @@ begin
   else
     begin
       chdtDevTools.Visible := True;
-      Splitter.Visible := True;
+      splBrw2Dev.Visible := True;
       chdtDevTools.ShowDevTools(chrmBrowser.Browser);
 
       FDevToolsEnabled := True;

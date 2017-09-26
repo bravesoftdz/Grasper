@@ -195,13 +195,13 @@ begin
 end;
 
 function TModelExport.GetRuleKeysFromLevel(aLevel: TJobLevel): TArray<string>;
-var
-  LevelRuleRel: TLevelRuleRel;
+//var
+  //LevelRuleRel: TLevelRuleRel;
 begin
   Result := [];
 
-  for LevelRuleRel in aLevel.RuleRels do
-    Result := Result + GetKeysFromRule(LevelRuleRel.Rule);
+  //for LevelRuleRel in aLevel.RuleRels do
+  //  Result := Result + GetKeysFromRule(LevelRuleRel.Rule);
 end;
 
 procedure TModelExport.ExportToCSV;

@@ -28,15 +28,6 @@ implementation
 uses
   Data.DB;
 
-function TJobAction.GetReGrabAfterAction: Boolean;
-begin
-  Result := FData.Items['REGRAB_AFTER_ACTION'];
-end;
-
-procedure TJobAction.SetReGrabAfterAction(aValue: Boolean);
-begin
-  FData.AddOrSetValue('REGRAB_AFTER_ACTION', aValue);
-end;
 
 function TJobAction.GetActionTypeID: Integer;
 begin

@@ -23,6 +23,7 @@ type
   TJSExtension = class
     class procedure selectdataback(const data: string);
     class procedure parsedataback(const data: string);
+    class procedure fullnodestreeback(const data: string);
   end;
 
   TCustomRenderProcessHandler = class(TCefRenderProcessHandlerOwn)
@@ -46,6 +47,9 @@ type
     procedure crmGetResourceHandler(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
             const request: ICefRequest; out Result: ICefResourceHandler);
 
+    procedure ParseDataReceived(aData: string);
+    procedure NodesFullTreeReceived(aData: string);
+
     procedure SyncParentChildRuleNodes(aNodes, aParentNodes: TNodeList);
     procedure UpdateJobState(aJobID: integer);
     function CanAddLevel(aJobRule: TJobLink): Boolean;
@@ -61,38 +65,34 @@ type
     procedure CreateJob;
     procedure StoreJob;
 
+    // Manage Job Rules
     procedure EditJobRules;
     procedure StoreJobRules;
 
+    // Events
     procedure OnRuleSelected;
     procedure OnTestPageLoaded;
 
     procedure CreateLevel(frame: ICefFrame);
     procedure DeleteLevel;
 
+    // Rule Creating
     procedure AddContainer;
-
     procedure AddLink;
-    procedure AddChildLink;
-
+    procedure AddCut;
     procedure AddRecord;
-    procedure AddChildRecord;
-
-    procedure AddChildCut;
-
     procedure AddAction;
-
     procedure AddRegExp;
 
+    // Rule Removing
     procedure RemoveRule;
+    procedure RemoveRegExp;
 
     procedure SelectHTMLNode;
 
     procedure AddNodes(aNodesData: string);
 
     procedure ShowRuleResult;
-
-    procedure ParseDataReceived(aData: string);
 
     procedure ClearJobLinks;
 
@@ -139,18 +139,30 @@ uses
   FireDAC.Comp.Client,
   eTestLink;
 
+procedure TController.NodesFullTreeReceived(aData: string);
+var
+  jsnNodes: TJSONObject;
+begin
+  jsnNodes := TJSONObject.ParseJSONValue(aData) as TJSONObject;
+  try
+    ViewRules.RenderNodesTree(jsnNodes);
+  finally
+    jsnNodes.Free;
+  end;
+end;
+
 function TController.AddRule: TJobRule;
 var
-  Level: TJobLevel;
-  RuleRel: TLevelRuleRel;
+  ParentRule: TJobRule;
+  RuleRel: TRuleRuleRel;
 begin
-  RuleRel := TLevelRuleRel.Create(FDBEngine);
-  RuleRel.Rule := TJobRule.Create(FDBEngine);
+  RuleRel := TRuleRuleRel.Create(FDBEngine);
+  RuleRel.ChildRule := TJobRule.Create(FDBEngine);
 
-  Level := ViewRules.GetSelectedLevel;
-  Level.RuleRels.Add(RuleRel);
+  ParentRule := ViewRules.GetSelectedRule;
+  ParentRule.ChildRuleRels.Add(RuleRel);
 
-  Result := RuleRel.Rule;
+  Result := RuleRel.ChildRule;
 end;
 
 procedure TController.AddAction;
@@ -160,7 +172,7 @@ begin
   Rule := AddRule;
   Rule.Action := TJobAction.Create(FDBEngine);
 
-  ViewRules.AddRuleToTree(nil, Rule);
+  ViewRules.AddRuleToTree(ViewRules.GetSelectedRule, Rule);
 end;
 
 procedure TController.crmGetResourceHandler(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
@@ -174,7 +186,7 @@ var
   Rule: TJobRule;
 begin
   Rule := AddRule;
-  ViewRules.AddRuleToTree(nil, Rule);
+  ViewRules.AddRuleToTree(ViewRules.GetSelectedRule, Rule);
 end;
 
 procedure TController.OnJobDone;
@@ -296,75 +308,16 @@ end;
 
 procedure TController.Test;
 var
-  SampleJob, NewJob: TJob;
-  Level: TJobLevel;
-  RuleRel: TLevelRuleRel;
-  RegEx: TJobRegExp;
-  jsnData: TJSONArray;
-  jsnJobValue: TJSONValue;
-  jsnJobData: TJSONObject;
-  FileText: string;
-  i, j: Integer;
+  InjectJS: string;
 begin
-  SampleJob := TJob.Create(FDBEngine, 1);
-  try
-    FileText := TFilesEngine.GetTextFromFile('D:\Git\ParseItAll\Dox\jobs.json');
-    jsnData := TJSONObject.ParseJSONValue(FileText) as TJSONArray;
-
-    i := 0;
-    for jsnJobValue in jsnData do
-      begin
-        Inc(i);
-        if i < 3 then Continue;
-        jsnJobData := jsnJobValue as TJSONObject;
-
-        NewJob := TJob.Create(FDBEngine);
-        try
-          NewJob.Assign(SampleJob);
-          NewJob.Caption := Format('Wikipedia %s', [jsnJobData.GetValue('FIELD1').Value]);
-          NewJob.ZeroLink := jsnJobData.GetValue('FIELD3').Value;
-
-          Level := NewJob.GetLevel(1);
-          for RuleRel in Level.RuleRels do
-            begin
-              if RuleRel.Rule.Rec <> nil then
-                begin
-                  if RuleRel.Rule.Rec.Key = 'category_identifier' then
-                    begin
-                      j := 0;
-                      for RegEx in RuleRel.Rule.RegExps do
-                        begin
-                          inc(j);
-                          if j = 1 then
-                            RegEx.RegExp := 'Страницы в категории';
-
-                          if j = 2 then
-                            begin
-                              RegEx.RegExp := 'Страницы в категории';
-                              RegEx.ReplaceValue := jsnJobData.GetValue('FIELD2').Value;
-                            end;
-                        end;
-                    end;
-                end;
-            end;
-
-        finally
-          NewJob.SaveAll;
-          NewJob.Free;
-        end;
-
-        //break;
-      end;
-  finally
-    SampleJob.Free;
-    jsnData.Free;
-  end;
+  InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\DOMFullTree.js');
+  ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
 end;
 
 procedure TController.TempCopy;
 var
   SourceLevel, DestLevel: TJobLevel;
-  RuleRel, NewRuleRel: TLevelRuleRel;
+  //RuleRel, NewRuleRel: TLevelRuleRel;
   SourceJob, DestJob: TJob;
 begin
   // copy Levels Rules
@@ -506,7 +459,7 @@ end;
 procedure TController.DeleteLevel;
 begin
   GetJob.Levels.DeleteByIndex(ViewRules.GetLevelIndex);
-  ViewRules.SetLevels(GetJob.Levels);
+  ViewRules.RenderLevels(GetJob.Levels);
 end;
 
 procedure TController.OnRuleSelected;
@@ -514,14 +467,13 @@ begin
   FObjData.AddOrSetValue('Level', ViewRules.GetSelectedLevel);
   FObjData.AddOrSetValue('Rule', ViewRules.GetSelectedRule);
   FData.AddOrSetValue('JSScript', FJSScript);
+  FData.AddOrSetValue('MarkNodes', True);
   FData.AddOrSetValue('SkipActions', True);
-  CallModel(TModelJS, 'PrepareJSScriptForLevel');
+
+  CallModel(TModelJS, 'PrepareParseScript');
 
   ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(FData.Items['JSScript'], 'about:blank', 0);
-  //FObjData.AddOrSetValue('Rule', ViewRules.GetSelectedRule);
-  //FData.AddOrSetValue('JSScript', FJSScript);
   //FData.AddOrSetValue('CanAddLevel', CanAddLevel(ViewRules.GetSelectedRule.Link));
-  //CallModel(TModelJS, 'PrepareJSScriptForRule');
 end;
 
 procedure TController.ShowRuleResult;
@@ -608,7 +560,7 @@ begin
   Level.BaseLink := frame.Url;
 
   GetJob.Levels.Add(Level);
-  ViewRules.SetLevels(GetJob.Levels, GetJob.Levels.Count - 1);
+  ViewRules.RenderLevels(GetJob.Levels, GetJob.Levels.Count - 1);
 end;
 
 procedure TController.AddNodes(aNodesData: string);
@@ -666,6 +618,8 @@ begin
     end;
 
   if message.Name = 'parsedataback' then ParseDataReceived(message.ArgumentList.GetString(0));
+
+  if message.Name = 'fullnodestreeback' then NodesFullTreeReceived(message.ArgumentList.GetString(0));
 end;
 
 procedure TController.SelectHTMLNode;
@@ -686,41 +640,29 @@ begin
       ParentRule := ViewRules.GetParentEntity as TJobRule;
       Index := ParentRule.IndexOfChildRule(ViewRules.GetSelectedRule);          
       ParentRule.ChildRuleRels.DeleteByIndex(Index);
-    end
-  else
-    ViewRules.GetSelectedLevel.RuleRels.DeleteByIndex(ViewRules.TreeIndex);
-  
-  ViewRules.RemoveTreeNode;    
+
+      ViewRules.RemoveTreeNode;
+    end;
 end;
 
-procedure TController.AddChildCut;
+procedure TController.RemoveRegExp;
 var
-  RuleRel: TRuleRuleRel;
   ParentRule: TJobRule;
 begin
-  RuleRel := TRuleRuleRel.Create(FDBEngine);
-  RuleRel.ChildRule := TJobRule.Create(FDBEngine);
-  RuleRel.ChildRule.Cut := TJobCut.Create(FDBEngine);
+  ParentRule := ViewRules.GetParentEntity as TJobRule;
+  ParentRule.RegExps.DeleteByEntity(ViewRules.GetSelectedRegExp);
 
-  ParentRule := ViewRules.GetSelectedRule;
-  ParentRule.ChildRuleRels.Add(RuleRel);
-
-  ViewRules.AddRuleToTree(ParentRule, RuleRel.ChildRule);
+  ViewRules.RemoveTreeNode;
 end;
 
-procedure TController.AddChildLink;
+procedure TController.AddCut;
 var
-  RuleRel: TRuleRuleRel;
-  ParentRule: TJobRule;
+  Rule: TJobRule;
 begin
-  RuleRel := TRuleRuleRel.Create(FDBEngine);
-  RuleRel.ChildRule := TJobRule.Create(FDBEngine);
-  RuleRel.ChildRule.Link := TJobLink.Create(FDBEngine);
+  Rule := AddRule;
+  Rule.Cut := TJobCut.Create(FDBEngine);
 
-  ParentRule := ViewRules.GetSelectedRule;
-  ParentRule.ChildRuleRels.Add(RuleRel);
-
-  ViewRules.AddRuleToTree(ParentRule, RuleRel.ChildRule);
+  ViewRules.AddRuleToTree(ViewRules.GetSelectedRule, Rule);
 end;
 
 procedure TController.AddLink;
@@ -730,22 +672,7 @@ begin
   Rule := AddRule;
   Rule.Link := TJobLink.Create(FDBEngine);
 
-  ViewRules.AddRuleToTree(nil, Rule);
-end;
-
-procedure TController.AddChildRecord;
-var
-  RuleRel: TRuleRuleRel;
-  ParentRule: TJobRule;
-begin
-  RuleRel := TRuleRuleRel.Create(FDBEngine);
-  RuleRel.ChildRule := TJobRule.Create(FDBEngine);
-  RuleRel.ChildRule.Rec := TJobRecord.Create(FDBEngine);
-
-  ParentRule := ViewRules.GetSelectedRule; 
-  ParentRule.ChildRuleRels.Add(RuleRel);
-
-  ViewRules.AddRuleToTree(ParentRule, RuleRel.ChildRule);
+  ViewRules.AddRuleToTree(ViewRules.GetSelectedRule, Rule);
 end;
 
 procedure TController.AddRecord;
@@ -755,7 +682,7 @@ begin
   Rule := AddRule;
   Rule.Rec := TJobRecord.Create(FDBEngine);
 
-  ViewRules.AddRuleToTree(nil, Rule);
+  ViewRules.AddRuleToTree(ViewRules.GetSelectedRule, Rule);
 end;
 
 procedure TController.GetJobList;
@@ -782,7 +709,7 @@ begin
   Levels := Job.Levels;
   if Levels.Count = 0 then
     begin
-      Level := TJobLevel.Create(FDBEngine, 0);
+      Level := TJobLevel.Create(FDBEngine);
       Level.Level := 1;
       Level.BaseLink := Job.ZeroLink;
       Levels.Add(Level);
@@ -794,7 +721,7 @@ begin
   ViewRules.chrmBrowser.OnLoadEnd := crmLoadEnd;
   ViewRules.chrmBrowser.OnGetResourceHandler := crmGetResourceHandler;
 
-  ViewRules.SetLevels(GetJob.Levels);
+  ViewRules.RenderLevels(GetJob.Levels);
 end;
 
 procedure TController.StoreJobRules;
@@ -862,6 +789,15 @@ var
   msg: ICefProcessMessage;
 begin
   msg := TCefProcessMessageRef.New('parsedataback');
+  msg.ArgumentList.SetString(0, data);
+  TCefv8ContextRef.Current.Browser.SendProcessMessage(PID_BROWSER, msg);
+end;
+
+class procedure TJSExtension.fullnodestreeback(const data: string);
+var
+  msg: ICefProcessMessage;
+begin
+  msg := TCefProcessMessageRef.New('fullnodestreeback');
   msg.ArgumentList.SetString(0, data);
   TCefv8ContextRef.Current.Browser.SendProcessMessage(PID_BROWSER, msg);
 end;
