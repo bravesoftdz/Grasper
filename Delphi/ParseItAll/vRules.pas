@@ -143,8 +143,38 @@ uses
 procedure TViewRules.AddNodeToTree(aTreeNode: TTreeNode; ajsnNode: TJSONObject);
 var
   Node: TTreeNode;
+  jsnNode: TJSONValue;
+  NodeVal: string;
+  TagID, ClassName, Value: string;
+  RuleNodeID: integer;
 begin
-  Node := tvNodesFull.Items.AddChild(aTreeNode, ajsnNode.GetValue('tagName').Value);
+  if ajsnNode.TryGetValue('tagID', Value) then
+    if not Value.IsEmpty then TagID := 'id: ' + Value;
+
+  if ajsnNode.TryGetValue('className', Value) then
+    if not Value.IsEmpty then ClassName := 'class: ' + Value;  
+
+  NodeVal := Format('%s[%d] %s %s', [
+    ajsnNode.GetValue('tagName').Value,
+    TJSONNumber(ajsnNode.GetValue('index')).asInt,
+    TagID,
+    ClassName
+  ]);     
+
+  Node := tvNodesFull.Items.AddChild(aTreeNode, NodeVal);
+  Node.ImageIndex := 4;
+  Node.SelectedIndex := 4;
+
+  if ajsnNode.TryGetValue<integer>('ruleNodeID', RuleNodeID) then
+    begin
+      Node.Text := RuleNodeID.ToString + ' ' + Node.Text; 
+      if Node.Parent <> nil then Node.Parent.Expand(False);      
+    end;
+
+  for jsnNode in ajsnNode.GetValue('children') as TJSONArray do
+    begin
+      AddNodeToTree(Node, TJSONObject(jsnNode));
+    end;
 end;
 
 procedure TViewRules.RenderNodesTree(ajsnNodes: TJSONObject);

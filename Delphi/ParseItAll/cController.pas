@@ -417,6 +417,9 @@ begin
             or (Node.ClassName.IsEmpty and LastParentNode.ClassName.IsEmpty)
           )
           and (Node.Name = LastParentNode.Name)
+
+          or (Node.Tag = 'HTML')
+          or (Node.Tag = 'BODY')
         then
           isClearMode := True;
 

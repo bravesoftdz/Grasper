@@ -140,6 +140,7 @@ function getNodeByRuleNode(ruleNode, tagCollection, keepSearch) {
         }
     }
 
+    $(node).data('pia-nodeid', ruleNode.id);
     return node;
 }
 

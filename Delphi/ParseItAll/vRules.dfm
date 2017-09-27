@@ -33,8 +33,6 @@ object ViewRules: TViewRules
     Anchors = [akLeft, akTop, akRight, akBottom]
     Caption = 'pnlBrowser'
     TabOrder = 0
-    ExplicitWidth = 400
-    ExplicitHeight = 429
     object splBrw2Dev: TSplitter
       Left = 1
       Top = 280
@@ -55,8 +53,6 @@ object ViewRules: TViewRules
       Align = alClient
       DefaultUrl = 'about:blank'
       TabOrder = 0
-      ExplicitWidth = 368
-      ExplicitHeight = 220
     end
     object chdtDevTools: TChromiumDevTools
       Left = 1
@@ -65,8 +61,6 @@ object ViewRules: TViewRules
       Height = 204
       Align = alBottom
       Visible = False
-      ExplicitTop = 200
-      ExplicitWidth = 359
     end
   end
   object pnlControls: TPanel
@@ -78,9 +72,6 @@ object ViewRules: TViewRules
     BevelEdges = []
     BevelOuter = bvNone
     TabOrder = 1
-    ExplicitLeft = 384
-    ExplicitWidth = 300
-    ExplicitHeight = 429
     object splTree2Sects: TSplitter
       Left = 0
       Top = 280
@@ -101,9 +92,6 @@ object ViewRules: TViewRules
       BevelKind = bkFlat
       BevelOuter = bvNone
       TabOrder = 0
-      ExplicitLeft = 1
-      ExplicitTop = 1
-      ExplicitWidth = 300
       object lbllevel: TLabel
         Left = 133
         Top = 11
@@ -149,9 +137,6 @@ object ViewRules: TViewRules
       Align = alTop
       BevelOuter = bvNone
       TabOrder = 1
-      ExplicitLeft = 1
-      ExplicitTop = 71
-      ExplicitWidth = 318
       object tvRules: TTreeView
         Left = 0
         Top = 29
@@ -164,8 +149,6 @@ object ViewRules: TViewRules
         TabOrder = 0
         OnChange = tvRulesChange
         OnDblClick = tvRulesDblClick
-        ExplicitTop = 96
-        ExplicitHeight = 114
       end
       object tlbRuleButtons: TToolBar
         Left = 0
@@ -256,8 +239,6 @@ object ViewRules: TViewRules
       Align = alBottom
       BevelOuter = bvNone
       TabOrder = 2
-      ExplicitTop = 394
-      ExplicitWidth = 302
       DesignSize = (
         301
         35)
@@ -292,9 +273,6 @@ object ViewRules: TViewRules
       BevelKind = bkFlat
       BevelOuter = bvNone
       TabOrder = 3
-      ExplicitLeft = 1
-      ExplicitTop = 36
-      ExplicitWidth = 300
       object btnGetTestPage: TBitBtn
         Left = 15
         Top = 5
@@ -372,12 +350,9 @@ object ViewRules: TViewRules
           Width = 293
           Height = 101
           Align = alClient
+          Images = ilRuleIcons
           Indent = 19
           TabOrder = 1
-          ExplicitLeft = 72
-          ExplicitTop = 88
-          ExplicitWidth = 121
-          ExplicitHeight = 97
         end
       end
       object tsResults: TTabSheet
@@ -401,7 +376,7 @@ object ViewRules: TViewRules
     Left = 421
     Top = 182
     Bitmap = {
-      494C0101070008000C0010001000FFFFFFFF2100FFFFFFFFFFFFFFFF424D3600
+      494C010107000800100010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000002000000001002000000000000020
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -669,7 +644,8 @@ object ViewRules: TViewRules
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
-      00000000000000000000000000000000}
+      0000000000000000000000000000000000000000000000000000000000000000
+      000000000000}
   end
   object alRuleActions: TActionList
     Images = ilRuleIcons
