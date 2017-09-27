@@ -348,6 +348,7 @@ function processActionsByRule(rule, resultNodes) {
         resultNodes.forEach(function (node) {
         
             if (rule.act_type == 1) $(node)[0].click();
+            if (rule.act_type == 2) $(node).attr('value', rule.fill);
         
         });
         

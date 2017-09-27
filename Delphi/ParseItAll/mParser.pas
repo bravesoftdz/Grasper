@@ -22,6 +22,12 @@ type
     GroupID: Integer;
   end;
 
+  TRequestCheck = record
+    Method: string;
+    URL: string;
+    IsHappen: Boolean;
+  end;
+
   TModelJS = class(TModelDB)
   private
     function ColorToHex(color: TColor): String;
@@ -37,15 +43,25 @@ type
     FJob: TJob;
     FCurrLink: TLink;
     FChromium: TChromium;
-    procedure ProcessNextLink(aPrivLinkHandled: Integer = 2);
+    FRequestCheckList: TArray<TRequestCheck>;
+    FIsDocumentReady: Boolean;
+
     procedure crmLoadEnd(Sender: TObject; const browser: ICefBrowser;
         const frame: ICefFrame; httpStatusCode: Integer);
-    procedure ProcessJSOnFrame(aFrame: ICefFrame);
     procedure crmProcessMessageReceived(Sender: TObject;
             const browser: ICefBrowser; sourceProcess: TCefProcessId;
             const message: ICefProcessMessage; out Result: Boolean);
+    procedure crmResourceResponse(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
+            const request: ICefRequest; const response: ICefResponse; out Result: Boolean);
+
+    procedure ProcessNextLink(aPrivLinkHandled: Integer = 2);
+    procedure ProcessJSOnFrame(aFrame: ICefFrame);
     procedure ProcessDataReceived(aData: string);
+    procedure ProcessRequest(aRequest: ICefRequest);
+
     procedure SetCurrLinkHandle(aValue: Integer);
+    procedure SetRequestCheckList(aLevel: integer);
+    function IsWaitingForRequest: Boolean;
     procedure StopJob;
     function GetNextlink: TLink;
     function AddGroup: Integer;
@@ -68,7 +84,75 @@ uses
   FireDAC.Comp.Client,
   API_Files,
   eError,
-  eGroup;
+  eGroup,
+  eRequest;
+
+procedure TModelParser.ProcessRequest(aRequest: ICefRequest);
+var
+  RequestCheck: TRequestCheck;
+  i: Integer;
+begin
+  for i := 0 to Length(FRequestCheckList) - 1 do
+    begin
+      RequestCheck := FRequestCheckList[i];
+
+      if     (RequestCheck.URL = aRequest.Url)
+         and (RequestCheck.Method = aRequest.Method)
+      then
+        begin
+          RequestCheck.IsHappen := True;
+          //ProcessJSOnFrame(nil);
+        end;
+    end;
+end;
+
+function TModelParser.IsWaitingForRequest: Boolean;
+var
+  RequestCheck: TRequestCheck;
+begin
+  Result := False;
+
+  for RequestCheck in FRequestCheckList do
+    if not RequestCheck.IsHappen then Exit(True);
+end;
+
+procedure TModelParser.SetRequestCheckList(aLevel: integer);
+var
+  Level: TJobLevel;
+  Request: TJobRequest;
+  RequestList: TJobRequestList;
+  RequestCheck: TRequestCheck;
+begin
+  Level := FJob.GetLevel(aLevel);
+  RequestList := Level.GetLevelRequestList;
+  try
+    FRequestCheckList := [];
+
+    for Request in RequestList do
+      begin
+        case Request.Method of
+          1: RequestCheck.Method := 'GET';
+          2: RequestCheck.Method := 'POST';
+        end;
+
+        RequestCheck.URL := Request.Link;
+        RequestCheck.IsHappen := False;
+
+        FRequestCheckList := FRequestCheckList + [RequestCheck];
+      end;
+  finally
+    RequestList.Free;
+  end;
+end;
+
+procedure TModelParser.crmResourceResponse(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
+            const request: ICefRequest; const response: ICefResponse; out Result: Boolean);
+begin
+  if FIsDocumentReady then
+    begin
+      ProcessRequest(request);
+    end;
+end;
 
 function TModelParser.GetGroupID(var aGroupBinds: TArray<TGroupBind>; aDataGroupNum: Integer): Integer;
 var
@@ -193,6 +277,9 @@ begin
     begin
       jsnRule.AddPair('type', 'action');
       jsnRule.AddPair('act_type', TJSONNumber.Create(aRule.Action.ActionTypeID));
+
+      if aRule.Action.ActionTypeID = 2 then
+        jsnRule.AddPair('fill', aRule.Action.FillValue);
     end;
 
   if not jsnRule.TryGetValue('type', Value) then
@@ -277,9 +364,7 @@ var
   Key, Value: string;
   GroupBinds: TArray<TGroupBind>;
   GroupID, DataGroupNum: Integer;
-  ReGrabAfterAction: Boolean;
 begin
-  ReGrabAfterAction := False;
   jsnData:=TJSONObject.ParseJSONValue(aData) as TJSONObject;
 
   try
@@ -310,14 +395,11 @@ begin
 
         if jsnRuleObj.GetValue('type').Value = 'action' then
           begin
-            if jsnRuleObj.TryGetValue<Boolean>('regrab_after_action', ReGrabAfterAction) then
-              ReGrabAfterAction := True;
+
           end;
       end;
 
-    if ReGrabAfterAction then
-      ProcessJSOnFrame(nil)
-    else
+    if not IsWaitingForRequest then
       ProcessNextLink;
   finally
     jsnData.Free;
@@ -350,7 +432,7 @@ begin
     ObjData.AddOrSetValue('DBEngine', FDBEngine);
 
     Level := FJob.GetLevel(FCurrLink.Level);
-    //if Level.RuleRels.Count = 0 then Exit;
+    if Level.BodyRuleID = 0 then Exit;
 
     Data.AddOrSetValue('JSScript', FData.Items['JSScript']);
     ObjData.AddOrSetValue('Level', Level);
@@ -379,10 +461,11 @@ var
 begin
   try
     if    (httpStatusCode = 200)
-      //and (frame.Url = FCurrLink.Link)
+      and not FIsDocumentReady
       and frame.IsMain
     then
       begin
+        FIsDocumentReady := True;
         InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\jquery-3.1.1.js');
         frame.ExecuteJavaScript(InjectJS, '', 0);
 
@@ -395,6 +478,14 @@ begin
         ProcessNextLink(3);
         Exit;
       end;
+
+    if FIsDocumentReady then
+      begin
+        InjectJS := '';
+        FChromium.
+      end;
+
+
   finally
     TFilesEngine.CreateFile('LoadEnd.log');
     TFilesEngine.SaveTextToFile('LoadEnd.log', httpStatusCode.ToString);
@@ -458,6 +549,8 @@ begin
       if FCurrLink <> nil then
         begin
           SetCurrLinkHandle(1);
+          SetRequestCheckList(FCurrLink.Level);
+          FIsDocumentReady := False;
           FChromium.Load(FCurrLink.Link);
         end
       else
@@ -474,6 +567,7 @@ begin
   FChromium := FObjData.Items['Chromium'] as TChromium;
   FChromium.OnLoadEnd := crmLoadEnd;
   FChromium.OnProcessMessageReceived := crmProcessMessageReceived;
+  FChromium.OnResourceResponse := crmResourceResponse;
 
   FJob := FObjData.Items['Job'] as TJob;
 

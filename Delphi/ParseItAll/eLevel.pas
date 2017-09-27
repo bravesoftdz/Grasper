@@ -5,7 +5,8 @@ interface
 uses
   API_ORM,
   eRule,
-  eTestLink;
+  eTestLink,
+  eRequest;
 
 type
   TJobLevel = class(TEntityAbstract)
@@ -30,8 +31,10 @@ type
     function GetCurrentTestLink: string;
   //////////////////
     function CreateBodyRule: TJobRule;
+    procedure AddRequests(aRule: TJobRule; aRequestList: TJobRequestList);
   public
     function GetActualTestLink(aLevel: Integer): TTestLink;
+    function GetLevelRequestList: TJobRequestList;
     property Level: Integer read GetLevel write SetLevel;
     property BaseLink: string read GetBaseLink write SetBaseLink;
     property BodyRuleID: Integer read GetBodyRuleID write SetBodyRuleID;
@@ -48,6 +51,24 @@ uses
   System.UITypes,
   Data.DB,
   eNodes;
+
+procedure TJobLevel.AddRequests(aRule: TJobRule; aRequestList: TJobRequestList);
+var
+  Request: TJobRequest;
+  ChildRuleRel: TRuleRuleRel;
+begin
+  for Request in aRule.RequestList do
+    aRequestList.Add(Request);
+
+  for ChildRuleRel in aRule.ChildRuleRels do
+    AddRequests(ChildRuleRel.ChildRule, aRequestList);
+end;
+
+function TJobLevel.GetLevelRequestList: TJobRequestList;
+begin
+  Result := TJobRequestList.Create(False);
+  AddRequests(Self.BodyRule, Result);
+end;
 
 function TJobLevel.CreateBodyRule: TJobRule;
 var

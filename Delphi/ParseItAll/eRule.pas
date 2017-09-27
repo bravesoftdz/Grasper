@@ -10,7 +10,8 @@ uses
   eRuleCut,
   eRuleAction,
   eRegExp,
-  eNodes;
+  eNodes,
+  eRequest;
 
 type
   TJobRule = class;
@@ -49,6 +50,7 @@ type
     FNodes: TNodeList;
     FChildRules: TRuleRuleRelList;
     FRegExps: TJobRegExpList;
+    FRequestList: TJobRequestList;
     FIsBodyRule: Boolean;
   // Getters Setters
     function GetLevelID: Integer;
@@ -74,6 +76,7 @@ type
     procedure SetAction(aValue: TJobAction);
     function GetChildRules: TRuleRuleRelList;
     function GetRegExps: TJobRegExpList;
+    function GetRequestList: TJobRequestList;
   //////////////////
   public
     function GetContainerInsideNodes: TNodeList;
@@ -91,6 +94,7 @@ type
     property Nodes: TNodeList read GetNodeList;
     property ChildRuleRels: TRuleRuleRelList read GetChildRules;
     property RegExps: TJobRegExpList read GetRegExps;
+    property RequestList: TJobRequestList read GetRequestList;
     property IsBodyRule: Boolean read FIsBodyRule write FIsBodyRule;
   end;
 
@@ -100,6 +104,14 @@ implementation
 
 uses
   Data.DB;
+
+function TJobRule.GetRequestList: TJobRequestList;
+begin
+  if not Assigned(FRequestList) then
+    FRequestList := TJobRequestList.Create(Self, 'JOB_RULE_ID', ID);
+
+  Result := FRequestList;
+end;
 
 function TJobRule.GetAction: TJobAction;
 begin
@@ -121,6 +133,7 @@ begin
       Nodes.Assign(TJobRule(aSourceEntity).Nodes);
       ChildRuleRels.Assign(TJobRule(aSourceEntity).ChildRuleRels);
       RegExps.Assign(TJobRule(aSourceEntity).RegExps);
+      RequestList.Assign(TJobRule(aSourceEntity).RequestList);
     end;
 end;
 
@@ -267,6 +280,7 @@ begin
   if Assigned(FNodes) then FNodes.SaveList(ID);
   if Assigned(FChildRules) then FChildRules.SaveList(ID);
   if Assigned(FRegExps) then FRegExps.SaveList(ID);
+  if Assigned(FRequestList) then FRequestList.SaveList(ID);
 end;
 
 function TJobRule.GetNodeList: TNodeList;

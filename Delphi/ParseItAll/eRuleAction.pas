@@ -17,10 +17,13 @@ type
     procedure SetJobRuleID(aValue: integer);
     function GetActionTypeID: Integer;
     procedure SetActionTypeID(aValue: integer);
+    function GetFillValue: String;
+    procedure SetFillValue(aValue: String);
   //////////////////
   public
     property JobRuleID: Integer read GetJobRuleID write SetJobRuleID;
     property ActionTypeID: Integer read GetActionTypeID write SetActionTypeID;
+    property FillValue: string read GetFillValue write SetFillValue;
   end;
 
 implementation
@@ -28,6 +31,15 @@ implementation
 uses
   Data.DB;
 
+function TJobAction.GetFillValue: String;
+begin
+  Result := FData.Items['FILL_VALUE'];
+end;
+
+procedure TJobAction.SetFillValue(aValue: String);
+begin
+  FData.AddOrSetValue('FILL_VALUE', aValue);
+end;
 
 function TJobAction.GetActionTypeID: Integer;
 begin
@@ -55,6 +67,7 @@ begin
 
   AddField(Result.FieldList, 'JOB_RULE_ID', ftInteger);
   AddField(Result.FieldList, 'ACTION_TYPE_ID', ftInteger);
+  AddField(Result.FieldList, 'FILL_VALUE', ftString);
 end;
 
 end.

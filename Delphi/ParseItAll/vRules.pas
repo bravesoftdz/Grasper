@@ -14,6 +14,7 @@ uses
   eLevel,
   eRule,
   eRegExp,
+  eRequest,
   System.ImageList, System.Actions, Vcl.ActnList, Vcl.Menus, Vcl.ToolWin;
 
 type
@@ -75,6 +76,14 @@ type
     acRemoveRule: TAction;
     btn1: TButton;
     tvNodesFull: TTreeView;
+    tsRequests: TTabSheet;
+    lvRequests: TListView;
+    btnAddAjax: TToolButton;
+    acAddRequest: TAction;
+    tlbRequestButtons: TToolBar;
+    alRequestActions: TActionList;
+    acAssignRequest: TAction;
+    btnAssignRequest: TToolButton;
     procedure btnCancelClick(Sender: TObject);
     procedure btnApplyClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -97,6 +106,8 @@ type
     procedure acAddRegExpExecute(Sender: TObject);
     procedure acRemoveRuleExecute(Sender: TObject);
     procedure btn1Click(Sender: TObject);
+    procedure acAddRequestExecute(Sender: TObject);
+    procedure acAssignRequestExecute(Sender: TObject);
   private
     { Private declarations }
     FDevToolsEnabled: Boolean;
@@ -116,15 +127,18 @@ type
 
     function GetSelectedRule: TJobRule;
     function GetSelectedRegExp: TJobRegExp;
+    function GetSelectedRequest: TJobRequest;
     function GetSelectedRootRule: TJobRule;
     function TreeIndex: Integer;
 
     procedure RenderLevels(aLevelList: TLevelList; aIndex: Integer = 0);
     procedure RenderRulesTree(aBodyRule: TJobRule);
     procedure RenderNodesTree(ajsnNodes: TJSONObject);
+    procedure RenderBackgroundRequest(aMethod, aUrl: string);
 
     procedure AddRuleToTree(aParentRule: TJobRule; aRule: TJobRule);
-    procedure AddRegExpToTree(aParentRule: TJobRule; aRegExp: TJobRegExp);
+    procedure AddRegExpToTree(aParentNode: TTreeNode; aRegExp: TJobRegExp);
+    procedure AddRequestToTree(aParentNode: TTreeNode; aJobRequest: TJobRequest);
 
     procedure RemoveTreeNode;
     procedure ClearRuleTree;
@@ -138,7 +152,49 @@ implementation
 {$R *.dfm}
 
 uses
-  System.UITypes;
+  System.UITypes,
+  System.Threading;
+
+procedure TViewRules.RenderBackgroundRequest(aMethod, aUrl: string);
+var
+  Task: ITask;
+  item: TListItem;
+begin
+  Task := TTask.Create(procedure
+    begin
+      item := lvRequests.Items.Add;
+
+      item.Caption := aMethod;
+      item.SubItems.Add(aUrl);
+    end
+  );
+  Task.Start;
+end;
+
+function TViewRules.GetSelectedRequest: TJobRequest;
+var
+  Entity: TEntityAbstract;
+begin
+  Entity := FBind.GetEntityByControl(tvRules.Selected);
+
+  if Entity is TJobRequest then
+    Result := Entity as TJobRequest
+  else
+    Result := nil;
+end;
+
+procedure TViewRules.AddRequestToTree(aParentNode: TTreeNode; aJobRequest: TJobRequest);
+var
+  RequestNode: TTreeNode;
+begin
+  RequestNode := tvRules.Items.AddChild(aParentNode, 'Request');
+
+  RequestNode.ImageIndex := 7;
+  RequestNode.SelectedIndex := 7;
+
+  aParentNode.Expand(True);
+  FBind.AddBind(RequestNode, aJobRequest);
+end;
 
 procedure TViewRules.AddNodeToTree(aTreeNode: TTreeNode; ajsnNode: TJSONObject);
 var
@@ -259,6 +315,17 @@ begin
   SendMessage('AddRegExp');
 end;
 
+procedure TViewRules.acAssignRequestExecute(Sender: TObject);
+begin
+  if lvRequests.Selected.Caption = 'GET' then
+    GetSelectedRequest.Method := 1;
+
+  if lvRequests.Selected.Caption = 'POST' then
+    GetSelectedRequest.Method := 2;
+
+  GetSelectedRequest.Link := lvRequests.Selected.SubItems[0];
+end;
+
 procedure TViewRules.acRemoveRuleExecute(Sender: TObject);
 var
   Entity: TEntityAbstract;
@@ -268,12 +335,19 @@ begin
   if Entity is TJobRule then
     SendMessage('RemoveRule')
   else if Entity is TJobRegExp then
-    SendMessage('RemoveRegExp');
+    SendMessage('RemoveRegExp')
+  else if Entity is TJobRequest then
+    SendMessage('RemoveRequest');
 end;
 
 procedure TViewRules.acAddActionExecute(Sender: TObject);
 begin
   SendMessage('AddAction');
+end;
+
+procedure TViewRules.acAddRequestExecute(Sender: TObject);
+begin
+  SendMessage('AddRequest');
 end;
 
 procedure TViewRules.acAddContainerExecute(Sender: TObject);
@@ -291,23 +365,24 @@ begin
   SendMessage('AddLink');
 end;
 
-procedure TViewRules.AddRegExpToTree(aParentRule: TJobRule; aRegExp: TJobRegExp);
+procedure TViewRules.AddRegExpToTree(aParentNode: TTreeNode; aRegExp: TJobRegExp);
 var
-  RegExpNode, ParentNode: TTreeNode;
+  RegExpNode: TTreeNode;
 begin
-  ParentNode := TTreeNode(FBind.GetControlByEntity(aParentRule));
-  RegExpNode := tvRules.Items.AddChild(ParentNode, aRegExp.Notes);
+  RegExpNode := tvRules.Items.AddChild(aParentNode, aRegExp.Notes);
 
   RegExpNode.ImageIndex := 3;
   RegExpNode.SelectedIndex := 3;
 
-  ParentNode.Expand(True);
+  aParentNode.Expand(True);
   FBind.AddBind(RegExpNode, aRegExp);
 end;
 
 procedure TViewRules.AddRuleToTree(aParentRule: TJobRule; aRule: TJobRule);
 var
   RuleNode, ParentNode: TTreeNode;
+  JobRegExp: TJobRegExp;
+  JobRequest: TJobRequest;
 begin
   if aParentRule <> nil then
     ParentNode := TTreeNode(FBind.GetControlByEntity(aParentRule))
@@ -342,6 +417,12 @@ begin
       RuleNode.SelectedIndex := 4;
     end;
 
+  for JobRegExp in aRule.RegExps do
+    AddRegExpToTree(RuleNode, JobRegExp);
+
+  for JobRequest in aRule.RequestList do
+    AddRequestToTree(RuleNode, JobRequest);
+
   if ParentNode <> nil then ParentNode.Expand(True);
   FBind.AddBind(RuleNode, aRule);
 end;
@@ -358,6 +439,8 @@ begin
     end
   else
     ClearRuleTree;
+
+  lvRequests.Clear;
 end;
 
 function TViewRules.GetSelectedRule: TJobRule;
@@ -411,14 +494,10 @@ end;
 procedure TViewRules.RecourseTreeBranch(aRule: TJobRule);
 var
   ChildRuleRel: TRuleRuleRel;
-  RegExp: TJobRegExp;
 begin
   for ChildRuleRel in aRule.ChildRuleRels do
     begin
       AddRuleToTree(aRule, ChildRuleRel.ChildRule);
-
-      for RegExp in ChildRuleRel.ChildRule.RegExps do
-        AddRegExpToTree(ChildRuleRel.ChildRule, RegExp);
 
       RecourseTreeBranch(ChildRuleRel.ChildRule);
     end;

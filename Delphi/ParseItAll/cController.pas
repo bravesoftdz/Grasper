@@ -17,7 +17,8 @@ uses
   eRuleCut,
   eRuleAction,
   eRegExp,
-  eNodes;
+  eNodes,
+  eRequest;
 
 type
   TJSExtension = class
@@ -37,21 +38,22 @@ type
     FLastParseResult: TJSONObject;
     FSelectNewLevelLink: Boolean;
     FGettingTestPage: Boolean;
+    FCatchingRequests: Boolean;
     JobStates: TArray<TJobState>;
 
     procedure crmLoadEnd(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame; httpStatusCode: Integer);
     procedure crmProcessMessageReceived(Sender: TObject;
             const browser: ICefBrowser; sourceProcess: TCefProcessId;
             const message: ICefProcessMessage; out Result: Boolean);
-
-    procedure crmGetResourceHandler(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
-            const request: ICefRequest; out Result: ICefResourceHandler);
+    procedure crmResourceResponse(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
+            const request: ICefRequest; const response: ICefResponse; out Result: Boolean);
 
     procedure ParseDataReceived(aData: string);
     procedure NodesFullTreeReceived(aData: string);
 
     procedure SyncParentChildRuleNodes(aNodes, aParentNodes: TNodeList);
     procedure UpdateJobState(aJobID: integer);
+    procedure UpdateBackgroundRequests(aRequest: ICefRequest);
     function CanAddLevel(aJobRule: TJobLink): Boolean;
     function GetJob: TJob;
     function AddRule: TJobRule;
@@ -83,10 +85,12 @@ type
     procedure AddRecord;
     procedure AddAction;
     procedure AddRegExp;
+    procedure AddRequest;
 
     // Rule Removing
     procedure RemoveRule;
     procedure RemoveRegExp;
+    procedure RemoveRequest;
 
     procedure SelectHTMLNode;
 
@@ -139,6 +143,38 @@ uses
   FireDAC.Comp.Client,
   eTestLink;
 
+procedure TController.crmResourceResponse(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
+        const request: ICefRequest; const response: ICefResponse; out Result: Boolean);
+begin
+  if FCatchingRequests then
+    UpdateBackgroundRequests(request);
+end;
+
+procedure TController.UpdateBackgroundRequests(aRequest: ICefRequest);
+begin
+  ViewRules.RenderBackgroundRequest(aRequest.Method, aRequest.Url);
+end;
+
+procedure TController.RemoveRequest;
+var
+  ParentRule: TJobRule;
+begin
+  ParentRule := ViewRules.GetParentEntity as TJobRule;
+  ParentRule.RequestList.DeleteByEntity(ViewRules.GetSelectedRequest);
+
+  ViewRules.RemoveTreeNode;
+end;
+
+procedure TController.AddRequest;
+var
+  JobRequest: TJobRequest;
+begin
+  JobRequest := TJobRequest.Create(FDBEngine);
+  ViewRules.GetSelectedRule.RequestList.Add(JobRequest);
+
+  ViewRules.AddRequestToTree(ViewRules.tvRules.Selected, JobRequest);
+end;
+
 procedure TController.NodesFullTreeReceived(aData: string);
 var
   jsnNodes: TJSONObject;
@@ -173,12 +209,6 @@ begin
   Rule.Action := TJobAction.Create(FDBEngine);
 
   ViewRules.AddRuleToTree(ViewRules.GetSelectedRule, Rule);
-end;
-
-procedure TController.crmGetResourceHandler(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
-            const request: ICefRequest; out Result: ICefResourceHandler);
-begin
-
 end;
 
 procedure TController.AddContainer;
@@ -435,7 +465,7 @@ begin
   RegExp := TJobRegExp.Create(FDBEngine); 
   ViewRules.GetSelectedRule.RegExps.Add(RegExp);
 
-  ViewRules.AddRegExpToTree(ViewRules.GetSelectedRule, RegExp);
+  ViewRules.AddRegExpToTree(ViewRules.tvRules.Selected, RegExp);
 end;
 
 procedure TController.StoreJob;
@@ -520,6 +550,10 @@ procedure TController.crmLoadEnd(Sender: TObject; const browser: ICefBrowser; co
 var
   InjectJS: string;
 begin
+  if not frame.IsMain or (httpStatusCode <> 200) then Exit;
+
+  FCatchingRequests := True;
+
   InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\jquery-3.1.1.js');
   ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, '', 0);
 
@@ -607,7 +641,7 @@ begin
       SyncParentChildRuleNodes(Rule.Nodes, ParentRule.Nodes);
     end;
 
-  OnRuleSelected;
+  if Assigned(jsnNodes) then jsnNodes.Free;
 end;
 
 procedure TController.crmProcessMessageReceived(Sender: TObject;
@@ -684,6 +718,7 @@ var
 begin
   Rule := AddRule;
   Rule.Rec := TJobRecord.Create(FDBEngine);
+  Rule.Rec.GrabType := 1;
 
   ViewRules.AddRuleToTree(ViewRules.GetSelectedRule, Rule);
 end;
@@ -722,7 +757,7 @@ begin
 
   ViewRules.chrmBrowser.OnProcessMessageReceived := crmProcessMessageReceived;
   ViewRules.chrmBrowser.OnLoadEnd := crmLoadEnd;
-  ViewRules.chrmBrowser.OnGetResourceHandler := crmGetResourceHandler;
+  ViewRules.chrmBrowser.OnResourceResponse := crmResourceResponse;
 
   ViewRules.RenderLevels(GetJob.Levels);
 end;
