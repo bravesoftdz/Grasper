@@ -286,6 +286,15 @@ object ViewRules: TViewRules
         TabOrder = 0
         OnClick = btnGetTestPageClick
       end
+      object btn2: TButton
+        Left = 144
+        Top = 4
+        Width = 75
+        Height = 25
+        Caption = 'btn2'
+        TabOrder = 1
+        OnClick = btn2Click
+      end
     end
     object pgcRuleSections: TPageControl
       Left = 0
@@ -297,18 +306,10 @@ object ViewRules: TViewRules
       TabOrder = 4
       object tsFields: TTabSheet
         Caption = 'tsFields'
-        ExplicitLeft = 0
-        ExplicitTop = 0
-        ExplicitWidth = 0
-        ExplicitHeight = 0
       end
       object tsDOM: TTabSheet
         Caption = 'tsDOM'
         ImageIndex = 1
-        ExplicitLeft = 0
-        ExplicitTop = 0
-        ExplicitWidth = 0
-        ExplicitHeight = 0
         object pnlXPath: TPanel
           Left = 0
           Top = 0
@@ -370,10 +371,6 @@ object ViewRules: TViewRules
       object tsResults: TTabSheet
         Caption = 'tsResults'
         ImageIndex = 2
-        ExplicitLeft = 0
-        ExplicitTop = 0
-        ExplicitWidth = 0
-        ExplicitHeight = 0
       end
       object tsRequests: TTabSheet
         Caption = 'tsRequests'
@@ -431,7 +428,7 @@ object ViewRules: TViewRules
     Left = 613
     Top = 158
     Bitmap = {
-      494C010108001800100010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C010108001800140010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000003000000001002000000000000030
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

@@ -482,7 +482,6 @@ begin
     if FIsDocumentReady then
       begin
         InjectJS := '';
-        FChromium.
       end;
 
 

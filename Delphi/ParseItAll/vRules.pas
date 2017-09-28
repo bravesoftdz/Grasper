@@ -84,6 +84,7 @@ type
     alRequestActions: TActionList;
     acAssignRequest: TAction;
     btnAssignRequest: TToolButton;
+    btn2: TButton;
     procedure btnCancelClick(Sender: TObject);
     procedure btnApplyClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -108,6 +109,7 @@ type
     procedure btn1Click(Sender: TObject);
     procedure acAddRequestExecute(Sender: TObject);
     procedure acAssignRequestExecute(Sender: TObject);
+    procedure btn2Click(Sender: TObject);
   private
     { Private declarations }
     FDevToolsEnabled: Boolean;
@@ -578,6 +580,11 @@ begin
 end;
 
 procedure TViewRules.btn1Click(Sender: TObject);
+begin
+  SendMessage('Test');
+end;
+
+procedure TViewRules.btn2Click(Sender: TObject);
 begin
   SendMessage('Test');
 end;

@@ -340,7 +340,9 @@ procedure TController.Test;
 var
   InjectJS: string;
 begin
-  InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\DOMFullTree.js');
+  //InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\DOMFullTree.js');
+  InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\DOMOBServer.js');
+
   ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
 end;
 
