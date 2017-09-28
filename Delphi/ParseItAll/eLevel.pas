@@ -31,10 +31,10 @@ type
     function GetCurrentTestLink: string;
   //////////////////
     function CreateBodyRule: TJobRule;
-    procedure AddRequests(aRule: TJobRule; aRequestList: TJobRequestList);
+    //procedure AddRequests(aRule: TJobRule; aRequestList: TJobRequestList);
   public
     function GetActualTestLink(aLevel: Integer): TTestLink;
-    function GetLevelRequestList: TJobRequestList;
+    //function GetLevelRequestList: TJobRequestList;
     property Level: Integer read GetLevel write SetLevel;
     property BaseLink: string read GetBaseLink write SetBaseLink;
     property BodyRuleID: Integer read GetBodyRuleID write SetBodyRuleID;
@@ -52,7 +52,7 @@ uses
   Data.DB,
   eNodes;
 
-procedure TJobLevel.AddRequests(aRule: TJobRule; aRequestList: TJobRequestList);
+{procedure TJobLevel.AddRequests(aRule: TJobRule; aRequestList: TJobRequestList);
 var
   Request: TJobRequest;
   ChildRuleRel: TRuleRuleRel;
@@ -62,13 +62,13 @@ begin
 
   for ChildRuleRel in aRule.ChildRuleRels do
     AddRequests(ChildRuleRel.ChildRule, aRequestList);
-end;
+end; }
 
-function TJobLevel.GetLevelRequestList: TJobRequestList;
+{function TJobLevel.GetLevelRequestList: TJobRequestList;
 begin
   Result := TJobRequestList.Create(False);
   AddRequests(Self.BodyRule, Result);
-end;
+end; }
 
 function TJobLevel.CreateBodyRule: TJobRule;
 var

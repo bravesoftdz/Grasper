@@ -19,17 +19,30 @@ type
     procedure SetActionTypeID(aValue: integer);
     function GetFillValue: String;
     procedure SetFillValue(aValue: String);
+    function GetExecuteAfterLoad: Boolean;
+    procedure SetExecuteAfterLoad(aValue: Boolean);
   //////////////////
   public
     property JobRuleID: Integer read GetJobRuleID write SetJobRuleID;
     property ActionTypeID: Integer read GetActionTypeID write SetActionTypeID;
     property FillValue: string read GetFillValue write SetFillValue;
+    property ExecuteAfterLoad: Boolean read GetExecuteAfterLoad write SetExecuteAfterLoad;
   end;
 
 implementation
 
 uses
   Data.DB;
+
+function TJobAction.GetExecuteAfterLoad: Boolean;
+begin
+  Result := FData.Items['EXECUTE_AFTER_LOAD'];
+end;
+
+procedure TJobAction.SetExecuteAfterLoad(aValue: Boolean);
+begin
+  FData.AddOrSetValue('EXECUTE_AFTER_LOAD', aValue);
+end;
 
 function TJobAction.GetFillValue: String;
 begin
@@ -68,6 +81,7 @@ begin
   AddField(Result.FieldList, 'JOB_RULE_ID', ftInteger);
   AddField(Result.FieldList, 'ACTION_TYPE_ID', ftInteger);
   AddField(Result.FieldList, 'FILL_VALUE', ftString);
+  AddField(Result.FieldList, 'EXECUTE_AFTER_LOAD', ftBoolean);
 end;
 
 end.

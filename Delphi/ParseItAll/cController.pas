@@ -25,6 +25,7 @@ type
     class procedure selectdataback(const data: string);
     class procedure parsedataback(const data: string);
     class procedure fullnodestreeback(const data: string);
+    class procedure observerevent(const data: string);
   end;
 
   TCustomRenderProcessHandler = class(TCefRenderProcessHandlerOwn)
@@ -146,8 +147,8 @@ uses
 procedure TController.crmResourceResponse(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
         const request: ICefRequest; const response: ICefResponse; out Result: Boolean);
 begin
-  if FCatchingRequests then
-    UpdateBackgroundRequests(request);
+  //if FCatchingRequests then
+  //  UpdateBackgroundRequests(request);
 end;
 
 procedure TController.UpdateBackgroundRequests(aRequest: ICefRequest);
@@ -160,7 +161,7 @@ var
   ParentRule: TJobRule;
 begin
   ParentRule := ViewRules.GetParentEntity as TJobRule;
-  ParentRule.RequestList.DeleteByEntity(ViewRules.GetSelectedRequest);
+  ParentRule.DeleteOneRelation(ParentRule.Request);
 
   ViewRules.RemoveTreeNode;
 end;
@@ -170,7 +171,7 @@ var
   JobRequest: TJobRequest;
 begin
   JobRequest := TJobRequest.Create(FDBEngine);
-  ViewRules.GetSelectedRule.RequestList.Add(JobRequest);
+  ViewRules.GetSelectedRule.Request := JobRequest;
 
   ViewRules.AddRequestToTree(ViewRules.tvRules.Selected, JobRequest);
 end;
@@ -207,6 +208,7 @@ var
 begin
   Rule := AddRule;
   Rule.Action := TJobAction.Create(FDBEngine);
+  Rule.Action.ExecuteAfterLoad := True;
 
   ViewRules.AddRuleToTree(ViewRules.GetSelectedRule, Rule);
 end;
@@ -502,8 +504,7 @@ begin
   FObjData.AddOrSetValue('Level', ViewRules.GetSelectedLevel);
   FObjData.AddOrSetValue('Rule', ViewRules.GetSelectedRule);
   FData.AddOrSetValue('JSScript', FJSScript);
-  FData.AddOrSetValue('MarkNodes', True);
-  FData.AddOrSetValue('SkipActions', True);
+  FData.AddOrSetValue('ScriptFor', sfEditor);
 
   CallModel(TModelJS, 'PrepareParseScript');
 
@@ -804,7 +805,7 @@ begin
   FConnectParams.DataBase := GetCurrentDir + '\DB\local.db';
   FDBEngineClass := TSQLiteEngine;
 
-  FJSScript := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\DOMParser.js');
+  FJSScript := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\DOMProcessing.js');
   FData.AddOrSetValue('JSScript', FJSScript);
 end;
 
@@ -838,6 +839,15 @@ var
   msg: ICefProcessMessage;
 begin
   msg := TCefProcessMessageRef.New('fullnodestreeback');
+  msg.ArgumentList.SetString(0, data);
+  TCefv8ContextRef.Current.Browser.SendProcessMessage(PID_BROWSER, msg);
+end;
+
+class procedure TJSExtension.observerevent(const data: string);
+var
+  msg: ICefProcessMessage;
+begin
+  msg := TCefProcessMessageRef.New('observerevent');
   msg.ArgumentList.SetString(0, data);
   TCefv8ContextRef.Current.Browser.SendProcessMessage(PID_BROWSER, msg);
 end;

@@ -130,7 +130,6 @@ type
     function GetSelectedRule: TJobRule;
     function GetSelectedRegExp: TJobRegExp;
     function GetSelectedRequest: TJobRequest;
-    function GetSelectedRootRule: TJobRule;
     function TreeIndex: Integer;
 
     procedure RenderLevels(aLevelList: TLevelList; aIndex: Integer = 0);
@@ -269,26 +268,6 @@ begin
   tvRules.Items.Clear;
 end;
 
-function TViewRules.GetSelectedRootRule: TJobRule;
-var
-  isRootLevel: Boolean;
-  CurrNode: TTreeNode;
-begin
-  Result := nil;
-  isRootLevel := False;
-  CurrNode := tvRules.Selected;
-
-  repeat
-    if CurrNode.Level = 0 then
-      begin
-        isRootLevel := True;
-        Result := FBind.GetEntityByControl(CurrNode) as TJobRule;
-      end;
-
-    CurrNode := CurrNode.Parent;
-  until isRootLevel;
-end;
-
 function TViewRules.TreeIndex: Integer;
 begin
   Result := tvRules.Selected.Index;
@@ -319,13 +298,13 @@ end;
 
 procedure TViewRules.acAssignRequestExecute(Sender: TObject);
 begin
-  if lvRequests.Selected.Caption = 'GET' then
+  {if lvRequests.Selected.Caption = 'GET' then
     GetSelectedRequest.Method := 1;
 
   if lvRequests.Selected.Caption = 'POST' then
     GetSelectedRequest.Method := 2;
 
-  GetSelectedRequest.Link := lvRequests.Selected.SubItems[0];
+  GetSelectedRequest.Link := lvRequests.Selected.SubItems[0]; }
 end;
 
 procedure TViewRules.acRemoveRuleExecute(Sender: TObject);
@@ -384,7 +363,6 @@ procedure TViewRules.AddRuleToTree(aParentRule: TJobRule; aRule: TJobRule);
 var
   RuleNode, ParentNode: TTreeNode;
   JobRegExp: TJobRegExp;
-  JobRequest: TJobRequest;
 begin
   if aParentRule <> nil then
     ParentNode := TTreeNode(FBind.GetControlByEntity(aParentRule))
@@ -422,8 +400,8 @@ begin
   for JobRegExp in aRule.RegExps do
     AddRegExpToTree(RuleNode, JobRegExp);
 
-  for JobRequest in aRule.RequestList do
-    AddRequestToTree(RuleNode, JobRequest);
+  if aRule.Request <> nil then
+    AddRequestToTree(RuleNode, aRule.Request);
 
   if ParentNode <> nil then ParentNode.Expand(True);
   FBind.AddBind(RuleNode, aRule);

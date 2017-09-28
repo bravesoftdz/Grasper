@@ -14,7 +14,8 @@ uses
   eNodes,
   eRegExp,
   eLink,
-  eRecord;
+  eRecord,
+  eRequest;
 
 type
   TGroupBind = record
@@ -22,18 +23,20 @@ type
     GroupID: Integer;
   end;
 
-  TRequestCheck = record
-    Method: string;
-    URL: string;
-    IsHappen: Boolean;
-  end;
+  TScriptFor = (sfEditor, sfLoadEnd, sfRequestEnd);
 
   TModelJS = class(TModelDB)
   private
+    FScriptFor: TScriptFor;
+    FRootRule: TJobRule;
+    FRootRuleNodeList: TNodeList;
     function ColorToHex(color: TColor): String;
     function EncodeNodesToJSON(aNodeList: TNodeList): TJSONArray;
     function EncodeRegExpsToJSON(aRegExpList: TJobRegExpList): TJSONArray;
+    function EncodeRequestToJSON(aJobRequest: TJobRequest): TJSONObject;
+    function CreateRootRuleNodeList(aBodyRule, aRootRule: TJobRule): TNodeList;
     procedure AddRuleToJSON(aRule: TJobRule; ajsnArray: TJSONArray);
+    procedure AddNodesToRootRuleNodeList(aRootRuleNodeList: TNodeList; aRule: TJobRule);
   published
     procedure PrepareParseScript;
   end;
@@ -43,25 +46,19 @@ type
     FJob: TJob;
     FCurrLink: TLink;
     FChromium: TChromium;
-    FRequestCheckList: TArray<TRequestCheck>;
-    FIsDocumentReady: Boolean;
 
     procedure crmLoadEnd(Sender: TObject; const browser: ICefBrowser;
         const frame: ICefFrame; httpStatusCode: Integer);
     procedure crmProcessMessageReceived(Sender: TObject;
             const browser: ICefBrowser; sourceProcess: TCefProcessId;
             const message: ICefProcessMessage; out Result: Boolean);
-    procedure crmResourceResponse(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
-            const request: ICefRequest; const response: ICefResponse; out Result: Boolean);
 
     procedure ProcessNextLink(aPrivLinkHandled: Integer = 2);
-    procedure ProcessJSOnFrame(aFrame: ICefFrame);
+    procedure ProcessJScript(aRule: TJobRule = nil);
     procedure ProcessDataReceived(aData: string);
-    procedure ProcessRequest(aRequest: ICefRequest);
+    procedure ProcessObserveEvent(aStrRuleID: string);
 
     procedure SetCurrLinkHandle(aValue: Integer);
-    procedure SetRequestCheckList(aLevel: integer);
-    function IsWaitingForRequest: Boolean;
     procedure StopJob;
     function GetNextlink: TLink;
     function AddGroup: Integer;
@@ -84,74 +81,54 @@ uses
   FireDAC.Comp.Client,
   API_Files,
   eError,
-  eGroup,
-  eRequest;
+  eGroup;
 
-procedure TModelParser.ProcessRequest(aRequest: ICefRequest);
+procedure TModelJS.AddNodesToRootRuleNodeList(aRootRuleNodeList: TNodeList; aRule: TJobRule);
 var
-  RequestCheck: TRequestCheck;
-  i: Integer;
+  JobNode: TJobNode;
 begin
-  for i := 0 to Length(FRequestCheckList) - 1 do
-    begin
-      RequestCheck := FRequestCheckList[i];
+  for JobNode in aRule.Nodes do
+    aRootRuleNodeList.Add(JobNode);
+end;
 
-      if     (RequestCheck.URL = aRequest.Url)
-         and (RequestCheck.Method = aRequest.Method)
-      then
-        begin
-          RequestCheck.IsHappen := True;
-          //ProcessJSOnFrame(nil);
-        end;
+function TModelJS.CreateRootRuleNodeList(aBodyRule, aRootRule: TJobRule): TNodeList;
+var
+  RuleRel: TRuleRuleRel;
+  Rule: TJobRule;
+  Indexes: TArray<Integer>;
+  Index: Integer;
+begin
+  Result := TNodeList.Create(False);
+  Rule := aBodyRule;
+  AddNodesToRootRuleNodeList(Result, Rule);
+
+  Indexes := aBodyRule.GetChildIndexes(aRootRule);
+  for Index in Indexes do
+    begin
+      Rule := Rule.ChildRuleRels[Index].ChildRule;
+      AddNodesToRootRuleNodeList(Result, Rule);
     end;
 end;
 
-function TModelParser.IsWaitingForRequest: Boolean;
+procedure TModelParser.ProcessObserveEvent(aStrRuleID: string);
 var
-  RequestCheck: TRequestCheck;
+  RuleID: Integer;
+  Rule: TJobRule;
 begin
-  Result := False;
+  RuleID := aStrRuleID.ToInteger;
 
-  for RequestCheck in FRequestCheckList do
-    if not RequestCheck.IsHappen then Exit(True);
-end;
-
-procedure TModelParser.SetRequestCheckList(aLevel: integer);
-var
-  Level: TJobLevel;
-  Request: TJobRequest;
-  RequestList: TJobRequestList;
-  RequestCheck: TRequestCheck;
-begin
-  Level := FJob.GetLevel(aLevel);
-  RequestList := Level.GetLevelRequestList;
+  Rule := TJobRule.Create(FDBEngine, RuleID);
   try
-    FRequestCheckList := [];
-
-    for Request in RequestList do
-      begin
-        case Request.Method of
-          1: RequestCheck.Method := 'GET';
-          2: RequestCheck.Method := 'POST';
-        end;
-
-        RequestCheck.URL := Request.Link;
-        RequestCheck.IsHappen := False;
-
-        FRequestCheckList := FRequestCheckList + [RequestCheck];
-      end;
+    ProcessJScript(Rule);
   finally
-    RequestList.Free;
+    Rule.Free;
   end;
 end;
 
-procedure TModelParser.crmResourceResponse(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
-            const request: ICefRequest; const response: ICefResponse; out Result: Boolean);
+function TModelJS.EncodeRequestToJSON(aJobRequest: TJobRequest): TJSONObject;
 begin
-  if FIsDocumentReady then
-    begin
-      ProcessRequest(request);
-    end;
+  Result := TJSONObject.Create;
+  Result.AddPair('id', TJSONNumber.Create(aJobRequest.ID));
 end;
 
 function TModelParser.GetGroupID(var aGroupBinds: TArray<TGroupBind>; aDataGroupNum: Integer): Integer;
@@ -252,6 +229,13 @@ var
   RuleRel: TRuleRuleRel;
   Value: string;
 begin
+  if FScriptFor = sfLoadEnd then
+    begin
+      if    (aRule.Action <> nil)
+        and (aRule.Action.ExecuteAfterLoad = False)
+      then Exit;
+    end;
+
   jsnRule := TJSONObject.Create;
   jsnRule.AddPair('id', TJSONNumber.Create(aRule.ID));
   jsnRule.AddPair('container_offset', TJSONNumber.Create(aRule.ContainerOffset));
@@ -298,7 +282,13 @@ begin
 
   jsnRule.AddPair('regexps', EncodeRegExpsToJSON(aRule.RegExps));
 
-  jsnRule.AddPair('nodes', EncodeNodesToJSON(aRule.Nodes));
+  if aRule.Request <> nil then
+    jsnRule.AddPair('request', EncodeRequestToJSON(aRule.Request));
+
+  if aRule = FRootRule then
+    jsnRule.AddPair('nodes', EncodeNodesToJSON(FRootRuleNodeList))
+  else
+    jsnRule.AddPair('nodes', EncodeNodesToJSON(aRule.Nodes));
 
   ajsnArray.AddElement(jsnRule);
 end;
@@ -382,7 +372,7 @@ begin
             Link := jsnRuleObj.GetValue('href').Value;
             Level := (jsnRuleObj.GetValue('level') as TJSONNumber).AsInt;
 
-            AddLink(Link, FCurrLink.ID, Level, GroupID);
+            //AddLink(Link, FCurrLink.ID, Level, GroupID);
           end;
 
         if jsnRuleObj.GetValue('type').Value = 'record' then
@@ -399,8 +389,7 @@ begin
           end;
       end;
 
-    if not IsWaitingForRequest then
-      ProcessNextLink;
+    //ProcessNextLink;
   finally
     jsnData.Free;
   end;
@@ -411,14 +400,18 @@ procedure TModelParser.crmProcessMessageReceived(Sender: TObject;
         const message: ICefProcessMessage; out Result: Boolean);
 begin
   try
-  if message.Name = 'parsedataback' then ProcessDataReceived(message.ArgumentList.GetString(0));
+    if message.Name = 'parsedataback' then
+      ProcessDataReceived(message.ArgumentList.GetString(0));
+
+    if message.Name = 'observerevent' then
+      ProcessObserveEvent(message.ArgumentList.GetString(0));
   finally
     TFilesEngine.CreateFile('ProcessMessageReceived.log');
     TFilesEngine.SaveTextToFile('ProcessMessageReceived.log', message.ArgumentList.GetString(0));
   end;
 end;
 
-procedure TModelParser.ProcessJSOnFrame(aFrame: ICefFrame);
+procedure TModelParser.ProcessJScript(aRule: TJobRule = nil);
 var
   ModelJS: TModelJS;
   ObjData: TObjectDictionary<string, TObject>;
@@ -432,19 +425,20 @@ begin
     ObjData.AddOrSetValue('DBEngine', FDBEngine);
 
     Level := FJob.GetLevel(FCurrLink.Level);
-    if Level.BodyRuleID = 0 then Exit;
+    if aRule = nil then
+      if Level.BodyRuleID = 0 then Exit
+      else aRule := Level.BodyRule;
+
+    ObjData.AddOrSetValue('Rule', aRule);
 
     Data.AddOrSetValue('JSScript', FData.Items['JSScript']);
-    ObjData.AddOrSetValue('Level', Level);
+    Data.AddOrSetValue('ScriptFor', sfLoadEnd);
 
     ModelJS := TModelJS.Create(Data, ObjData);
     try
       ModelJS.PrepareParseScript;
       JSScript := Data.Items['JSScript'];
-      if Assigned(aFrame) then
-        aFrame.ExecuteJavaScript(JSScript, 'about:blank', 0)
-      else
-        FChromium.Browser.MainFrame.ExecuteJavaScript(JSScript, 'about:blank', 0);
+      FChromium.Browser.MainFrame.ExecuteJavaScript(JSScript, 'about:blank', 0);
     finally
       ModelJS.Free;
     end;
@@ -461,15 +455,13 @@ var
 begin
   try
     if    (httpStatusCode = 200)
-      and not FIsDocumentReady
       and frame.IsMain
     then
       begin
-        FIsDocumentReady := True;
         InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\jquery-3.1.1.js');
         frame.ExecuteJavaScript(InjectJS, '', 0);
 
-        ProcessJSOnFrame(frame);
+        ProcessJScript;
       end;
 
     if httpStatusCode = 404 then
@@ -478,12 +470,6 @@ begin
         ProcessNextLink(3);
         Exit;
       end;
-
-    if FIsDocumentReady then
-      begin
-        InjectJS := '';
-      end;
-
 
   finally
     TFilesEngine.CreateFile('LoadEnd.log');
@@ -548,8 +534,7 @@ begin
       if FCurrLink <> nil then
         begin
           SetCurrLinkHandle(1);
-          SetRequestCheckList(FCurrLink.Level);
-          FIsDocumentReady := False;
+          //FIsDocumentReady := False;
           FChromium.Load(FCurrLink.Link);
         end
       else
@@ -566,7 +551,6 @@ begin
   FChromium := FObjData.Items['Chromium'] as TChromium;
   FChromium.OnLoadEnd := crmLoadEnd;
   FChromium.OnProcessMessageReceived := crmProcessMessageReceived;
-  FChromium.OnResourceResponse := crmResourceResponse;
 
   FJob := FObjData.Items['Job'] as TJob;
 
@@ -619,38 +603,36 @@ end;
 procedure TModelJS.PrepareParseScript;
 var
   Level: TJobLevel;
+  Rule: TJobRule;
   jsnLevel: TJSONObject;
   jsnRules: TJSONArray;
   JSScript: string;
-  SkipActions: Boolean;
-  MarkNodes: Boolean;
-  Value: Variant;
 begin
+  FScriptFor := FData.Items['ScriptFor'];
+  FRootRule := FObjData.Items['Rule'] as TJobRule;
   Level := FObjData.Items['Level'] as TJobLevel;
 
   jsnLevel := TJSONObject.Create;
   jsnRules := TJSONArray.Create;
+
   try
-    AddRuleToJSON(Level.BodyRule, jsnRules);
+    FRootRuleNodeList := CreateRootRuleNodeList(Level.BodyRule, FRootRule);
+
+    AddRuleToJSON(FRootRule, jsnRules);
 
     jsnLevel.AddPair('rules', jsnRules);
 
-    if FData.TryGetValue('SkipActions', Value) then
+    if FScriptFor = sfEditor then
       begin
-        SkipActions := Value;
-        jsnLevel.AddPair('skip_actions', TJSONBool.Create(SkipActions));
-      end;
-
-    if FData.TryGetValue('MarkNodes', Value) then
-      begin
-        MarkNodes := Value;
-        jsnLevel.AddPair('mark_nodes', TJSONBool.Create(MarkNodes));
+        jsnLevel.AddPair('skip_actions', TJSONBool.Create(True));
+        jsnLevel.AddPair('mark_nodes', TJSONBool.Create(True));
       end;
 
     JSScript := FData.Items['JSScript'];
     JSScript := Format(JSScript, [jsnLevel.ToJSON]);
     FData.AddOrSetValue('JSScript', JSScript);
   finally
+    FRootRuleNodeList.Free;
     jsnLevel.Free;
   end;
 end;

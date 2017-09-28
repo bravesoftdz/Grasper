@@ -301,7 +301,7 @@ object ViewRules: TViewRules
       Top = 283
       Width = 301
       Height = 170
-      ActivePage = tsRequests
+      ActivePage = tsFields
       Align = alClient
       TabOrder = 4
       object tsFields: TTabSheet
@@ -371,6 +371,10 @@ object ViewRules: TViewRules
       object tsResults: TTabSheet
         Caption = 'tsResults'
         ImageIndex = 2
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
       end
       object tsRequests: TTabSheet
         Caption = 'tsRequests'
@@ -428,7 +432,7 @@ object ViewRules: TViewRules
     Left = 613
     Top = 158
     Bitmap = {
-      494C010108001800140010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C010108001800180010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000003000000001002000000000000030
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

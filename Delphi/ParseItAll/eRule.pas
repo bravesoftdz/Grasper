@@ -50,11 +50,8 @@ type
     FNodes: TNodeList;
     FChildRules: TRuleRuleRelList;
     FRegExps: TJobRegExpList;
-    FRequestList: TJobRequestList;
     FIsBodyRule: Boolean;
   // Getters Setters
-    function GetLevelID: Integer;
-    procedure SetLevelID(aValue: integer);
     function GetNotes: string;
     procedure SetNotes(aValue: string);
     function GetContainerOffset: integer;
@@ -74,14 +71,15 @@ type
     procedure SetCut(aValue: TJobCut);
     function GetAction: TJobAction;
     procedure SetAction(aValue: TJobAction);
+    function GetRequest: TJobRequest;
+    procedure SetRequest(aValue: TJobRequest);
     function GetChildRules: TRuleRuleRelList;
     function GetRegExps: TJobRegExpList;
-    function GetRequestList: TJobRequestList;
   //////////////////
+    function HaveIndexOfRule(aJobRule, aTargetRule: TJobRule; var aIndexes: TArray<Integer>): Boolean;
   public
-    function GetContainerInsideNodes: TNodeList;
     function IndexOfChildRule(aJobRule: TJobRule): Integer;
-    property LevelID: Integer read GetLevelID write SetLevelID;
+    function GetChildIndexes(aJobRule: TJobRule): TArray<Integer>;
     property Notes: string read GetNotes write SetNotes;
     property ContainerOffset: Integer read GetContainerOffset write SetContainerOffset;
     property CriticalType: Integer read GetCriticalType write SetCriticalType;
@@ -91,10 +89,10 @@ type
     property Rec: TJobRecord read GetRec write SetRec;
     property Cut: TJobCut read GetCut write SetCut;
     property Action: TJobAction read GetAction write SetAction;
+    property Request: TJobRequest read GetRequest write SetRequest;
     property Nodes: TNodeList read GetNodeList;
     property ChildRuleRels: TRuleRuleRelList read GetChildRules;
     property RegExps: TJobRegExpList read GetRegExps;
-    property RequestList: TJobRequestList read GetRequestList;
     property IsBodyRule: Boolean read FIsBodyRule write FIsBodyRule;
   end;
 
@@ -105,12 +103,41 @@ implementation
 uses
   Data.DB;
 
-function TJobRule.GetRequestList: TJobRequestList;
+function TJobRule.HaveIndexOfRule(aJobRule, aTargetRule: TJobRule; var aIndexes: TArray<Integer>): Boolean;
+var
+  RuleRel: TRuleRuleRel;
+  i, level: Integer;
 begin
-  if not Assigned(FRequestList) then
-    FRequestList := TJobRequestList.Create(Self, 'JOB_RULE_ID', ID);
+  if aJobRule = aTargetRule then Exit(True);
 
-  Result := FRequestList;
+  i := 0;
+  SetLength(aIndexes, Length(aIndexes) + 1);
+  level := Length(aIndexes) - 1;
+
+  for RuleRel in aJobRule.ChildRuleRels do
+    begin
+      aIndexes[level] := i;
+      if HaveIndexOfRule(RuleRel.ChildRule, aTargetRule, aIndexes) then
+        Exit(True);
+      Inc(i);
+    end;
+
+  SetLength(aIndexes, Length(aIndexes) - 1);
+end;
+
+function TJobRule.GetChildIndexes(aJobRule: TJobRule): TArray<Integer>;
+begin
+  HaveIndexOfRule(Self, aJobRule, Result);
+end;
+
+function TJobRule.GetRequest: TJobRequest;
+begin
+  Result := FOneRelations.Items['JOB_REQUESTS'] as TJobRequest;
+end;
+
+procedure TJobRule.SetRequest(aValue: TJobRequest);
+begin
+  FOneRelations.AddOrSetValue('JOB_REQUESTS', aValue);
 end;
 
 function TJobRule.GetAction: TJobAction;
@@ -133,7 +160,6 @@ begin
       Nodes.Assign(TJobRule(aSourceEntity).Nodes);
       ChildRuleRels.Assign(TJobRule(aSourceEntity).ChildRuleRels);
       RegExps.Assign(TJobRule(aSourceEntity).RegExps);
-      RequestList.Assign(TJobRule(aSourceEntity).RequestList);
     end;
 end;
 
@@ -260,27 +286,11 @@ begin
   FData.AddOrSetValue('VISUAL_COLOR', aValue);
 end;
 
-function TJobRule.GetContainerInsideNodes: TNodeList;
-var
-  Node: TJobNode;
-  i: Integer;
-begin
-  Result := TNodeList.Create(False);
-  i := 0;
-  for Node in Self.Nodes do
-    begin
-      Inc(i);
-      if i > Nodes.Count - Self.ContainerOffset then
-        Result.Add(Node);
-    end;
-end;
-
 procedure TJobRule.SaveLists;
 begin
   if Assigned(FNodes) then FNodes.SaveList(ID);
   if Assigned(FChildRules) then FChildRules.SaveList(ID);
   if Assigned(FRegExps) then FRegExps.SaveList(ID);
-  if Assigned(FRequestList) then FRequestList.SaveList(ID);
 end;
 
 function TJobRule.GetNodeList: TNodeList;
@@ -325,16 +335,7 @@ begin
   AddOneRelation(Result.OneRelatedList, 'JOB_RULE_ID', '', TJobRecord);
   AddOneRelation(Result.OneRelatedList, 'JOB_RULE_ID', '', TJobCut);
   AddOneRelation(Result.OneRelatedList, 'JOB_RULE_ID', '', TJobAction);
-end;
-
-function TJobRule.GetLevelID: Integer;
-begin
-  Result := FData.Items['LEVEL_ID'];
-end;
-
-procedure TJobRule.SetLevelID(aValue: integer);
-begin
-  FData.AddOrSetValue('LEVEL_ID', aValue);
+  AddOneRelation(Result.OneRelatedList, 'JOB_RULE_ID', '', TJobRequest);
 end;
 
 function TJobRule.GetNotes: string;

@@ -1,6 +1,6 @@
 console.log('domparser');
 
-var level = %s;
+var income = %s;
 var groupNum = 1;
 var skipActions = false;
 
@@ -149,12 +149,12 @@ function getTagCollection(node, ruleNode) {
     var collection = [];
 
     for (var i = 0; i < node.children.length; i++) {
-        
+
         if (node.children[i].tagName === ruleNode.tag)
             collection.push(node.children[i]);
-    
+
     }
-    
+
     return collection;
 }
 
@@ -272,9 +272,10 @@ function getContentByRegExps(grabData, rule) {
 }
 
 function processResultNodesByRule(rule, resultNodes) {
-    
-    if (rule.type == 'container') return [];
-    
+
+    if (rule.type == 'container')
+        return [];
+
     var result = [];
 
     resultNodes.forEach(function (node) {
@@ -290,7 +291,7 @@ function processResultNodesByRule(rule, resultNodes) {
         else
             grabData.innerText = '';
 
-        var href = $('a', node).attr('href'); 
+        var href = $('a', node).attr('href');
         if (href != null)
             grabData.href = href;
         else
@@ -324,7 +325,7 @@ function processResultNodesByRule(rule, resultNodes) {
                 objNodeRes.key = rule.key;
                 objNodeRes.value = matchText;
             }
-            
+
             if (rule.type == 'action') {
                 objNodeRes.type = 'action';
                 objNodeRes.act_type = rule.act_type;
@@ -340,20 +341,46 @@ function processResultNodesByRule(rule, resultNodes) {
 }
 
 function processActionsByRule(rule, resultNodes) {
-    
-    if (skipActions) return false;
-    
+
+    if (skipActions)
+        return false;
+
     if (rule.type == 'action') {
-        
+
         resultNodes.forEach(function (node) {
-        
-            if (rule.act_type == 1) $(node)[0].click();
-            if (rule.act_type == 2) $(node).attr('value', rule.fill);
-        
+
+            if (rule.act_type == 1)
+                $(node)[0].click();
+            if (rule.act_type == 2)
+                $(node).attr('value', rule.fill);
+
         });
-        
+
     }
+
+}
+
+function processRequestsByRule(rule, resultNodes) {
+
+    if (rule.request == null) return false;
     
+    resultNodes.forEach(function (node) {
+
+        var observer = new MutationObserver(function (mutations) {
+
+            app.observerevent(String(rule.id));
+            
+            mutations.forEach(function (mutation) {
+                console.log(mutation.type);
+            });
+
+        });
+
+        var config = {childList: true, characterData: true, subtree: true};
+        console.log('Observer begin');
+        observer.observe(node, config);
+
+    });
 }
 
 function setPIAClass(rule, node) {
@@ -393,45 +420,48 @@ function getRuleResult(rule, containerNode) {
         }
     } else
         resultNodes = [];
-    
-    var result = processResultNodesByRule(rule, resultNodes);
+
     processActionsByRule(rule, resultNodes);
-    
+    processRequestsByRule(rule, resultNodes);
+
+    var result = processResultNodesByRule(rule, resultNodes);
+
     resultNodes.forEach(function (node) {
         // set PIA class to selected elements
         setPIAClass(rule, node);
 
         if (rule.rules != null) {
-            
+
             groupNum++;
             rule.rules.forEach(function (rule) {
                 result = result.concat(getRuleResult(rule, node));
             });
-            
+
         }
-        
+
     });
 
     return result;
 }
 
-function parseDOMbyLevel(level) {
+function processDOM(income) {
 
     var objResult = {result: []};
 
-    if (level.skip_actions != null) skipActions = level.skip_actions; 
-        
-    level.rules.forEach(function (rule) {
-        
+    if (income.skip_actions != null)
+        skipActions = income.skip_actions;
+
+    income.rules.forEach(function (rule) {
+
         var objRuleResult = getRuleResult(rule, document);
         objResult.result = objResult.result.concat(objRuleResult);
-        
+
     });
 
     return JSON.stringify(objResult);
 }
 
-$(function() {
+$(function () {
 
     // clear previous selection
     var paintedElements = $('.PIAColor');
@@ -439,7 +469,7 @@ $(function() {
     paintedElements.removeClass('PIAColor');
     $('.PIAIgnore').removeClass('PIAIgnore');
 
-    app.parsedataback(parseDOMbyLevel(level));
+    app.parsedataback(processDOM(income));
 
     console.log('done');
 
