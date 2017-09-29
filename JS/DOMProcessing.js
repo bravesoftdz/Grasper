@@ -349,6 +349,9 @@ function processActionsByRule(rule, resultNodes) {
 
         resultNodes.forEach(function (node) {
 
+            if (rule.delay > 0)
+                $(node).delay(rule.delay);
+            
             if (rule.act_type == 1)
                 $(node)[0].click();
             if (rule.act_type == 2)
@@ -377,6 +380,7 @@ function processRequestsByRule(rule, resultNodes) {
         });
 
         var config = {childList: true, characterData: true, subtree: true};
+        config.attributes = rule.request.listen_attrs; 
         console.log('Observer begin');
         observer.observe(node, config);
 
@@ -451,6 +455,9 @@ function processDOM(income) {
     if (income.skip_actions != null)
         skipActions = income.skip_actions;
 
+    if (income.request_id != null)
+        objResult.request_id = income.request_id; 
+    
     income.rules.forEach(function (rule) {
 
         var objRuleResult = getRuleResult(rule, document);

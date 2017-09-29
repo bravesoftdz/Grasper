@@ -23,11 +23,14 @@ type
     procedure SetExecuteAfterLoad(aValue: Boolean);
     function GetTrigerRequestID: Integer;
     procedure SetTrigerRequestID(aValue: Integer);
+    function GetDelay: Integer;
+    procedure SetDelay(aValue: Integer);
   //////////////////
   public
     property JobRuleID: Integer read GetJobRuleID write SetJobRuleID;
     property ActionTypeID: Integer read GetActionTypeID write SetActionTypeID;
     property FillValue: string read GetFillValue write SetFillValue;
+    property Delay: Integer read GetDelay write SetDelay;
     property ExecuteAfterLoad: Boolean read GetExecuteAfterLoad write SetExecuteAfterLoad;
     property TrigerRequestID: Integer read GetTrigerRequestID write SetTrigerRequestID;
   end;
@@ -38,6 +41,16 @@ implementation
 
 uses
   Data.DB;
+
+function TJobAction.GetDelay: Integer;
+begin
+  Result := FData.Items['DELAY'];
+end;
+
+procedure TJobAction.SetDelay(aValue: Integer);
+begin
+  FData.AddOrSetValue('DELAY', aValue);
+end;
 
 function TJobAction.GetTrigerRequestID: Integer;
 begin
@@ -96,6 +109,7 @@ begin
   AddField(Result.FieldList, 'JOB_RULE_ID', ftInteger);
   AddField(Result.FieldList, 'ACTION_TYPE_ID', ftInteger);
   AddField(Result.FieldList, 'FILL_VALUE', ftString);
+  AddField(Result.FieldList, 'DELAY', ftInteger);
   AddField(Result.FieldList, 'EXECUTE_AFTER_LOAD', ftBoolean);
   AddField(Result.FieldList, 'TRIGER_REQUEST_ID', ftInteger);
 end;

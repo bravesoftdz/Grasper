@@ -5,6 +5,7 @@ interface
 uses
   System.JSON,
   System.UITypes,
+  System.Threading,
   cefvcl,
   cefLib,
   API_MVC_DB,
@@ -23,7 +24,13 @@ type
     GroupID: Integer;
   end;
 
-  TScriptFor = (sfEditor, sfLoadEnd, sfRequestEnd);
+  TScriptFor = (sfEditor, sfLoadEnd, sfRequestEnd, sfTriggerExecute);
+
+  TRequestState = record
+    RequestID: Integer;
+    TimeOut: Integer;
+    IsClosed: Boolean;
+  end;
 
   TModelJS = class(TModelDB)
   private
@@ -45,7 +52,10 @@ type
   private
     FJob: TJob;
     FCurrLink: TLink;
+    FLevel: TJobLevel;
     FChromium: TChromium;
+    FRequests: TArray<TRequestState>;
+    FReqTimeOutTasks: array of ITask;
 
     procedure crmLoadEnd(Sender: TObject; const browser: ICefBrowser;
         const frame: ICefFrame; httpStatusCode: Integer);
@@ -57,13 +67,19 @@ type
     procedure ProcessJScript(aScriptFor: TScriptFor; aRule: TJobRule = nil);
     procedure ProcessDataReceived(aData: string);
     procedure ProcessObserveEvent(aStrRuleID: string);
+    procedure ProcessTrigerAction(aRequestID: integer);
 
     procedure SetCurrLinkHandle(aValue: Integer);
+    procedure SetRequestsDueLevel(aLevel: TJobLevel);
+    procedure SetTimeOutProcForRequests;
+    procedure StopRequestTimeOutProc(aRequestID: integer);
+    procedure ChangeRequestState(aRequestID: integer; aIsClosed: Boolean);
+    function IsWaitingForRequests: Boolean;
     procedure StopJob;
-    function GetNextlink: TLink;
+    function GetNextLink: TLink;
     function AddGroup: Integer;
-    procedure AddLink(aLink: string; aParentLinkID, aLevel, aGroupID: Integer);
-    procedure AddRecord(aLinkId, aGroupID: integer; aKey, aValue: string);
+    function AddLink(aLink: string; aParentLinkID, aLevel, aGroupID: Integer): Boolean;
+    function AddRecord(aLinkId, aGroupID: integer; aKey, aValue: string): Boolean;
     procedure AddError(aLinkID, aErrTypeID: Integer; aErrText: string);
     function GetGroupID(var aGroupBinds: TArray<TGroupBind>; aDataGroupNum: Integer): Integer;
     function GetLinksCount(aJobID: Integer; aHandled: Integer = -1): Integer;
@@ -75,6 +91,8 @@ type
 implementation
 
 uses
+  Vcl.Dialogs,
+  System.Classes,
   System.SysUtils,
   System.Generics.Collections,
   System.Hash,
@@ -83,6 +101,112 @@ uses
   eError,
   eGroup,
   eRuleAction;
+
+procedure TModelParser.StopRequestTimeOutProc(aRequestID: integer);
+var
+  i: Integer;
+begin
+  for i := 0 to Length(FRequests) - 1 do
+    if FRequests[i].RequestID = aRequestID then
+      FReqTimeOutTasks[i].Cancel;
+end;
+
+procedure TModelParser.SetTimeOutProcForRequests;
+var
+  i: Integer;
+  RequestState: TRequestState;
+  TimeOutProc: ITask;
+begin
+  SetLength(FReqTimeOutTasks, Length(FRequests));
+
+  for i := 0 to Length(FRequests) - 1 do
+    begin
+      RequestState := FRequests[i];
+
+      TimeOutProc := TTask.Create(procedure
+        begin
+          Sleep(RequestState.TimeOut);
+          ShowMessage(RequestState.TimeOut.ToString);
+          ChangeRequestState(RequestState.RequestID, True);
+
+          {TThread.Synchronize(nil, procedure
+            begin
+              if not IsWaitingForRequests then ProcessNextLink;
+            end
+          ); }
+        end
+      );
+
+      if Assigned(FReqTimeOutTasks[i]) then FReqTimeOutTasks[i].Cancel;
+      FReqTimeOutTasks[i] := TimeOutProc;
+
+      TimeOutProc.Start;
+    end;
+end;
+
+procedure TModelParser.ProcessTrigerAction(aRequestID: integer);
+var
+  JobRequest: TJobRequest;
+  TrigerActionList: TJobActionList;
+  TrigerAction: TJobAction;
+  ActionRule: TJobRule;
+begin
+  JobRequest := TJobRequest.Create(FDBEngine, aRequestID);
+  TrigerActionList := JobRequest.GetTrigerActionList;
+  try
+    for TrigerAction in TrigerActionList do
+      begin
+        ActionRule := FLevel.BodyRule.GetTreeChildRuleByID(TrigerAction.JobRuleID);
+        ProcessJScript(sfTriggerExecute, ActionRule);
+        ChangeRequestState(aRequestID, False);
+      end;
+  finally
+    JobRequest.Free;
+    TrigerActionList.Free;
+  end;
+end;
+
+procedure TModelParser.ChangeRequestState(aRequestID: Integer; aIsClosed: Boolean);
+var
+  i: Integer;
+begin
+  for i := 0 to Length(FRequests) - 1 do
+    if FRequests[i].RequestID = aRequestID then
+      FRequests[i].IsClosed := aIsClosed;
+end;
+
+function TModelParser.IsWaitingForRequests: Boolean;
+var
+  RequestState: TRequestState;
+begin
+  Result := False;
+
+  for RequestState in FRequests do
+    if not RequestState.IsClosed then Exit(True);
+end;
+
+procedure TModelParser.SetRequestsDueLevel(aLevel: TJobLevel);
+var
+  RequestList: TJobRequestList;
+  Request: TJobRequest;
+  RequestState: TRequestState;
+begin
+  RequestList := aLevel.GetLevelRequestList;
+  try
+    FRequests := [];
+
+    for Request in RequestList do
+      begin
+        RequestState.RequestID := Request.ID;
+        RequestState.TimeOut := Request.TimeOut;
+        RequestState.IsClosed := False;
+
+        FRequests := FRequests + [RequestState];
+      end;
+  finally
+    RequestList.Free;
+  end;
+end;
 
 procedure TModelJS.AddNodesToRootRuleNodeList(aRootRuleNodeList: TNodeList; aRule: TJobRule);
 var
@@ -127,6 +251,7 @@ function TModelJS.EncodeRequestToJSON(aJobRequest: TJobRequest): TJSONObject;
 begin
   Result := TJSONObject.Create;
   Result.AddPair('id', TJSONNumber.Create(aJobRequest.JobRuleID));
+  Result.AddPair('listen_attrs', TJSONBool.Create(aJobRequest.ListenAttrs));
 end;
 
 function TModelParser.GetGroupID(var aGroupBinds: TArray<TGroupBind>; aDataGroupNum: Integer): Integer;
@@ -259,6 +384,7 @@ begin
     begin
       jsnRule.AddPair('type', 'action');
       jsnRule.AddPair('act_type', TJSONNumber.Create(aRule.Action.ActionTypeID));
+      jsnRule.AddPair('delay', TJSONNumber.Create(aRule.Action.Delay));
 
       if aRule.Action.ActionTypeID = 2 then
         jsnRule.AddPair('fill', aRule.Action.FillValue);
@@ -280,7 +406,9 @@ begin
 
   jsnRule.AddPair('regexps', EncodeRegExpsToJSON(aRule.RegExps));
 
-  if aRule.Request <> nil then
+  if     (FScriptFor in [sfLoadEnd, sfEditor])
+     and (aRule.Request <> nil)
+  then
     jsnRule.AddPair('request', EncodeRequestToJSON(aRule.Request));
 
   if aRule = FRootRule then
@@ -291,7 +419,7 @@ begin
   ajsnArray.AddElement(jsnRule);
 end;
 
-procedure TModelParser.AddRecord(aLinkId, aGroupID: integer; aKey, aValue: string);
+function TModelParser.AddRecord(aLinkId, aGroupID: integer; aKey, aValue: string): Boolean;
 var
   Rec: TRecord;
 begin
@@ -302,7 +430,12 @@ begin
     Rec.Key := aKey;
     Rec.Value := aValue;
 
-    Rec.SaveEntity;
+    try
+      Rec.SaveEntity;
+      Result := True;
+    except
+      Result := False;
+    end;
   finally
     Rec.Free;
   end;
@@ -314,7 +447,7 @@ begin
   FCurrLink.SaveEntity;
 end;
 
-procedure TModelParser.AddLink(aLink: string; aParentLinkID, aLevel, aGroupID: Integer);
+function TModelParser.AddLink(aLink: string; aParentLinkID, aLevel, aGroupID: Integer): Boolean;
 var
   Link: TLink;
 begin
@@ -333,8 +466,9 @@ begin
 
     try
       Link.SaveAll;
+      Result := True;
     except
-
+      Result := False;
     end;
   finally
     Link.Free;
@@ -352,10 +486,10 @@ var
   Key, Value: string;
   GroupBinds: TArray<TGroupBind>;
   GroupID, DataGroupNum: Integer;
-
-  {TrigerActionList: TJobActionList;
-  TrigerAction: TJobAction;}
+  StoredAnyData: Boolean;
+  RequestID: Integer;
 begin
+  StoredAnyData := False;
   jsnData:=TJSONObject.ParseJSONValue(aData) as TJSONObject;
 
   try
@@ -373,7 +507,8 @@ begin
             Link := jsnRuleObj.GetValue('href').Value;
             Level := (jsnRuleObj.GetValue('level') as TJSONNumber).AsInt;
 
-            AddLink(Link, FCurrLink.ID, Level, GroupID);
+            if AddLink(Link, FCurrLink.ID, Level, GroupID) then
+              StoredAnyData := True;
           end;
 
         if jsnRuleObj.GetValue('type').Value = 'record' then
@@ -381,28 +516,21 @@ begin
             Key := jsnRuleObj.GetValue('key').Value;
 
             if jsnRuleObj.TryGetValue('value', Value) then
-              AddRecord(FCurrLink.ID, GroupID, Key, Value);
-          end;
-
-        if jsnRuleObj.GetValue('type').Value = 'action' then
-          begin
-
+              if AddRecord(FCurrLink.ID, GroupID, Key, Value) then
+                StoredAnyData := True;
           end;
       end;
 
-    //ProcessNextLink;
+    if    jsnData.TryGetValue<Integer>('request_id', RequestID)
+      and StoredAnyData
+    then
+      begin
+        StopRequestTimeOutProc(RequestID);
+        ChangeRequestState(RequestID, True);
+        ProcessTrigerAction(RequestID);
+      end;
 
-    {TrigerActionList := Rule.Request.GetTrigerActionList;
-    try
-      for TrigerAction in TrigerActionList do
-        begin
-          Rule := FJob.GetLevel(FCurrLink.Level).BodyRule.GetTreeChildRuleByID(TrigerAction.JobRuleID);
-          ProcessJScript(sfRequestEnd, Rule);
-        end;
-    finally
-      TrigerActionList.Free;
-    end;}
-
+    if not IsWaitingForRequests then ProcessNextLink;
   finally
     jsnData.Free;
   end;
@@ -430,19 +558,17 @@ var
   ObjData: TObjectDictionary<string, TObject>;
   Data: TDictionary<string, variant>;
   JSScript: string;
-  Level: TJobLevel;
 begin
   ObjData := TObjectDictionary<string, TObject>.Create;
   Data := TDictionary<string, variant>.Create;
   try
     ObjData.AddOrSetValue('DBEngine', FDBEngine);
 
-    Level := FJob.GetLevel(FCurrLink.Level);
     if aRule = nil then
-      if Level.BodyRuleID = 0 then Exit
-      else aRule := Level.BodyRule;
+      if FLevel.BodyRuleID = 0 then Exit
+      else aRule := FLevel.BodyRule;
 
-    ObjData.AddOrSetValue('Level', Level);
+    ObjData.AddOrSetValue('Level', FLevel);
     ObjData.AddOrSetValue('Rule', aRule);
 
     Data.AddOrSetValue('ScriptFor', aScriptFor);
@@ -453,6 +579,9 @@ begin
       ModelJS.PrepareParseScript;
       JSScript := Data.Items['JSScript'];
       FChromium.Browser.MainFrame.ExecuteJavaScript(JSScript, 'about:blank', 0);
+
+      SetRequestsDueLevel(FLevel);
+      SetTimeOutProcForRequests;
     finally
       ModelJS.Free;
     end;
@@ -491,7 +620,7 @@ begin
   end;
 end;
 
-function TModelParser.GetNextlink: TLink;
+function TModelParser.GetNextLink: TLink;
 var
   SQL: string;
   dsQuery: TFDQuery;
@@ -519,7 +648,7 @@ begin
             GroupID := AddGroup;
 
             AddLink(FJob.ZeroLink, 0, 1, GroupID);
-            Exit(GetNextlink);
+            Exit(GetNextLink);
           end
         else
           Exit(nil); // all links are handled
@@ -544,11 +673,12 @@ begin
           FreeAndNil(FCurrLink);
         end;
 
-      FCurrLink := GetNextlink;
+      FCurrLink := GetNextLink;
       if FCurrLink <> nil then
         begin
           SetCurrLinkHandle(1);
-          //FIsDocumentReady := False;
+          FLevel := FJob.GetLevel(FCurrLink.Level);
+          SetRequestsDueLevel(FLevel);
           FChromium.Load(FCurrLink.Link);
         end
       else
@@ -640,6 +770,11 @@ begin
       begin
         jsnLevel.AddPair('skip_actions', TJSONBool.Create(True));
         jsnLevel.AddPair('mark_nodes', TJSONBool.Create(True));
+      end;
+
+    if FScriptFor = sfRequestEnd then
+      begin
+        jsnLevel.AddPair('request_id', TJSONNumber.Create(FRootRule.Request.ID));
       end;
 
     JSScript := FData.Items['JSScript'];

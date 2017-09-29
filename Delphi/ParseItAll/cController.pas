@@ -171,6 +171,7 @@ var
   JobRequest: TJobRequest;
 begin
   JobRequest := TJobRequest.Create(FDBEngine);
+  JobRequest.TimeOut := 3000;
   ViewRules.GetSelectedRule.Request := JobRequest;
 
   ViewRules.AddRequestToTree(ViewRules.tvRules.Selected, JobRequest);
@@ -208,6 +209,7 @@ var
 begin
   Rule := AddRule;
   Rule.Action := TJobAction.Create(FDBEngine);
+  Rule.Action.Delay := 1000;
   Rule.Action.ExecuteAfterLoad := True;
 
   ViewRules.AddRuleToTree(ViewRules.GetSelectedRule, Rule);
