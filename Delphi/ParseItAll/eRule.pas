@@ -80,6 +80,7 @@ type
   public
     function IndexOfChildRule(aJobRule: TJobRule): Integer;
     function GetChildIndexes(aJobRule: TJobRule): TArray<Integer>;
+    function GetTreeChildRuleByID(aID: integer): TJobRule;
     property Notes: string read GetNotes write SetNotes;
     property ContainerOffset: Integer read GetContainerOffset write SetContainerOffset;
     property CriticalType: Integer read GetCriticalType write SetCriticalType;
@@ -102,6 +103,17 @@ implementation
 
 uses
   Data.DB;
+
+function TJobRule.GetTreeChildRuleByID(aID: integer): TJobRule;
+var
+  RuleRel: TRuleRuleRel;
+begin
+  for RuleRel in ChildRuleRels do
+    begin
+      if RuleRel.ChildRule.ID = aID then Exit(RuleRel.ChildRule);
+      Result := RuleRel.ChildRule.GetTreeChildRuleByID(aID);
+    end;
+end;
 
 function TJobRule.HaveIndexOfRule(aJobRule, aTargetRule: TJobRule; var aIndexes: TArray<Integer>): Boolean;
 var

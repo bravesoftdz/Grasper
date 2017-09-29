@@ -3,7 +3,8 @@ unit eRequest;
 interface
 
 uses
-  API_ORM;
+  API_ORM,
+  eRuleAction;
 
 type
   TJobRequest = class(TEntityAbstract)
@@ -17,13 +18,23 @@ type
     procedure SetJobRuleID(aValue: Integer);
   ////////////////////
   public
+    function GetTrigerActionList: TJobActionList;
     property JobRuleID: Integer read GetJobRuleID write SetJobRuleID;
   end;
 
 implementation
 
 uses
+  System.SysUtils,
   Data.DB;
+
+function TJobRequest.GetTrigerActionList: TJobActionList;
+var
+  Filter: string;
+begin
+  Filter := Format('TRIGER_REQUEST_ID = %d', [ID]);
+  Result := TJobActionList.Create(FDBEngine, [Filter], []);
+end;
 
 function TJobRequest.GetJobRuleID: Integer;
 begin

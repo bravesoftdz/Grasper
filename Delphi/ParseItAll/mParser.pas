@@ -54,7 +54,7 @@ type
             const message: ICefProcessMessage; out Result: Boolean);
 
     procedure ProcessNextLink(aPrivLinkHandled: Integer = 2);
-    procedure ProcessJScript(aRule: TJobRule = nil);
+    procedure ProcessJScript(aScriptFor: TScriptFor; aRule: TJobRule = nil);
     procedure ProcessDataReceived(aData: string);
     procedure ProcessObserveEvent(aStrRuleID: string);
 
@@ -81,7 +81,8 @@ uses
   FireDAC.Comp.Client,
   API_Files,
   eError,
-  eGroup;
+  eGroup,
+  eRuleAction;
 
 procedure TModelJS.AddNodesToRootRuleNodeList(aRootRuleNodeList: TNodeList; aRule: TJobRule);
 var
@@ -117,18 +118,15 @@ var
 begin
   RuleID := aStrRuleID.ToInteger;
 
-  Rule := TJobRule.Create(FDBEngine, RuleID);
-  try
-    ProcessJScript(Rule);
-  finally
-    Rule.Free;
-  end;
+  Rule := FJob.GetLevel(FCurrLink.Level).BodyRule.GetTreeChildRuleByID(RuleID);
+
+  ProcessJScript(sfRequestEnd, Rule);
 end;
 
 function TModelJS.EncodeRequestToJSON(aJobRequest: TJobRequest): TJSONObject;
 begin
   Result := TJSONObject.Create;
-  Result.AddPair('id', TJSONNumber.Create(aJobRequest.ID));
+  Result.AddPair('id', TJSONNumber.Create(aJobRequest.JobRuleID));
 end;
 
 function TModelParser.GetGroupID(var aGroupBinds: TArray<TGroupBind>; aDataGroupNum: Integer): Integer;
@@ -354,6 +352,9 @@ var
   Key, Value: string;
   GroupBinds: TArray<TGroupBind>;
   GroupID, DataGroupNum: Integer;
+
+  {TrigerActionList: TJobActionList;
+  TrigerAction: TJobAction;}
 begin
   jsnData:=TJSONObject.ParseJSONValue(aData) as TJSONObject;
 
@@ -372,7 +373,7 @@ begin
             Link := jsnRuleObj.GetValue('href').Value;
             Level := (jsnRuleObj.GetValue('level') as TJSONNumber).AsInt;
 
-            //AddLink(Link, FCurrLink.ID, Level, GroupID);
+            AddLink(Link, FCurrLink.ID, Level, GroupID);
           end;
 
         if jsnRuleObj.GetValue('type').Value = 'record' then
@@ -390,6 +391,18 @@ begin
       end;
 
     //ProcessNextLink;
+
+    {TrigerActionList := Rule.Request.GetTrigerActionList;
+    try
+      for TrigerAction in TrigerActionList do
+        begin
+          Rule := FJob.GetLevel(FCurrLink.Level).BodyRule.GetTreeChildRuleByID(TrigerAction.JobRuleID);
+          ProcessJScript(sfRequestEnd, Rule);
+        end;
+    finally
+      TrigerActionList.Free;
+    end;}
+
   finally
     jsnData.Free;
   end;
@@ -411,7 +424,7 @@ begin
   end;
 end;
 
-procedure TModelParser.ProcessJScript(aRule: TJobRule = nil);
+procedure TModelParser.ProcessJScript(aScriptFor: TScriptFor; aRule: TJobRule = nil);
 var
   ModelJS: TModelJS;
   ObjData: TObjectDictionary<string, TObject>;
@@ -429,10 +442,11 @@ begin
       if Level.BodyRuleID = 0 then Exit
       else aRule := Level.BodyRule;
 
+    ObjData.AddOrSetValue('Level', Level);
     ObjData.AddOrSetValue('Rule', aRule);
 
+    Data.AddOrSetValue('ScriptFor', aScriptFor);
     Data.AddOrSetValue('JSScript', FData.Items['JSScript']);
-    Data.AddOrSetValue('ScriptFor', sfLoadEnd);
 
     ModelJS := TModelJS.Create(Data, ObjData);
     try
@@ -461,7 +475,7 @@ begin
         InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\jquery-3.1.1.js');
         frame.ExecuteJavaScript(InjectJS, '', 0);
 
-        ProcessJScript;
+        ProcessJScript(sfLoadEnd);
       end;
 
     if httpStatusCode = 404 then
