@@ -569,6 +569,9 @@ begin
     end;
 
   if FGettingTestPage then OnTestPageLoaded;
+
+  //debug
+  ViewRules.tvRules.Select(ViewRules.tvRules.Items[0]);
 end;
 
 function TController.GetJob: TJob;

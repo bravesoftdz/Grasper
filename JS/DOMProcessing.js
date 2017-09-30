@@ -342,8 +342,7 @@ function processResultNodesByRule(rule, resultNodes) {
 
 function processActionsByRule(rule, resultNodes) {
 
-    if (skipActions)
-        return false;
+    //if (skipActions) return false;
 
     if (rule.type == 'action') {
 
@@ -354,6 +353,7 @@ function processActionsByRule(rule, resultNodes) {
             
             if (rule.act_type == 1)
                 $(node)[0].click();
+     
             if (rule.act_type == 2)
                 $(node).attr('value', rule.fill);
 
