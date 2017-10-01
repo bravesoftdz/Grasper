@@ -10,29 +10,32 @@ function getNormalizeString(str) {
     return str.trim(str);
 }
 
-function checkClassMatch(ruleNode, node) {
+function getClassMatch(ruleNode, node) {
 
     if (ruleNode.className == null)
         ruleNode.className = '';
+
+    if (ruleNode.className == '' && node.className == '')
+        return -1;
 
     var clName = ruleNode.className.toString();
     var clArr = clName.split(' ');
     clName = getNormalizeString(node.className);
 
-    var isMatch = false;
+    var matchCount = 0;
     clArr.forEach(function (item) {
         var reg = new RegExp(item, 'g');
         if (clName.match(reg) != null)
-            isMatch = true;
+            matchCount++;
     });
 
-    return isMatch;
+    return matchCount;
 }
 
 function checkNodeMatches(matches, ruleNode, node) {
 
     matches.IDMatch = false;
-    matches.ClassMatch = false;
+    matches.ClassMatch = 0;
     matches.NameMatch = false;
 
     if (node === undefined)
@@ -44,9 +47,8 @@ function checkNodeMatches(matches, ruleNode, node) {
     if (ruleNode.tagID === node.id)
         matches.IDMatch = true;
 
-    // class match (true even one class name matched)
-    if (checkClassMatch(ruleNode, node))
-        matches.ClassMatch = true;
+    // class match (matches count, -1 class name is empty)
+    matches.ClassMatch = getClassMatch(ruleNode, node);
 
     // name match
     if (ruleNode.name === undefined)
@@ -72,18 +74,27 @@ function getNodeByName(ruleNode, tagCollection, matches) {
 
 function getNodeByClass(ruleNode, tagCollection, matches) {
 
-    if (ruleNode.className !== "") {
+    if (ruleNode.className !== '') {
+
+        var maxCount = 0;
+        var indx = 0;
         for (var i = 0; i < tagCollection.length; i++) {
             var node = tagCollection[i];
 
-            if (checkClassMatch(ruleNode, node))
-                break;
+            var matchesCount = getClassMatch(ruleNode, node);
+            if (matchesCount > maxCount) {
+                maxCount = matchesCount;
+                indx = i;
+            }
         }
+
+        if (maxCount > 0)
+            var resultNode = tagCollection[indx];
     }
 
-    checkNodeMatches(matches, ruleNode, node);
+    checkNodeMatches(matches, ruleNode, resultNode);
 
-    return node;
+    return resultNode;
 }
 
 function getNodeByID(ruleNode, tagCollection, matches) {
@@ -350,10 +361,10 @@ function processActionsByRule(rule, resultNodes) {
 
             if (rule.delay > 0)
                 $(node).delay(rule.delay);
-            
+
             if (rule.act_type == 1)
                 $(node)[0].click();
-     
+
             if (rule.act_type == 2)
                 $(node).attr('value', rule.fill);
 
@@ -365,14 +376,15 @@ function processActionsByRule(rule, resultNodes) {
 
 function processRequestsByRule(rule, resultNodes) {
 
-    if (rule.request == null) return false;
-    
+    if (rule.request == null)
+        return false;
+
     resultNodes.forEach(function (node) {
 
         var observer = new MutationObserver(function (mutations) {
 
             app.observerevent(String(rule.id));
-            
+
             mutations.forEach(function (mutation) {
                 console.log(mutation.type);
             });
@@ -380,7 +392,6 @@ function processRequestsByRule(rule, resultNodes) {
         });
 
         var config = {childList: true, characterData: true, subtree: true};
-        config.attributes = rule.request.listen_attrs; 
         console.log('Observer begin');
         observer.observe(node, config);
 
@@ -401,6 +412,7 @@ function getRuleResult(rule, containerNode) {
 
     var containerSize = rule.nodes.length - rule.container_offset;
     for (var i = 0; i < containerSize; i++) {
+
         var ruleNode = rule.nodes[i];
         var tagCollection = getTagCollection(containerNode, ruleNode);
         containerNode = getNodeByRuleNode(ruleNode, tagCollection, true);
@@ -456,8 +468,8 @@ function processDOM(income) {
         skipActions = income.skip_actions;
 
     if (income.request_id != null)
-        objResult.request_id = income.request_id; 
-    
+        objResult.request_id = income.request_id;
+
     income.rules.forEach(function (rule) {
 
         var objRuleResult = getRuleResult(rule, document);
