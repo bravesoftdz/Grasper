@@ -21,12 +21,15 @@ type
     procedure SetKey(aValue: String);
     function GetValue: String;
     procedure SetValue(aValue: String);
+    function GetValueHash: String;
+    procedure SetValueHash(aValue: String);
   ///////////////////////
   public
     property LinkID: Integer read GetLinkID write SetLinkID;
     property GroupID: Integer read GetGroupID write SetGroupID;
     property Key: string read GetKey write SetKey;
     property Value: string read GetValue write SetValue;
+    property ValueHash: string read GetValueHash write SetValueHash;
   end;
 
   TRecordList = TEntityList<TRecord>;
@@ -35,6 +38,16 @@ implementation
 
 uses
   Data.DB;
+
+function TRecord.GetValueHash: String;
+begin
+  Result := FData.Items['VALUE_HASH'];
+end;
+
+procedure TRecord.SetValueHash(aValue: String);
+begin
+  FData.AddOrSetValue('VALUE_HASH', aValue);
+end;
 
 function TRecord.GetGroupID: Integer;
 begin
@@ -84,6 +97,7 @@ begin
   AddField(Result.FieldList, 'GROUP_ID', ftInteger);
   AddField(Result.FieldList, 'KEY', ftString);
   AddField(Result.FieldList, 'VALUE', ftString);
+  AddField(Result.FieldList, 'VALUE_HASH', ftString);
 end;
 
 end.

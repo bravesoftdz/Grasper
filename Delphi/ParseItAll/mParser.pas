@@ -26,6 +26,14 @@ type
 
   TScriptFor = (sfEditor, sfLoadEnd, sfRequestEnd, sfTriggerExecute);
 
+  TState = (sWaitingReplay, sDone, sWaitingTriger);
+
+  TRequestState = record
+    RequestID: Integer;
+    TimeOut: Integer;
+    State: TState;
+  end;
+
   TModelJS = class(TModelDB)
   private
     FScriptFor: TScriptFor;
@@ -48,9 +56,10 @@ type
     FCurrLink: TLink;
     FLevel: TJobLevel;
     FChromium: TChromium;
-    FHaveRequests: Boolean;
+
     FIsWaitingForRequests: Boolean;
     FJSTimeOutTask: ITask;
+    FRequestStates: TArray<TRequestState>;
 
     procedure crmLoadEnd(Sender: TObject; const browser: ICefBrowser;
         const frame: ICefFrame; httpStatusCode: Integer);
@@ -66,9 +75,10 @@ type
 
     procedure SetCurrLinkHandle(aValue: Integer);
 
-    function GetHaveRequests: Boolean;
-    procedure StartTimeOutProc(aJobRequest: TJobRequest);
-    procedure StopTimeOutProc;
+    function GetRequestStates: TArray<TRequestState>;
+    procedure SetRequestState(aReqID: integer; aState: TState);
+    procedure StartTimeOutProc;
+    procedure OnRequestTimeOut;
 
     procedure StopJob;
     function GetNextLink: TLink;
@@ -91,49 +101,87 @@ uses
   System.SysUtils,
   System.Generics.Collections,
   System.Hash,
+  Math,
   FireDAC.Comp.Client,
   API_Files,
   eError,
   eGroup,
   eRuleAction;
 
-function TModelParser.GetHaveRequests: Boolean;
+procedure TModelParser.SetRequestState(aReqID: integer; aState: TState);
+var
+  i: Integer;
 begin
-  if FLevel.GetLevelRequestList.Count > 0 then
-    Result := True
-  else
-    Result := False;
+  for i := 0 to Length(FRequestStates) - 1 do
+    if FRequestStates[i].RequestID = aReqID then
+      begin
+        FRequestStates[i].State := aState;
+        Exit;
+      end;
 end;
 
-procedure TModelParser.StopTimeOutProc;
+procedure TModelParser.OnRequestTimeOut;
+var
+  i: Integer;
+  isAnyWaitingReplay, isAnyWaitingTriger: Boolean;
 begin
-  if Assigned(FJSTimeOutTask) then FJSTimeOutTask.Cancel;
+  isAnyWaitingReplay := False;
+  isAnyWaitingTriger := False;
+
+  for i := 0 to Length(FRequestStates) - 1 do
+    begin
+      if FRequestStates[i].State = sWaitingReplay then
+        isAnyWaitingReplay := True;
+
+      if FRequestStates[i].State = sWaitingTriger then
+        isAnyWaitingTriger := True;
+    end;
+
+  if isAnyWaitingReplay and not isAnyWaitingTriger then ProcessNextLink;
 end;
 
-procedure TModelParser.StartTimeOutProc(aJobRequest: TJobRequest);
+function TModelParser.GetRequestStates: TArray<TRequestState>;
+var
+  JobRequest: TJobRequest;
+  RequestState: TRequestState;
+begin
+  Result := [];
+
+  for JobRequest in FLevel.GetLevelRequestList do
+    begin
+      RequestState.RequestID := JobRequest.ID;
+      RequestState.TimeOut := JobRequest.TimeOut;
+      RequestState.State:= sWaitingReplay;
+      Result := Result + [RequestState];
+    end;
+end;
+
+procedure TModelParser.StartTimeOutProc;
 var
   TimeOut: Integer;
+  RequestState: TRequestState;
 begin
-  StopTimeOutProc;
-  TimeOut := 3000;
+  TimeOut := 1;
+  for RequestState in FRequestStates do
+    begin
+      TimeOut := Max(RequestState.TimeOut, TimeOut);
+    end;
 
-  //if not Assigned(FJSTimeOutTask) then
-  //  begin
-      FJSTimeOutTask := TTask.Create(
-        procedure
-          begin
-            Sleep(TimeOut);
+  if FJSTimeOutTask <> nil then FJSTimeOutTask.Cancel;
 
-            TThread.Synchronize(nil,
-              procedure
-                begin
-                  ShowMessage('time out');
-                  ProcessNextLink;
-                end
-            );
-          end
-      );
-  //  end;
+  FJSTimeOutTask := TTask.Create(
+    procedure
+      begin
+        Sleep(TimeOut);
+
+        TThread.Synchronize(nil,
+          procedure
+            begin
+              OnRequestTimeOut;
+            end
+        );
+      end
+  );
 
   FJSTimeOutTask.Start;
 end;
@@ -150,6 +198,7 @@ begin
   try
     for TrigerAction in TrigerActionList do
       begin
+        SetRequestState(aRequestID, sWaitingTriger);
         ActionRule := FLevel.BodyRule.GetTreeChildRuleByID(TrigerAction.JobRuleID);
         ProcessJScript(sfTriggerExecute, ActionRule);
       end;
@@ -384,6 +433,7 @@ begin
     Rec.GroupID := aGroupID;
     Rec.Key := aKey;
     Rec.Value := aValue;
+    Rec.ValueHash := THashMD5.GetHashString(aValue);
 
     try
       Rec.SaveEntity;
@@ -480,7 +530,7 @@ begin
       and StoredAnyData
     then
       begin
-        StopTimeOutProc;
+        SetRequestState(RequestID, sDone);
         ProcessTrigerAction(RequestID);
       end;
 
@@ -534,10 +584,12 @@ begin
       JSScript := Data.Items['JSScript'];
       FChromium.Browser.MainFrame.ExecuteJavaScript(JSScript, 'about:blank', 0);
 
-      if FHaveRequests then
+      if   ((aScriptFor = sfLoadEnd) and (Length(FRequestStates) > 0))
+        or ((aScriptFor = sfRequestEnd) and (aRule.Request <> nil))
+      then
         begin
           FIsWaitingForRequests := True;
-          StartTimeOutProc(aRule.Request);
+          StartTimeOutProc;
         end
       else
         FIsWaitingForRequests := False;
@@ -622,6 +674,9 @@ end;
 
 procedure TModelParser.ProcessNextLink(aPrivLinkHandled: Integer = 2);
 begin
+  if True then
+
+
   if FData.Items['IsJobStopped'] then
     StopJob
   else
@@ -638,7 +693,7 @@ begin
         begin
           SetCurrLinkHandle(1);
           FLevel := FJob.GetLevel(FCurrLink.Level);
-          FHaveRequests := GetHaveRequests;
+          FRequestStates := GetRequestStates;
           FChromium.Load(FCurrLink.Link);
         end
       else

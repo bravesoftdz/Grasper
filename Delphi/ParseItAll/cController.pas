@@ -508,7 +508,7 @@ begin
   FData.AddOrSetValue('JSScript', FJSScript);
   FData.AddOrSetValue('ScriptFor', sfEditor);
 
-  CallModel(TModelJS, 'PrepareParseScript');
+  CallModel(TModelJS, 'PrepareProcessingScript');
 
   ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(FData.Items['JSScript'], 'about:blank', 0);
   //FData.AddOrSetValue('CanAddLevel', CanAddLevel(ViewRules.GetSelectedRule.Link));
