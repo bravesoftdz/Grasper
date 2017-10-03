@@ -367,6 +367,9 @@ function processActionsByRule(rule, resultNodes) {
 
             if (rule.act_type == 2)
                 $(node).attr('value', rule.fill);
+            
+            if (rule.act_type == 3)
+                $(node).mouseover();
 
         });
 

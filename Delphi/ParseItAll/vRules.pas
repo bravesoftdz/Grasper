@@ -74,7 +74,6 @@ type
     btnSep4: TToolButton;
     btnRemove: TToolButton;
     acRemoveRule: TAction;
-    btn1: TButton;
     tvNodesFull: TTreeView;
     tsRequests: TTabSheet;
     lvRequests: TListView;
@@ -106,10 +105,10 @@ type
     procedure acAddActionExecute(Sender: TObject);
     procedure acAddRegExpExecute(Sender: TObject);
     procedure acRemoveRuleExecute(Sender: TObject);
-    procedure btn1Click(Sender: TObject);
     procedure acAddRequestExecute(Sender: TObject);
     procedure acAssignRequestExecute(Sender: TObject);
     procedure btn2Click(Sender: TObject);
+    procedure tvNodesFullChange(Sender: TObject; Node: TTreeNode);
   private
     { Private declarations }
     FDevToolsEnabled: Boolean;
@@ -236,6 +235,7 @@ end;
 
 procedure TViewRules.RenderNodesTree(ajsnNodes: TJSONObject);
 begin
+  tvNodesFull.Items.Clear;
   AddNodeToTree(nil, ajsnNodes);
 end;
 
@@ -507,6 +507,11 @@ begin
   AfterLevelSelected;
 end;
 
+procedure TViewRules.tvNodesFullChange(Sender: TObject; Node: TTreeNode);
+begin
+  SendMessage('OnNodeSelected');
+end;
+
 procedure TViewRules.tvRulesChange(Sender: TObject; Node: TTreeNode);
 var
   Entity, ParentEntity: TEntityAbstract;
@@ -555,11 +560,6 @@ begin
   pnlEntityFields.BuildControls(GetSelectedRule);
 
   SendMessage('OnRuleSelected');
-end;
-
-procedure TViewRules.btn1Click(Sender: TObject);
-begin
-  SendMessage('Test');
 end;
 
 procedure TViewRules.btn2Click(Sender: TObject);

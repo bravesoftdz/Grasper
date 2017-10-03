@@ -160,6 +160,7 @@ procedure TModelParser.StartTimeOutProc;
 var
   TimeOut: Integer;
   RequestState: TRequestState;
+  LocalTask: ITask;
 begin
   TimeOut := 1;
   for RequestState in FRequestStates do
@@ -169,7 +170,7 @@ begin
 
   if FJSTimeOutTask <> nil then FJSTimeOutTask.Cancel;
 
-  FJSTimeOutTask := TTask.Create(
+  LocalTask := TTask.Create(
     procedure
       begin
         Sleep(TimeOut);
@@ -177,13 +178,18 @@ begin
         TThread.Synchronize(nil,
           procedure
             begin
-              OnRequestTimeOut;
+              try
+                LocalTask.CheckCanceled;
+                OnRequestTimeOut;
+              except
+              end;
             end
         );
       end
   );
 
-  FJSTimeOutTask.Start;
+  LocalTask.Start;
+  FJSTimeOutTask := LocalTask;
 end;
 
 procedure TModelParser.ProcessTrigerAction(aRequestID: integer);
@@ -198,9 +204,9 @@ begin
   try
     for TrigerAction in TrigerActionList do
       begin
-        SetRequestState(aRequestID, sWaitingTriger);
         ActionRule := FLevel.BodyRule.GetTreeChildRuleByID(TrigerAction.JobRuleID);
         ProcessJScript(sfTriggerExecute, ActionRule);
+        SetRequestState(aRequestID, sWaitingReplay);
       end;
 
     if TrigerActionList.Count > 0 then
@@ -427,6 +433,8 @@ function TModelParser.AddRecord(aLinkId, aGroupID: integer; aKey, aValue: string
 var
   Rec: TRecord;
 begin
+  if aKey.Trim = '' then Exit;
+
   Rec := TRecord.Create(FDBEngine);
   try
     Rec.LinkID := aLinkId;

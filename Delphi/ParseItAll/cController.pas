@@ -74,6 +74,7 @@ type
 
     // Events
     procedure OnRuleSelected;
+    procedure OnNodeSelected;
     procedure OnTestPageLoaded;
 
     procedure CreateLevel(frame: ICefFrame);
@@ -143,6 +144,11 @@ uses
 
   FireDAC.Comp.Client,
   eTestLink;
+
+procedure TController.OnNodeSelected;
+begin
+
+end;
 
 procedure TController.crmResourceResponse(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
         const request: ICefRequest; const response: ICefResponse; out Result: Boolean);
@@ -344,7 +350,6 @@ procedure TController.Test;
 var
   InjectJS: string;
 begin
-  //InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\DOMFullTree.js');
   InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\DOMOBServer.js');
 
   ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
@@ -502,15 +507,22 @@ begin
 end;
 
 procedure TController.OnRuleSelected;
+var
+  InjectJS: string;
 begin
   FObjData.AddOrSetValue('Level', ViewRules.GetSelectedLevel);
   FObjData.AddOrSetValue('Rule', ViewRules.GetSelectedRule);
   FData.AddOrSetValue('JSScript', FJSScript);
-  FData.AddOrSetValue('ScriptFor', sfEditor);
+  FData.AddOrSetValue('ScriptFor', sfLoadEnd);
+  //FData.AddOrSetValue('ScriptFor', sfEditor);
 
   CallModel(TModelJS, 'PrepareProcessingScript');
+  InjectJS := FData.Items['JSScript'];
+  ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
 
-  ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(FData.Items['JSScript'], 'about:blank', 0);
+  InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\DOMFullTree.js');
+  ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
+
   //FData.AddOrSetValue('CanAddLevel', CanAddLevel(ViewRules.GetSelectedRule.Link));
 end;
 
