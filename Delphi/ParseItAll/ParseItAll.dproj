@@ -135,6 +135,7 @@
         <DCCReference Include="eGroup.pas"/>
         <DCCReference Include="eRuleAction.pas"/>
         <DCCReference Include="eRequest.pas"/>
+        <DCCReference Include="mNodes.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

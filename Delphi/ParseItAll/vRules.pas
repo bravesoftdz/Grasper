@@ -6,7 +6,6 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, cefvcl, Vcl.StdCtrls, Vcl.Buttons, Vcl.ComCtrls,
   Vcl.ImgList,
-  System.JSON,
   API_MVC,
   API_ORM,
   API_ORM_Cntrls,
@@ -15,12 +14,24 @@ uses
   eRule,
   eRegExp,
   eRequest,
-  System.ImageList, System.Actions, Vcl.ActnList, Vcl.Menus, Vcl.ToolWin;
+  eNodes,
+  System.ImageList, System.Actions, Vcl.ActnList, Vcl.Menus, Vcl.ToolWin,
+  VirtualTrees;
 
 type
   TEntityPanel = class(TEntityPanelAbstract)
   protected
     procedure InitPanel; override;
+  end;
+
+  PVirtualNodeData = ^TVirtualNodeData;
+  TVirtualNodeData = record
+    Text: ShortString;
+    KeyID: Integer;
+    Index: Integer;
+    ClassName: string[255];
+    Name: ShortString;
+    TagID: string[255];
   end;
 
   TViewRules = class(TViewORM)
@@ -74,7 +85,6 @@ type
     btnSep4: TToolButton;
     btnRemove: TToolButton;
     acRemoveRule: TAction;
-    tvNodesFull: TTreeView;
     tsRequests: TTabSheet;
     lvRequests: TListView;
     btnAddAjax: TToolButton;
@@ -84,6 +94,8 @@ type
     acAssignRequest: TAction;
     btnAssignRequest: TToolButton;
     btn2: TButton;
+    vstNodesFullTree: TVirtualStringTree;
+    btnAssignNode: TBitBtn;
     procedure btnCancelClick(Sender: TObject);
     procedure btnApplyClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -108,14 +120,20 @@ type
     procedure acAddRequestExecute(Sender: TObject);
     procedure acAssignRequestExecute(Sender: TObject);
     procedure btn2Click(Sender: TObject);
-    procedure tvNodesFullChange(Sender: TObject; Node: TTreeNode);
+    procedure vstNodesFullTreeGetText(Sender: TBaseVirtualTree;
+      Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType;
+      var CellText: string);
+    procedure vstNodesFullTreeAddToSelection(Sender: TBaseVirtualTree;
+      Node: PVirtualNode);
+    procedure btnAssignNodeClick(Sender: TObject);
   private
     { Private declarations }
     FDevToolsEnabled: Boolean;
+    FSelectedNodeKeyID: Integer;
     procedure RecourseTreeBranch(aRule: TJobRule);
     procedure AfterLevelSelected;
     procedure DefineRuleActionAllow(aEntity: TEntityAbstract);
-    procedure AddNodeToTree(aTreeNode: TTreeNode; ajsnNode: TJSONObject);
+    procedure AddNodeToTree(aParentNode: PVirtualNode; aDOMNode: TDOMNode);
   protected
     procedure InitView; override;
   public
@@ -125,15 +143,17 @@ type
     function GetLevelIndex: integer;
     function GetSelectedLevel: TJobLevel;
     function GetParentEntity: TEntityAbstract;
+    function GetParentParentEntity: TEntityAbstract;
 
     function GetSelectedRule: TJobRule;
     function GetSelectedRegExp: TJobRegExp;
     function GetSelectedRequest: TJobRequest;
+    function GetSelectedNodesChain: TArray<TDOMNode>;
     function TreeIndex: Integer;
 
     procedure RenderLevels(aLevelList: TLevelList; aIndex: Integer = 0);
     procedure RenderRulesTree(aBodyRule: TJobRule);
-    procedure RenderNodesTree(ajsnNodes: TJSONObject);
+    procedure RenderNodesTree(aDOMTree: TDOMNode);
     procedure RenderBackgroundRequest(aMethod, aUrl: string);
 
     procedure AddRuleToTree(aParentRule: TJobRule; aRule: TJobRule);
@@ -142,6 +162,8 @@ type
 
     procedure RemoveTreeNode;
     procedure ClearRuleTree;
+
+    property SelectedNodeKeyID: Integer read FSelectedNodeKeyID;
   end;
 
 var
@@ -154,6 +176,31 @@ implementation
 uses
   System.UITypes,
   System.Threading;
+
+function TViewRules.GetSelectedNodesChain: TArray<TDOMNode>;
+var
+  VirtualNode: PVirtualNode;
+  VirtualNodeData: PVirtualNodeData;
+  DOMNode: TDOMNode;
+begin
+  VirtualNode := vstNodesFullTree.FocusedNode;
+
+  repeat
+    VirtualNodeData := vstNodesFullTree.GetNodeData(VirtualNode);
+    if VirtualNodeData = nil then Break;
+
+    DOMNode.Tag := VirtualNodeData^.Text;
+    DOMNode.Index := VirtualNodeData^.Index;
+    DOMNode.ClassName := VirtualNodeData^.ClassName;
+    DOMNode.TagID := VirtualNodeData^.TagID;
+    DOMNode.Name := VirtualNodeData^.Name;
+
+    Result := Result + [DOMNode];
+
+    VirtualNode := VirtualNode.Parent;
+
+  until VirtualNodeData = nil;
+end;
 
 procedure TViewRules.RenderBackgroundRequest(aMethod, aUrl: string);
 var
@@ -196,47 +243,29 @@ begin
   FBind.AddBind(RequestNode, aJobRequest);
 end;
 
-procedure TViewRules.AddNodeToTree(aTreeNode: TTreeNode; ajsnNode: TJSONObject);
+procedure TViewRules.AddNodeToTree(aParentNode: PVirtualNode; aDOMNode: TDOMNode);
 var
-  Node: TTreeNode;
-  jsnNode: TJSONValue;
-  NodeVal: string;
-  TagID, ClassName, Value: string;
-  RuleNodeID: integer;
+  VirtualNode: PVirtualNode;
+  VirtualNodeData: PVirtualNodeData;
+  ChildDOMNode: TDOMNode;
 begin
-  if ajsnNode.TryGetValue('tagID', Value) then
-    if not Value.IsEmpty then TagID := 'id: ' + Value;
+  VirtualNode := vstNodesFullTree.AddChild(aParentNode);
+  VirtualNodeData := vstNodesFullTree.GetNodeData(VirtualNode);
+  VirtualNodeData^.Text := aDOMNode.Tag;
+  VirtualNodeData^.KeyID := aDOMNode.KeyID;
+  VirtualNodeData^.Index := aDOMNode.Index;
+  VirtualNodeData^.ClassName := aDOMNode.ClassName;
+  VirtualNodeData^.TagID := aDOMNode.TagID;
+  VirtualNodeData^.Name := aDOMNode.Name;
 
-  if ajsnNode.TryGetValue('className', Value) then
-    if not Value.IsEmpty then ClassName := 'class: ' + Value;  
-
-  NodeVal := Format('%s[%d] %s %s', [
-    ajsnNode.GetValue('tagName').Value,
-    TJSONNumber(ajsnNode.GetValue('index')).asInt,
-    TagID,
-    ClassName
-  ]);     
-
-  Node := tvNodesFull.Items.AddChild(aTreeNode, NodeVal);
-  Node.ImageIndex := 4;
-  Node.SelectedIndex := 4;
-
-  if ajsnNode.TryGetValue<integer>('ruleNodeID', RuleNodeID) then
-    begin
-      Node.Text := RuleNodeID.ToString + ' ' + Node.Text; 
-      if Node.Parent <> nil then Node.Parent.Expand(False);      
-    end;
-
-  for jsnNode in ajsnNode.GetValue('children') as TJSONArray do
-    begin
-      AddNodeToTree(Node, TJSONObject(jsnNode));
-    end;
+  for ChildDOMNode in aDOMNode.ChildNodes do
+    AddNodeToTree(VirtualNode, ChildDOMNode);
 end;
 
-procedure TViewRules.RenderNodesTree(ajsnNodes: TJSONObject);
+procedure TViewRules.RenderNodesTree(aDOMTree: TDOMNode);
 begin
-  tvNodesFull.Items.Clear;
-  AddNodeToTree(nil, ajsnNodes);
+  vstNodesFullTree.Clear;
+  AddNodeToTree(nil, aDOMTree);
 end;
 
 procedure TViewRules.DefineRuleActionAllow(aEntity: TEntityAbstract);
@@ -278,6 +307,14 @@ var
   Node: TTreeNode;
 begin
   Node := tvRules.Selected.Parent;
+  Result := FBind.GetEntityByControl(Node);
+end;
+
+function TViewRules.GetParentParentEntity: TEntityAbstract;
+var
+  Node: TTreeNode;
+begin
+  Node := tvRules.Selected.Parent.Parent;
   Result := FBind.GetEntityByControl(Node);
 end;
 
@@ -507,11 +544,6 @@ begin
   AfterLevelSelected;
 end;
 
-procedure TViewRules.tvNodesFullChange(Sender: TObject; Node: TTreeNode);
-begin
-  SendMessage('OnNodeSelected');
-end;
-
 procedure TViewRules.tvRulesChange(Sender: TObject; Node: TTreeNode);
 var
   Entity, ParentEntity: TEntityAbstract;
@@ -562,6 +594,34 @@ begin
   SendMessage('OnRuleSelected');
 end;
 
+procedure TViewRules.vstNodesFullTreeAddToSelection(Sender: TBaseVirtualTree;
+  Node: PVirtualNode);
+var
+  VirtualNodeData: PVirtualNodeData;
+begin
+  VirtualNodeData := Sender.GetNodeData(Node);
+  FSelectedNodeKeyID := VirtualNodeData^.KeyID;
+
+  SendMessage('OnNodeSelected');
+end;
+
+procedure TViewRules.vstNodesFullTreeGetText(Sender: TBaseVirtualTree;
+  Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType;
+  var CellText: string);
+var
+  VirtualNodeData: PVirtualNodeData;
+begin
+  VirtualNodeData := Sender.GetNodeData(Node);
+
+  //CellText := VirtualNodeData^.Text;
+  CellText := Format('%s[%d] id(%s) class(%s)', [
+    VirtualNodeData^.Text,
+    VirtualNodeData^.Index,
+    VirtualNodeData^.TagID,
+    VirtualNodeData^.ClassName
+  ]);
+end;
+
 procedure TViewRules.btn2Click(Sender: TObject);
 begin
   SendMessage('Test');
@@ -575,6 +635,11 @@ end;
 procedure TViewRules.btnApplyClick(Sender: TObject);
 begin
   SendMessage('StoreJobRules');
+end;
+
+procedure TViewRules.btnAssignNodeClick(Sender: TObject);
+begin
+  SendMessage('AssignNodeToRule');
 end;
 
 procedure TViewRules.btnCancelClick(Sender: TObject);
@@ -605,6 +670,7 @@ end;
 procedure TViewRules.FormCreate(Sender: TObject);
 begin
   pnlEntityFields := TEntityPanel.Create(tsFields);
+  vstNodesFullTree.NodeDataSize := SizeOf(TVirtualNodeData);
 end;
 
 procedure TViewRules.DevToolsActivate(Sender: Tobject);

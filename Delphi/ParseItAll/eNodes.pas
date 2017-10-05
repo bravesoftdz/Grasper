@@ -6,6 +6,16 @@ uses
   API_ORM;
 
 type
+  TDOMNode = record
+    Tag: string;
+    Index: Integer;
+    KeyID: Integer;
+    Name: string;
+    TagID: string;
+    ClassName: string;
+    ChildNodes: TArray<TDOMNode>;
+  end;
+
   TJobNode = class(TEntityAbstract)
   // overrides
   public

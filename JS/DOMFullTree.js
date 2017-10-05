@@ -1,9 +1,16 @@
+var config = %s;
+var GIAnodeEnumenator = 0;
+
+function emptyIfnull(value) {
+    if (value == null) return '';
+    return value;	
+}
 
 function getTagIndx(node, tagIndexes) {
 
     var result = 0;
     tagIndexes.forEach(function (tagIndex) {
-        
+
         if (tagIndex.tag == node.tagName) {
             tagIndex.seq++;
             result = tagIndex.seq;
@@ -11,14 +18,15 @@ function getTagIndx(node, tagIndexes) {
         }
 
     });
-    if (result > 0) return result;  
-    
+    if (result > 0)
+        return result;
+
     var tagIndex = {};
     tagIndex.tag = node.tagName;
     tagIndex.seq = 0;
     tagIndexes.push(tagIndex);
-    
-    return getTagIndx(node, tagIndexes); 
+
+    return getTagIndx(node, tagIndexes);
 }
 
 function getChildren(children) {
@@ -41,28 +49,61 @@ function processNode(node, i) {
 
     var result = {};
 
-    result.tagName = node.tagName;
-    result.index = i;
-    result.tagID = node.id;
-    result.className = node.className;
-    result.children = getChildren(node.children);
+    if (config.needDataBack) {
 
-    var ruleNodeID = $(node).data('pia-nodeid'); 
-    if (ruleNodeID != null) 
-        result.ruleNodeID = ruleNodeID; 
+        GIAnodeEnumenator++;
+        $(node).attr('data-pia-keyid', GIAnodeEnumenator);
+        result.keyID = GIAnodeEnumenator;
+    }
+
+    var piaKeyid = $(node).attr('data-pia-keyid');
+
+    if (piaKeyid == config.nodeKeyID) {
+
+        setColorMark(node);
+        
+        return {};
+    }
+
+    result.tag = node.tagName;
+    result.index = i;
+    result.tagID = emptyIfnull(node.id);
+    result.className = emptyIfnull(node.className);
+    result.name = emptyIfnull($(node).attr('name'));
+    result.children = getChildren(node.children);
 
     return result;
 
+}
+
+function setColorMark(node) {
+    
+    $(node).attr('data-pia-nodecolor', 1);
+    $(node).css('background-color', 'SlateGray');
+    $(node).find('*').css('background-color', 'SlateGray');   
+    
+}
+
+function clearColorMark() {
+    
+    var node = $('[data-pia-nodecolor]'); 
+    $(node).css('background-color', '');
+    $(node).find('*').css('background-color', '');
+    
 }
 
 $(function () {
 
     console.log('DOMFullTree begin');
 
+    clearColorMark();
+
     var node = document.children[0];
 
     var result = processNode(node, 0);
-    app.fullnodestreeback(JSON.stringify(result));
+
+    if (config.needDataBack)
+        app.fullnodestreeback(JSON.stringify(result));
 
     console.log('DOMFullTree done');
 

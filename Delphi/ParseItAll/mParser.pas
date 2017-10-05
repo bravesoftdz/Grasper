@@ -48,6 +48,7 @@ type
     procedure AddNodesToRootRuleNodeList(aRootRuleNodeList: TNodeList; aRule: TJobRule);
   published
     procedure PrepareProcessingScript;
+    procedure PrepareFullTreeScript;
   end;
 
   TModelParser = class(TModelDB)
@@ -107,6 +108,32 @@ uses
   eError,
   eGroup,
   eRuleAction;
+
+procedure TModelJS.PrepareFullTreeScript;
+var
+  JSScript: string;
+  NodeKeyID: Integer;
+  jsnConfig: TJSONObject;
+begin
+  JSScript := FData.Items['JSScript'];
+  NodeKeyID := FData.Items['NodeKeyID'];
+
+  jsnConfig := TJSONObject.Create;
+  try
+    if NodeKeyID > 0 then
+      begin
+        jsnConfig.AddPair('needDataBack', TJSONBool.Create(False));
+        jsnConfig.AddPair('nodeKeyID', TJSONNumber.Create(NodeKeyID));
+      end
+    else
+      jsnConfig.AddPair('needDataBack', TJSONBool.Create(True));
+
+    JSScript := Format(JSScript, [jsnConfig.ToJSON]);
+    FData.AddOrSetValue('JSScript', JSScript);
+  finally
+    jsnConfig.Free;
+  end;
+end;
 
 procedure TModelParser.SetRequestState(aReqID: integer; aState: TState);
 var
@@ -254,6 +281,9 @@ begin
   RuleID := aStrRuleID.ToInteger;
 
   Rule := FJob.GetLevel(FCurrLink.Level).BodyRule.GetTreeChildRuleByID(RuleID);
+
+  // not allowed body rule requests
+  if Rule = nil then Exit;
 
   ProcessJScript(sfRequestEnd, Rule);
 end;
@@ -433,14 +463,14 @@ function TModelParser.AddRecord(aLinkId, aGroupID: integer; aKey, aValue: string
 var
   Rec: TRecord;
 begin
-  if aKey.Trim = '' then Exit;
+  if aValue.Trim = '' then Exit;
 
   Rec := TRecord.Create(FDBEngine);
   try
     Rec.LinkID := aLinkId;
     Rec.GroupID := aGroupID;
     Rec.Key := aKey;
-    Rec.Value := aValue;
+    Rec.Value := aValue.Trim;
     Rec.ValueHash := THashMD5.GetHashString(aValue);
 
     try
@@ -500,12 +530,15 @@ var
   GroupBinds: TArray<TGroupBind>;
   GroupID, DataGroupNum: Integer;
   StoredAnyData: Boolean;
-  RequestID: Integer;
+  RequestID, LinkID: Integer;
 begin
   StoredAnyData := False;
   jsnData:=TJSONObject.ParseJSONValue(aData) as TJSONObject;
 
   try
+    if jsnData.TryGetValue<Integer>('link_id', LinkID) then
+      if LinkID <> FCurrLink.ID then Exit;
+
     jsnResult:=jsnData.GetValue('result') as TJSONArray;
 
     for jsnRuleVal in jsnResult do
@@ -539,6 +572,7 @@ begin
     then
       begin
         SetRequestState(RequestID, sDone);
+        //FJSTimeOutTask.Cancel;
         ProcessTrigerAction(RequestID);
       end;
 
@@ -585,6 +619,7 @@ begin
 
     Data.AddOrSetValue('ScriptFor', aScriptFor);
     Data.AddOrSetValue('JSScript', FData.Items['JSScript']);
+    Data.AddOrSetValue('LinkID', FCurrLink.ID);
 
     ModelJS := TModelJS.Create(Data, ObjData);
     try
@@ -682,9 +717,6 @@ end;
 
 procedure TModelParser.ProcessNextLink(aPrivLinkHandled: Integer = 2);
 begin
-  if True then
-
-
   if FData.Items['IsJobStopped'] then
     StopJob
   else
@@ -774,6 +806,7 @@ var
   jsnLevel: TJSONObject;
   jsnRules: TJSONArray;
   JSScript: string;
+  LinkID: Integer;
 begin
   FScriptFor := FData.Items['ScriptFor'];
   FRootRule := FObjData.Items['Rule'] as TJobRule;
@@ -798,6 +831,9 @@ begin
     if FScriptFor = sfRequestEnd then
       begin
         jsnLevel.AddPair('request_id', TJSONNumber.Create(FRootRule.Request.ID));
+
+        LinkID := FData.Items['LinkID'];
+        jsnLevel.AddPair('link_id', TJSONNumber.Create(LinkID));
       end;
 
     JSScript := FData.Items['JSScript'];

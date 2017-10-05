@@ -306,10 +306,18 @@ object ViewRules: TViewRules
       TabOrder = 4
       object tsFields: TTabSheet
         Caption = 'tsFields'
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
       end
       object tsDOM: TTabSheet
         Caption = 'tsDOM'
         ImageIndex = 1
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
         object pnlXPath: TPanel
           Left = 0
           Top = 0
@@ -347,26 +355,50 @@ object ViewRules: TViewRules
             Orientation = udHorizontal
             TabOrder = 2
           end
+          object btnAssignNode: TBitBtn
+            Left = 54
+            Top = 12
+            Width = 75
+            Height = 25
+            Caption = 'btnAssignNode'
+            TabOrder = 3
+            OnClick = btnAssignNodeClick
+          end
         end
-        object tvNodesFull: TTreeView
+        object vstNodesFullTree: TVirtualStringTree
           Left = 0
           Top = 41
           Width = 293
           Height = 101
           Align = alClient
-          Images = ilRuleIcons
-          Indent = 19
+          Header.AutoSizeIndex = 0
+          Header.Font.Charset = DEFAULT_CHARSET
+          Header.Font.Color = clWindowText
+          Header.Font.Height = -11
+          Header.Font.Name = 'Tahoma'
+          Header.Font.Style = []
+          Header.MainColumn = -1
           TabOrder = 1
-          OnChange = tvNodesFullChange
+          OnAddToSelection = vstNodesFullTreeAddToSelection
+          OnGetText = vstNodesFullTreeGetText
+          Columns = <>
         end
       end
       object tsResults: TTabSheet
         Caption = 'tsResults'
         ImageIndex = 2
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
       end
       object tsRequests: TTabSheet
         Caption = 'tsRequests'
         ImageIndex = 3
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
         object lvRequests: TListView
           Left = 0
           Top = 29
@@ -420,7 +452,7 @@ object ViewRules: TViewRules
     Left = 613
     Top = 158
     Bitmap = {
-      494C0101080018001C0010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C0101080018002C0010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000003000000001002000000000000030
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

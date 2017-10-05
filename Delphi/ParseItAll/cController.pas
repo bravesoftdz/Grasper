@@ -55,9 +55,11 @@ type
     procedure SyncParentChildRuleNodes(aNodes, aParentNodes: TNodeList);
     procedure UpdateJobState(aJobID: integer);
     procedure UpdateBackgroundRequests(aRequest: ICefRequest);
+    procedure AddNodes(aNodesData: string);
     function CanAddLevel(aJobRule: TJobLink): Boolean;
     function GetJob: TJob;
     function AddRule: TJobRule;
+    function GetFullTreeScript(aNodeKeyID: integer): string;
   protected
     procedure InitDB; override;
     procedure PerfomViewMessage(aMsg: string); override;
@@ -94,9 +96,10 @@ type
     procedure RemoveRegExp;
     procedure RemoveRequest;
 
-    procedure SelectHTMLNode;
+    // Nodes
+    procedure AssignNodeToRule;
 
-    procedure AddNodes(aNodesData: string);
+    procedure SelectHTMLNode;
 
     procedure ShowRuleResult;
 
@@ -141,13 +144,45 @@ uses
   mParser,
   mTester,
   mExport,
+  mNodes,
 
   FireDAC.Comp.Client,
   eTestLink;
 
-procedure TController.OnNodeSelected;
+procedure TController.AssignNodeToRule;
+var
+  Wrap: TWrapModelNodes;
+  jsnNodes: TJSONArray;
 begin
+  Wrap := TWrapModelNodes.Create;
+  try
+    Wrap.NodesChain := ViewRules.GetSelectedNodesChain;
+    FObjData.AddOrSetValue('NodesChain', Wrap);
+    CallModel(TModelNodes, 'GetJSONNodesChain');
 
+    jsnNodes := FObjData.Items['JSONNodesChain'] as TJSONArray;
+    AddNodes(jsnNodes.ToJSON);
+  finally
+    Wrap.Free;
+    jsnNodes.Free;
+  end;
+end;
+
+function TController.GetFullTreeScript(aNodeKeyID: integer): string;
+begin
+  Result := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\DOMFullTree.js');
+  FData.AddOrSetValue('JSScript', Result);
+  FData.AddOrSetValue('NodeKeyID', aNodeKeyID);
+  CallModel(TModelJS, 'PrepareFullTreeScript');
+  Result := FData.Items['JSScript'];
+end;
+
+procedure TController.OnNodeSelected;
+var
+  InjectJS: string;
+begin
+  InjectJS := GetFullTreeScript(ViewRules.SelectedNodeKeyID);
+  ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
 end;
 
 procedure TController.crmResourceResponse(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
@@ -186,10 +221,21 @@ end;
 procedure TController.NodesFullTreeReceived(aData: string);
 var
   jsnNodes: TJSONObject;
+  WrapObj: TWrapModelNodes;
 begin
   jsnNodes := TJSONObject.ParseJSONValue(aData) as TJSONObject;
   try
-    ViewRules.RenderNodesTree(jsnNodes);
+    FObjData.AddOrSetValue('jsnDOMFullTree', jsnNodes);
+    FObjData.AddOrSetValue('RuleNodeList', ViewRules.GetSelectedRule.Nodes);
+
+    CallModel(TModelNodes, 'GetVirtualNodeTree');
+
+    WrapObj := FObjData.Items['VirtualDOMTree'] as TWrapModelNodes;
+    try
+      ViewRules.RenderNodesTree(WrapObj.VirtualDOMTree);
+    finally
+      WrapObj.Free;
+    end;
   finally
     jsnNodes.Free;
   end;
@@ -519,9 +565,11 @@ begin
   CallModel(TModelJS, 'PrepareProcessingScript');
   InjectJS := FData.Items['JSScript'];
   ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
+  //ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, '', 0);
 
-  InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\DOMFullTree.js');
-  ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
+  InjectJS := GetFullTreeScript(0);
+  //ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
+  ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, '', 0);
 
   //FData.AddOrSetValue('CanAddLevel', CanAddLevel(ViewRules.GetSelectedRule.Link));
 end;
@@ -658,6 +706,8 @@ begin
   if ParentEntity is TJobRule then
     begin
       ParentRule := ParentEntity as TJobRule;
+      if ParentRule.Nodes.Count = 0 then ParentRule := ViewRules.GetParentParentEntity as TJobRule;
+
       SyncParentChildRuleNodes(Rule.Nodes, ParentRule.Nodes);
     end;
 

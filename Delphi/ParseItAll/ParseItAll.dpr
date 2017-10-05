@@ -38,7 +38,8 @@ uses
   eError in 'eError.pas',
   eGroup in 'eGroup.pas',
   eRuleAction in 'eRuleAction.pas',
-  eRequest in 'eRequest.pas';
+  eRequest in 'eRequest.pas',
+  mNodes in 'mNodes.pas';
 
 {$R *.res}
 

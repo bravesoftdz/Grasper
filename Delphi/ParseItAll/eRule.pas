@@ -108,6 +108,8 @@ function TJobRule.GetTreeChildRuleByID(aID: integer): TJobRule;
 var
   RuleRel: TRuleRuleRel;
 begin
+  if ChildRuleRels.Count = 0 then Exit(nil);
+
   for RuleRel in ChildRuleRels do
     begin
       if RuleRel.ChildRule.ID = aID then Exit(RuleRel.ChildRule);
