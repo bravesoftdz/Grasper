@@ -15,15 +15,28 @@ type
   // Getters Setters
     function GetJobID: Integer;
     procedure SetJobID(aValue: Integer);
+    function GetParentGroupID: Integer;
+    procedure SetParentGroupID(aValue: Integer);
   ///////////////////////
   public
     property JobID: Integer read GetJobID write SetJobID;
+    property ParentGroupID: Integer read GetParentGroupID write SetParentGroupID;
   end;
 
 implementation
 
 uses
   Data.DB;
+
+function TGroup.GetParentGroupID: Integer;
+begin
+  Result := FData.Items['PARENT_GROUP_ID'];
+end;
+
+procedure TGroup.SetParentGroupID(aValue: Integer);
+begin
+  FData.AddOrSetValue('PARENT_GROUP_ID', aValue);
+end;
 
 function TGroup.GetJobID: Integer;
 begin
@@ -40,6 +53,7 @@ begin
   Result.TableName := 'GROUPS';
 
   AddField(Result.FieldList, 'JOB_ID', ftInteger);
+  AddField(Result.FieldList, 'PARENT_GROUP_ID', ftInteger);
 end;
 
 end.

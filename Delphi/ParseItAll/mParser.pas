@@ -64,6 +64,12 @@ type
 
     procedure crmLoadEnd(Sender: TObject; const browser: ICefBrowser;
         const frame: ICefFrame; httpStatusCode: Integer);
+    procedure crmBeforePopup(Sender: TObject; const browser: ICefBrowser;
+        const frame: ICefFrame; const targetUrl, targetFrameName: ustring;
+        targetDisposition: TCefWindowOpenDisposition; userGesture: Boolean;
+        var popupFeatures: TCefPopupFeatures; var windowInfo: TCefWindowInfo;
+        var client: ICefClient; var settings: TCefBrowserSettings;
+        var noJavascriptAccess: Boolean; out Result: Boolean);
     procedure crmProcessMessageReceived(Sender: TObject;
             const browser: ICefBrowser; sourceProcess: TCefProcessId;
             const message: ICefProcessMessage; out Result: Boolean);
@@ -83,11 +89,11 @@ type
 
     procedure StopJob;
     function GetNextLink: TLink;
-    function AddGroup: Integer;
+    function AddGroup(aParentGroupID: Integer): Integer;
     function AddLink(aLink: string; aParentLinkID, aLevel, aGroupID: Integer): Boolean;
     function AddRecord(aLinkId, aGroupID: integer; aKey, aValue: string): Boolean;
     procedure AddError(aLinkID, aErrTypeID: Integer; aErrText: string);
-    function GetGroupID(var aGroupBinds: TArray<TGroupBind>; aDataGroupNum: Integer): Integer;
+    function GetGroupID(var aGroupBinds: TArray<TGroupBind>; aDataGroupNum, aDataParentGroupNum: Integer): Integer;
     function GetLinksCount(aJobID: Integer; aHandled: Integer = -1): Integer;
   published
     procedure StartJob;
@@ -108,6 +114,18 @@ uses
   eError,
   eGroup,
   eRuleAction;
+
+procedure TModelParser.crmBeforePopup(Sender: TObject; const browser: ICefBrowser;
+    const frame: ICefFrame; const targetUrl, targetFrameName: ustring;
+    targetDisposition: TCefWindowOpenDisposition; userGesture: Boolean;
+    var popupFeatures: TCefPopupFeatures; var windowInfo: TCefWindowInfo;
+    var client: ICefClient; var settings: TCefBrowserSettings;
+    var noJavascriptAccess: Boolean; out Result: Boolean);
+begin
+  Result := True;
+  FIsWaitingForRequests := True;
+  TChromium(Sender).Load(targetUrl);
+end;
 
 procedure TModelJS.PrepareFullTreeScript;
 var
@@ -294,27 +312,34 @@ begin
   Result.AddPair('id', TJSONNumber.Create(aJobRequest.JobRuleID));
 end;
 
-function TModelParser.GetGroupID(var aGroupBinds: TArray<TGroupBind>; aDataGroupNum: Integer): Integer;
+function TModelParser.GetGroupID(var aGroupBinds: TArray<TGroupBind>; aDataGroupNum, aDataParentGroupNum: Integer): Integer;
 var
   GroupBind: TGroupBind;
+  ParentGroupID: Integer;
 begin
   for GroupBind in aGroupBinds do
     if GroupBind.DataGroupNum = aDataGroupNum then
       Exit(GroupBind.GroupID);
 
-  GroupBind.GroupID := AddGroup;
+  ParentGroupID := 0;
+  for GroupBind in aGroupBinds do
+    if GroupBind.DataGroupNum = aDataParentGroupNum then
+      ParentGroupID := GroupBind.GroupID;
+
+  GroupBind.GroupID := AddGroup(ParentGroupID);
   GroupBind.DataGroupNum := aDataGroupNum;
   aGroupBinds := aGroupBinds + [GroupBind];
   Exit(GroupBind.GroupID);
 end;
 
-function TModelParser.AddGroup: Integer;
+function TModelParser.AddGroup(aParentGroupID: Integer): Integer;
 var
   Group: TGroup;
 begin
   Group := TGroup.Create(FDBEngine);
   try
     Group.JobID := FJob.ID;
+    Group.ParentGroupID := aParentGroupID;
     Group.SaveEntity;
 
     Result := Group.ID;
@@ -402,6 +427,7 @@ begin
   jsnRule := TJSONObject.Create;
   jsnRule.AddPair('id', TJSONNumber.Create(aRule.ID));
   jsnRule.AddPair('container_offset', TJSONNumber.Create(aRule.ContainerOffset));
+  jsnRule.AddPair('is_strict', TJSONBool.Create(aRule.IsStrict));
   jsnRule.AddPair('color', ColorToHex(aRule.VisualColor));
 
   if aRule.Link <> nil then
@@ -415,6 +441,7 @@ begin
       jsnRule.AddPair('type', 'record');
       jsnRule.AddPair('key', aRule.Rec.Key);
       jsnRule.AddPair('grab_type', TJSONNumber.Create(aRule.Rec.GrabType));
+      jsnRule.AddPair('special_id', TJSONNumber.Create(aRule.Rec.SpecialID));
     end;
 
   if aRule.Cut <> nil then
@@ -528,7 +555,7 @@ var
   Level: Integer;
   Key, Value: string;
   GroupBinds: TArray<TGroupBind>;
-  GroupID, DataGroupNum: Integer;
+  GroupID, DataGroupNum, DataParentGroupNum: Integer;
   StoredAnyData: Boolean;
   RequestID, LinkID: Integer;
 begin
@@ -546,7 +573,8 @@ begin
         jsnRuleObj := jsnRuleVal as TJSONObject;
 
         DataGroupNum := (jsnRuleObj.GetValue('group') as TJSONNumber).AsInt;
-        GroupID := GetGroupID(GroupBinds, DataGroupNum);
+        DataParentGroupNum := (jsnRuleObj.GetValue('parent_group') as TJSONNumber).AsInt;
+        GroupID := GetGroupID(GroupBinds, DataGroupNum, DataParentGroupNum);
 
         if jsnRuleObj.GetValue('type').Value = 'link' then
           begin
@@ -700,7 +728,7 @@ begin
       begin
         if GetLinksCount(FJob.ID) = 0 then // first start - no links else
           begin
-            GroupID := AddGroup;
+            GroupID := AddGroup(0);
 
             AddLink(FJob.ZeroLink, 0, 1, GroupID);
             Exit(GetNextLink);
@@ -749,6 +777,7 @@ procedure TModelParser.StartJob;
 begin
   FChromium := FObjData.Items['Chromium'] as TChromium;
   FChromium.OnLoadEnd := crmLoadEnd;
+  FChromium.OnBeforePopup := crmBeforePopup;
   FChromium.OnProcessMessageReceived := crmProcessMessageReceived;
 
   FJob := FObjData.Items['Job'] as TJob;

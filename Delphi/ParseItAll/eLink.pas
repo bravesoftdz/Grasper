@@ -56,7 +56,7 @@ type
     function GetChildLinkRels: TLinkRelList;
   ////////////////////
   public
-    function GetRecordsByKey(aKey: string; aResult: TObjectList<TRecord> = nil; aOrignLink: TLink = nil): TObjectList<TRecord>;
+    function GetRecordsByKey(aKey: string; aResult: TObjectList<TRecord> = nil; aOrignLink: TLink = nil; aGroupID: Integer = 0): TObjectList<TRecord>;
     property GroupID: Integer read GetGroupID write SetGroupID;
     property Level: Integer read GetLevel write SetLevel;
     property Link: string read GetLink write SetLink;
@@ -91,7 +91,7 @@ begin
   Result := FChildLinkRels;
 end;
 
-function TLink.GetRecordsByKey(aKey: string; aResult: TObjectList<TRecord> = nil; aOrignLink: TLink = nil): TObjectList<TRecord>;
+function TLink.GetRecordsByKey(aKey: string; aResult: TObjectList<TRecord> = nil; aOrignLink: TLink = nil; aGroupID: Integer = 0): TObjectList<TRecord>;
 var
   Rec: TRecord;
   ParentLink, ChildLink: TLink;
@@ -109,7 +109,7 @@ begin
     OrignLink := aOrignLink;
 
   for Rec in Records do
-    if Rec.Key = aKey then
+    if (Rec.Key = aKey) and ((Rec.GroupID = aGroupID) or (aGroupID = 0)) then
       begin
         Records.Extract(Rec);
         Result.Add(Rec);
@@ -138,7 +138,7 @@ begin
       begin
         ParentLink := TLink.Create(FDBEngine, ParentRel.ParentLinkID);
         try
-          ParentLink.GetRecordsByKey(aKey, Result, OrignLink);
+          ParentLink.GetRecordsByKey(aKey, Result, OrignLink, Self.GroupID);
         finally
           ParentLink.Free;
         end;

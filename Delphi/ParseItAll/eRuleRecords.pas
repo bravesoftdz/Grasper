@@ -17,10 +17,13 @@ type
     procedure SetKey(aValue: string);
     function GetGrabType: integer;
     procedure SetGrabType(aValue: integer);
+    function GetSpecialID: integer;
+    procedure SetSpecialID(aValue: integer);
   //////////////////
   public
     property Key: string read GetKey write SetKey;
     property GrabType: Integer read GetGrabType write SetGrabType;
+    property SpecialID: Integer read GetSpecialID write SetSpecialID;
   end;
 
   TRecordList = TEntityList<TJobRecord>;
@@ -29,6 +32,16 @@ implementation
 
 uses
   Data.DB;
+
+function TJobRecord.GetSpecialID: integer;
+begin
+  Result := FData.Items['SPECIAL_ID'];
+end;
+
+procedure TJobRecord.SetSpecialID(aValue: integer);
+begin
+  FData.AddOrSetValue('SPECIAL_ID', aValue);
+end;
 
 function TJobRecord.GetGrabType: integer;
 begin
@@ -56,6 +69,7 @@ begin
   AddField(Result.FieldList, 'JOB_RULE_ID', ftInteger);
   AddField(Result.FieldList, 'KEY', ftString);
   AddField(Result.FieldList, 'GRAB_TYPE', ftInteger);
+  AddField(Result.FieldList, 'SPECIAL_ID', ftInteger);
 end;
 
 end.

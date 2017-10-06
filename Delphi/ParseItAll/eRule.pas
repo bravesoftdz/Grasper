@@ -58,6 +58,8 @@ type
     procedure SetContainerOffset(aValue: integer);
     function GetCriticalType: integer;
     procedure SetCriticalType(aValue: integer);
+    function GetIsStrict: Boolean;
+    procedure SetIsStrict(aValue: Boolean);
     function GetVisualColor: TColor;
     procedure SetVisualColor(aValue: TColor);
     function GetOrderNum: Integer;
@@ -84,6 +86,7 @@ type
     property Notes: string read GetNotes write SetNotes;
     property ContainerOffset: Integer read GetContainerOffset write SetContainerOffset;
     property CriticalType: Integer read GetCriticalType write SetCriticalType;
+    property IsStrict: Boolean read GetIsStrict write SetIsStrict;
     property VisualColor: TColor read GetVisualColor write SetVisualColor;
     property OrderNum: Integer read GetOrderNum write SetOrderNum;
     property Link: TJobLink read GetLink write SetLink;
@@ -103,6 +106,16 @@ implementation
 
 uses
   Data.DB;
+
+function TJobRule.GetIsStrict: Boolean;
+begin
+  Result := FData.Items['IS_STRICT'];
+end;
+
+procedure TJobRule.SetIsStrict(aValue: Boolean);
+begin
+  FData.AddOrSetValue('IS_STRICT', aValue);
+end;
 
 function TJobRule.GetTreeChildRuleByID(aID: integer): TJobRule;
 var
@@ -344,6 +357,7 @@ begin
   AddField(Result.FieldList, 'CRITICAL_TYPE', ftInteger);
   AddField(Result.FieldList, 'VISUAL_COLOR', ftInteger);
   AddField(Result.FieldList, 'ORDER_NUM', ftInteger);
+  AddField(Result.FieldList, 'IS_STRICT', ftBoolean);
 
   AddOneRelation(Result.OneRelatedList, 'JOB_RULE_ID', '', TJobLink);
   AddOneRelation(Result.OneRelatedList, 'JOB_RULE_ID', '', TJobRecord);

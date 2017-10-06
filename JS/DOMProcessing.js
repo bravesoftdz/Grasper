@@ -1,8 +1,15 @@
 console.log('domparser');
 
 var income = %s;
-var groupNum = 1;
+var groupNum = 0;
 var skipActions = false;
+
+if(window.Prototype) {
+    delete Object.prototype.toJSON;
+    delete Array.prototype.toJSON;
+    delete Hash.prototype.toJSON;
+    delete String.prototype.toJSON;
+}
 
 function getNormalizeString(str) {
     str = str.replace(/\n/g, "");
@@ -18,17 +25,21 @@ function getClassMatch(ruleNode, node) {
     if (ruleNode.className == '' && node.className == '')
         return -1;
 
-    var clName = ruleNode.className.toString();
+    var clName = getNormalizeString(ruleNode.className);
     var clArr = clName.split(' ');
     clName = getNormalizeString(node.className);
 
     var matchCount = 0;
+    var i = 0;
     clArr.forEach(function (item) {
+        i++;
         var reg = new RegExp(item, 'g');
         if (clName.match(reg) != null)
             matchCount++;
     });
 
+    if (i == matchCount) matchCount = 1000; 
+    
     return matchCount;
 }
 
@@ -47,7 +58,7 @@ function checkNodeMatches(matches, ruleNode, node) {
     if (ruleNode.tagID === node.id)
         matches.IDMatch = true;
 
-    // class match (matches count, -1 class name is empty)
+    // class match (matches count, -1 class name is empty, 1000 full match)
     matches.ClassMatch = getClassMatch(ruleNode, node);
 
     // name match
@@ -121,7 +132,7 @@ function getNodeByIndex(ruleNode, tagCollection, matches) {
     return node;
 }
 
-function getNodeByRuleNode(ruleNode, tagCollection, keepSearch) {
+function getNodeByRuleNode(ruleNode, tagCollection, keepSearch, isStrict) {
 
     var matches = {};
 
@@ -137,7 +148,7 @@ function getNodeByRuleNode(ruleNode, tagCollection, keepSearch) {
         }
 
         // find element by class
-        if (node == null || (!(matches.ClassMatch) && (ruleNode.tagID === ""))) {
+        if (node == null || ((matches.ClassMatch != 1000) && (ruleNode.tagID === ""))) {
             matchedNode = getNodeByClass(ruleNode, tagCollection, matches);
             if (matchedNode != null)
                 node = matchedNode;
@@ -149,9 +160,16 @@ function getNodeByRuleNode(ruleNode, tagCollection, keepSearch) {
             if (matchedNode != null)
                 node = matchedNode;
         }
+        
+        // check strict search
+        if (isStrict) {
+
+            if (!(matches.IDMatch && matches.ClassMatch == 1000 && matches.NameMatch))
+                node = null;
+            
+        }
     }
 
-    $(node).data('pia-nodeid', ruleNode.id);
     return node;
 }
 
@@ -282,7 +300,7 @@ function getContentByRegExps(grabData, rule) {
     return results;
 }
 
-function processResultNodesByRule(rule, resultNodes) {
+function processResultNodesByRule(rule, resultNodes, parentGroupNum) {
 
     if (rule.type == 'container')
         return [];
@@ -322,8 +340,9 @@ function processResultNodesByRule(rule, resultNodes) {
         regExResults.forEach(function (matchText) {
 
             var objNodeRes = {};
-            objNodeRes.ruleID = rule.id;
+            objNodeRes.rule_id = rule.id;
             objNodeRes.group = groupNum;
+            objNodeRes.parent_group = parentGroupNum;
 
             if (rule.type == 'link') {
                 objNodeRes.type = 'link';
@@ -405,20 +424,35 @@ function setPIAClass(rule, node) {
 
     $(node).addClass('PIAColor');
     $(node).css('background-color', rule.color);
-    //$('.PIAColor').children().css('background-color', 'inherit'); 
+    $(node).find('*').css('background-color', rule.color);  
 
     if (rule.type == 'cut')
         $(node).addClass('PIAIgnore');
 }
 
-function getRuleResult(rule, containerNode) {
+function getRuleResult(rule, containerNode, parentGroupNum) {
 
+    // special rules
+    if (rule.special_id > 0) { 
+        
+        if (rule.special_id == 1) { 
+            return [{                    
+                rule_id: rule.id,
+                group: groupNum,
+                parent_group: 0, 
+                type: 'record',
+                key: rule.key,
+                value: document.URL 
+            }];
+        }
+    }            
+    
     var containerSize = rule.nodes.length - rule.container_offset;
     for (var i = 0; i < containerSize; i++) {
 
         var ruleNode = rule.nodes[i];
         var tagCollection = getTagCollection(containerNode, ruleNode);
-        containerNode = getNodeByRuleNode(ruleNode, tagCollection, true);
+        containerNode = getNodeByRuleNode(ruleNode, tagCollection, true, (rule.is_strict && i == containerSize - 1));
 
         if (containerNode == null)
             break;
@@ -443,17 +477,17 @@ function getRuleResult(rule, containerNode) {
     processActionsByRule(rule, resultNodes);
     processRequestsByRule(rule, resultNodes);
 
-    var result = processResultNodesByRule(rule, resultNodes);
+    var result = processResultNodesByRule(rule, resultNodes, parentGroupNum);
 
     resultNodes.forEach(function (node) {
         // set PIA class to selected elements
         setPIAClass(rule, node);
 
         if (rule.rules != null) {
-
+            
             groupNum++;
             rule.rules.forEach(function (rule) {
-                result = result.concat(getRuleResult(rule, node));
+                result = result.concat(getRuleResult(rule, node, parentGroupNum));
             });
 
         }
@@ -478,7 +512,7 @@ function processDOM(income) {
 
     income.rules.forEach(function (rule) {
 
-        var objRuleResult = getRuleResult(rule, document);
+        var objRuleResult = getRuleResult(rule, document, groupNum);
         objResult.result = objResult.result.concat(objRuleResult);
 
     });
@@ -491,6 +525,7 @@ $(function () {
     // clear previous selection
     var paintedElements = $('.PIAColor');
     paintedElements.css('background-color', '');
+    paintedElements.find('*').css('background-color', '');
     paintedElements.removeClass('PIAColor');
     $('.PIAIgnore').removeClass('PIAIgnore');
 

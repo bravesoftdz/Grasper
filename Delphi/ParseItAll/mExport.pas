@@ -140,7 +140,7 @@ begin
           end;
 
         // translate
-        TryGetTranslate(ValueStrings, Key, Link);
+        //TryGetTranslate(ValueStrings, Key, Link);
 
         AddToCSVString(CSVString, ValueStrings);
       end;
@@ -160,10 +160,11 @@ begin
     dsQuery.SQL.Text :=
       'select l.Id ' +
       'from links l ' +
+      'join groups g on g.id = l.group_id ' +
       'join link2link l2l on l2l.child_link_id = l.id ' +
       'where not exists (select Id from link2link l2l where l2l.parent_link_id = l.Id) ' +
       'and exists (select Id from records r where r.link_id = l.Id) ' +
-      'and l.job_id = :JobID ' +
+      'and g.job_id = :JobID ' +
       'group by l2l.parent_link_id '+
     //  'order by l.id';
       'order by l.handle_time, level';
@@ -195,13 +196,9 @@ begin
 end;
 
 function TModelExport.GetRuleKeysFromLevel(aLevel: TJobLevel): TArray<string>;
-//var
-  //LevelRuleRel: TLevelRuleRel;
 begin
   Result := [];
-
-  //for LevelRuleRel in aLevel.RuleRels do
-  //  Result := Result + GetKeysFromRule(LevelRuleRel.Rule);
+  Result := Result + GetKeysFromRule(aLevel.BodyRule);
 end;
 
 procedure TModelExport.ExportToCSV;
