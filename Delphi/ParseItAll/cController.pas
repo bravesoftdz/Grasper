@@ -497,7 +497,7 @@ begin
 
       if not isClearMode then
         if    (Node.Tag = LastParentNode.Tag)
-          and (Node.Index = LastParentNode.Index)
+          //and (Node.Index = LastParentNode.Index)
           and (Node.TagID = LastParentNode.TagID)
           and (
                (Node.ClassName.Contains(LastParentNode.ClassName))
