@@ -37,6 +37,7 @@ type
   private
     FRecords: TRecordList;
     FChildLinkRels: TLinkRelList;
+    function CheckGroupInChain(aRecGroupID, aCheckGroupID: integer): Boolean;
   // Getters Setters
     function GetLevel: Integer;
     procedure SetLevel(aValue: Integer);
@@ -71,7 +72,31 @@ type
 implementation
 
 uses
-  Data.DB;
+  Data.DB,
+  eGroup;
+
+function TLink.CheckGroupInChain(aRecGroupID, aCheckGroupID: integer): Boolean;
+var
+  Group: TGroup;
+  CurrentGroupID: Integer;
+begin
+  Result := False;
+  if aCheckGroupID = 0 then Exit(True);
+
+  CurrentGroupID := aCheckGroupID;
+
+  repeat
+    if CurrentGroupID = aRecGroupID then Exit(True);
+
+    Group := TGroup.Create(FDBEngine, CurrentGroupID);
+    try
+      CurrentGroupID := Group.ParentGroupID;
+    finally
+      Group.Free;
+    end;
+
+  until CurrentGroupID = 0;
+end;
 
 function TLinkRel.GetChildLinkID: Integer;
 begin
@@ -109,7 +134,7 @@ begin
     OrignLink := aOrignLink;
 
   for Rec in Records do
-    if (Rec.Key = aKey) and ((Rec.GroupID = aGroupID) or (aGroupID = 0)) then
+    if (Rec.Key = aKey) and (CheckGroupInChain(Rec.GroupID, aGroupID)) then
       begin
         Records.Extract(Rec);
         Result.Add(Rec);

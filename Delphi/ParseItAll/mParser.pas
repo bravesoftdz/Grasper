@@ -62,6 +62,8 @@ type
     FJSTimeOutTask: ITask;
     FRequestStates: TArray<TRequestState>;
 
+    FGroupBinds: TArray<TGroupBind>;
+
     procedure crmLoadEnd(Sender: TObject; const browser: ICefBrowser;
         const frame: ICefFrame; httpStatusCode: Integer);
     procedure crmBeforePopup(Sender: TObject; const browser: ICefBrowser;
@@ -138,13 +140,13 @@ begin
 
   jsnConfig := TJSONObject.Create;
   try
+
+    jsnConfig.AddPair('node_key_id', TJSONNumber.Create(NodeKeyID));
+
     if NodeKeyID > 0 then
-      begin
-        jsnConfig.AddPair('needDataBack', TJSONBool.Create(False));
-        jsnConfig.AddPair('nodeKeyID', TJSONNumber.Create(NodeKeyID));
-      end
+      jsnConfig.AddPair('need_data_back', TJSONBool.Create(False))
     else
-      jsnConfig.AddPair('needDataBack', TJSONBool.Create(True));
+      jsnConfig.AddPair('need_data_back', TJSONBool.Create(True));
 
     JSScript := Format(JSScript, [jsnConfig.ToJSON]);
     FData.AddOrSetValue('JSScript', JSScript);
@@ -317,15 +319,28 @@ var
   GroupBind: TGroupBind;
   ParentGroupID: Integer;
 begin
+  // searching in binds
   for GroupBind in aGroupBinds do
     if GroupBind.DataGroupNum = aDataGroupNum then
       Exit(GroupBind.GroupID);
 
+  // if result is failed, create new bind
+  // first search parent bind
   ParentGroupID := 0;
   for GroupBind in aGroupBinds do
     if GroupBind.DataGroupNum = aDataParentGroupNum then
       ParentGroupID := GroupBind.GroupID;
 
+  // if result of parent bind failed, create new
+  if ParentGroupID = 0 then
+    begin
+      GroupBind.GroupID := AddGroup(0);
+      GroupBind.DataGroupNum := aDataParentGroupNum;
+      aGroupBinds := aGroupBinds + [GroupBind];
+      ParentGroupID := GroupBind.GroupID;
+    end;
+
+  // create bind
   GroupBind.GroupID := AddGroup(ParentGroupID);
   GroupBind.DataGroupNum := aDataGroupNum;
   aGroupBinds := aGroupBinds + [GroupBind];
@@ -554,7 +569,6 @@ var
   Link: string;
   Level: Integer;
   Key, Value: string;
-  GroupBinds: TArray<TGroupBind>;
   GroupID, DataGroupNum, DataParentGroupNum: Integer;
   StoredAnyData: Boolean;
   RequestID, LinkID: Integer;
@@ -574,7 +588,7 @@ begin
 
         DataGroupNum := (jsnRuleObj.GetValue('group') as TJSONNumber).AsInt;
         DataParentGroupNum := (jsnRuleObj.GetValue('parent_group') as TJSONNumber).AsInt;
-        GroupID := GetGroupID(GroupBinds, DataGroupNum, DataParentGroupNum);
+        GroupID := GetGroupID(FGroupBinds, DataGroupNum, DataParentGroupNum);
 
         if jsnRuleObj.GetValue('type').Value = 'link' then
           begin
@@ -762,6 +776,7 @@ begin
           SetCurrLinkHandle(1);
           FLevel := FJob.GetLevel(FCurrLink.Level);
           FRequestStates := GetRequestStates;
+          FGroupBinds := [];
           FChromium.Load(FCurrLink.Link);
         end
       else

@@ -35,6 +35,12 @@ type
 
   TController = class(TControllerDB)
   private
+    {inside Controller logic procedures, functions, variables
+     functions have to be a verb with Get prefix
+    }
+    function GetProcessingScript: string;
+    ////////////////////////////////////////////////////////////////////////////
+  private
     FJSScript: string;
     FLastParseResult: TJSONObject;
     FSelectNewLevelLink: Boolean;
@@ -65,6 +71,23 @@ type
     procedure PerfomViewMessage(aMsg: string); override;
     procedure EventListener(aEventMsg: string); override;
   published
+    { procedures assign with View message call
+      have to be verb sach as
+      ORM:
+        AddSomeEntity - creation entities
+        RemoveSomeEntity - removing entities
+        SomeEntitySelected - when entity assign control selected in the View GUI
+
+      these procedures are for
+      ORM munipulations with entities
+      Models calls
+      single call View interface
+
+      Controller have to be thin!
+    }
+    procedure RuleSelected;
+
+    ////////////////////////////////////////////////////////////////////////////
     procedure GetJobList;
 
     procedure CreateJob;
@@ -75,7 +98,6 @@ type
     procedure StoreJobRules;
 
     // Events
-    procedure OnRuleSelected;
     procedure OnNodeSelected;
     procedure OnTestPageLoaded;
 
@@ -148,6 +170,17 @@ uses
 
   FireDAC.Comp.Client,
   eTestLink;
+
+function TController.GetProcessingScript: string;
+begin
+  FObjData.AddOrSetValue('Level', ViewRules.GetSelectedLevel);
+  FObjData.AddOrSetValue('Rule', ViewRules.GetSelectedRule);
+  FData.AddOrSetValue('JSScript', FJSScript);
+  FData.AddOrSetValue('ScriptFor', sfEditor);
+
+  CallModel(TModelJS, 'PrepareProcessingScript');
+  Result := FData.Items['JSScript'];
+end;
 
 procedure TController.AssignNodeToRule;
 var
@@ -552,24 +585,15 @@ begin
   ViewRules.RenderLevels(GetJob.Levels);
 end;
 
-procedure TController.OnRuleSelected;
+procedure TController.RuleSelected;
 var
   InjectJS: string;
 begin
-  FObjData.AddOrSetValue('Level', ViewRules.GetSelectedLevel);
-  FObjData.AddOrSetValue('Rule', ViewRules.GetSelectedRule);
-  FData.AddOrSetValue('JSScript', FJSScript);
-  FData.AddOrSetValue('ScriptFor', sfLoadEnd);
-  //FData.AddOrSetValue('ScriptFor', sfEditor);
-
-  CallModel(TModelJS, 'PrepareProcessingScript');
-  InjectJS := FData.Items['JSScript'];
-  ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
-  //ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, '', 0);
+  InjectJS := GetProcessingScript;
+  ViewRules.ExecuteJavaScript(InjectJS);
 
   InjectJS := GetFullTreeScript(0);
-  //ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
-  ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, '', 0);
+  ViewRules.ExecuteJavaScript(InjectJS);
 
   //FData.AddOrSetValue('CanAddLevel', CanAddLevel(ViewRules.GetSelectedRule.Link));
 end;
@@ -721,7 +745,7 @@ begin
   if message.Name = 'selectdataback' then
     begin
       AddNodes(message.ArgumentList.GetString(0));
-      OnRuleSelected;
+        RuleSelected;
     end;
 
   if message.Name = 'parsedataback' then ParseDataReceived(message.ArgumentList.GetString(0));

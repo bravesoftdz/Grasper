@@ -58,11 +58,12 @@ var
   jsnChildNode: TJSONValue;
   DOMNode: TDOMNode;
 begin
-  DOMNode.KeyID := TJSONNumber(aDOMNode.GetValue('keyID')).AsInt;
+  DOMNode.KeyID := TJSONNumber(aDOMNode.GetValue('key_id')).AsInt;
+  DOMNode.RuleID := TJSONNumber(aDOMNode.GetValue('rule_node_id')).AsInt;
   DOMNode.Tag := aDOMNode.GetValue('tag').Value;
   DOMNode.Index := TJSONNumber(aDOMNode.GetValue('index')).AsInt;
-  DOMNode.ClassName := aDOMNode.GetValue('className').Value;
-  DOMNode.TagID := aDOMNode.GetValue('tagID').Value;
+  DOMNode.ClassName := aDOMNode.GetValue('class_name').Value;
+  DOMNode.TagID := aDOMNode.GetValue('tag_id').Value;
   DOMNode.Name := aDOMNode.GetValue('name').Value;
 
   jsnChildren := aDOMNode.GetValue('children') as TJSONArray;

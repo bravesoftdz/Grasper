@@ -1,10 +1,9 @@
 console.log('domparser');
 
 var income = %s;
-var groupNum = 0;
 var skipActions = false;
 
-if(window.Prototype) {
+if (window.Prototype) {
     delete Object.prototype.toJSON;
     delete Array.prototype.toJSON;
     delete Hash.prototype.toJSON;
@@ -38,8 +37,9 @@ function getClassMatch(ruleNode, node) {
             matchCount++;
     });
 
-    if (i == matchCount) matchCount = 1000; 
-    
+    if (i == matchCount)
+        matchCount = 1000;
+
     return matchCount;
 }
 
@@ -160,16 +160,18 @@ function getNodeByRuleNode(ruleNode, tagCollection, keepSearch, isStrict) {
             if (matchedNode != null)
                 node = matchedNode;
         }
-        
+
         // check strict search
         if (isStrict) {
 
             if (!(matches.IDMatch && matches.ClassMatch == 1000 && matches.NameMatch))
                 node = null;
-            
+
         }
     }
 
+    
+    setPIAMarks(node, ruleNode.id)
     return node;
 }
 
@@ -300,7 +302,7 @@ function getContentByRegExps(grabData, rule) {
     return results;
 }
 
-function processResultNodesByRule(rule, resultNodes, parentGroupNum) {
+function processResultNodesByRule(rule, resultNodes, groupNum, parentGroupNum) {
 
     if (rule.type == 'container')
         return [];
@@ -386,7 +388,7 @@ function processActionsByRule(rule, resultNodes) {
 
             if (rule.act_type == 2)
                 $(node).attr('value', rule.fill);
-            
+
             if (rule.act_type == 3)
                 $(node).mouseover();
 
@@ -420,33 +422,52 @@ function processRequestsByRule(rule, resultNodes) {
     });
 }
 
-function setPIAClass(rule, node) {
+function setPIAMarks(node, ruleNodeid) {
 
-    $(node).addClass('PIAColor');
+    $(node).attr('data-pia-rule_node_id', ruleNodeid);
+ 
+}
+
+function clearPIAMarksAndColor() {
+    
+    var nodes = $('[data-pia-rule_node_id]');
+    
+
+    $(nodes).data('data-pia-rule_node_id', 0);
+    $(nodes).css('background-color', '');
+    $(nodes).find('*').css('background-color', '');
+
+    
+    $('.PIAIgnore').removeClass('PIAIgnore');
+    
+}
+
+function setPIAColor(rule, node) {
+    
     $(node).css('background-color', rule.color);
-    $(node).find('*').css('background-color', rule.color);  
+    $(node).find('*').css('background-color', rule.color);
 
     if (rule.type == 'cut')
         $(node).addClass('PIAIgnore');
 }
 
-function getRuleResult(rule, containerNode, parentGroupNum) {
+function getRuleResult(rule, containerNode, groupNum, parentGroupNum) {
 
     // special rules
-    if (rule.special_id > 0) { 
-        
-        if (rule.special_id == 1) { 
-            return [{                    
-                rule_id: rule.id,
-                group: groupNum,
-                parent_group: 0, 
-                type: 'record',
-                key: rule.key,
-                value: document.URL 
-            }];
+    if (rule.special_id > 0) {
+
+        if (rule.special_id == 1) {
+            return [{
+                    rule_id: rule.id,
+                    group: groupNum,
+                    parent_group: 0,
+                    type: 'record',
+                    key: rule.key,
+                    value: document.URL
+                }];
         }
-    }            
-    
+    }
+
     var containerSize = rule.nodes.length - rule.container_offset;
     for (var i = 0; i < containerSize; i++) {
 
@@ -477,17 +498,19 @@ function getRuleResult(rule, containerNode, parentGroupNum) {
     processActionsByRule(rule, resultNodes);
     processRequestsByRule(rule, resultNodes);
 
-    var result = processResultNodesByRule(rule, resultNodes, parentGroupNum);
+    var result = processResultNodesByRule(rule, resultNodes, groupNum, parentGroupNum);
 
+    parentGroupNum = groupNum;
     resultNodes.forEach(function (node) {
-        // set PIA class to selected elements
-        setPIAClass(rule, node);
+
+        // set PIA color to result nodes
+        setPIAColor(rule, node);
 
         if (rule.rules != null) {
-            
+
             groupNum++;
             rule.rules.forEach(function (rule) {
-                result = result.concat(getRuleResult(rule, node, parentGroupNum));
+                result = result.concat(getRuleResult(rule, node, groupNum, parentGroupNum));
             });
 
         }
@@ -512,7 +535,7 @@ function processDOM(income) {
 
     income.rules.forEach(function (rule) {
 
-        var objRuleResult = getRuleResult(rule, document, groupNum);
+        var objRuleResult = getRuleResult(rule, document, 1, 0);
         objResult.result = objResult.result.concat(objRuleResult);
 
     });
@@ -523,11 +546,7 @@ function processDOM(income) {
 $(function () {
 
     // clear previous selection
-    var paintedElements = $('.PIAColor');
-    paintedElements.css('background-color', '');
-    paintedElements.find('*').css('background-color', '');
-    paintedElements.removeClass('PIAColor');
-    $('.PIAIgnore').removeClass('PIAIgnore');
+    clearPIAMarksAndColor();
 
     app.parsedataback(processDOM(income));
 

@@ -10,6 +10,7 @@ type
     Tag: string;
     Index: Integer;
     KeyID: Integer;
+    RuleID: Integer;
     Name: string;
     TagID: string;
     ClassName: string;

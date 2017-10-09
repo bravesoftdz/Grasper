@@ -28,6 +28,7 @@ type
   TVirtualNodeData = record
     Text: ShortString;
     KeyID: Integer;
+    RuleID: Integer;
     Index: Integer;
     ClassName: string[255];
     Name: ShortString;
@@ -126,6 +127,9 @@ type
     procedure vstNodesFullTreeAddToSelection(Sender: TBaseVirtualTree;
       Node: PVirtualNode);
     procedure btnAssignNodeClick(Sender: TObject);
+    procedure vstNodesFullTreePaintText(Sender: TBaseVirtualTree;
+      const TargetCanvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex;
+      TextType: TVSTTextType);
   private
     { Private declarations }
     FDevToolsEnabled: Boolean;
@@ -164,6 +168,11 @@ type
     procedure ClearRuleTree;
 
     property SelectedNodeKeyID: Integer read FSelectedNodeKeyID;
+  public
+    {View interface procedures, can be called by Controller
+    }
+    procedure ExecuteJavaScript(aJavaScript: string);
+    ////////////////////////////////////////////////////////////////////////////
   end;
 
 var
@@ -176,6 +185,11 @@ implementation
 uses
   System.UITypes,
   System.Threading;
+
+procedure TViewRules.ExecuteJavaScript(aJavaScript: string);
+begin
+  chrmBrowser.Browser.MainFrame.ExecuteJavaScript(aJavaScript, 'about:blank', 0);
+end;
 
 function TViewRules.GetSelectedNodesChain: TArray<TDOMNode>;
 var
@@ -253,10 +267,14 @@ begin
   VirtualNodeData := vstNodesFullTree.GetNodeData(VirtualNode);
   VirtualNodeData^.Text := aDOMNode.Tag;
   VirtualNodeData^.KeyID := aDOMNode.KeyID;
+  VirtualNodeData^.RuleID := aDOMNode.RuleID;
   VirtualNodeData^.Index := aDOMNode.Index;
   VirtualNodeData^.ClassName := aDOMNode.ClassName;
   VirtualNodeData^.TagID := aDOMNode.TagID;
   VirtualNodeData^.Name := aDOMNode.Name;
+
+  if aDOMNode.RuleID > 0 then
+    vstNodesFullTree.Expanded[VirtualNode.Parent] := True;
 
   for ChildDOMNode in aDOMNode.ChildNodes do
     AddNodeToTree(VirtualNode, ChildDOMNode);
@@ -571,7 +589,7 @@ begin
         if (ParentEntity as TJobRule).Nodes.Count > 0 then
           btnSelectHTML.Enabled := True;
 
-      SendMessage('OnRuleSelected');
+      SendMessage('RuleSelected');
     end;
 end;
 
@@ -620,6 +638,19 @@ begin
     VirtualNodeData^.TagID,
     VirtualNodeData^.ClassName
   ]);
+end;
+
+procedure TViewRules.vstNodesFullTreePaintText(Sender: TBaseVirtualTree;
+  const TargetCanvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex;
+  TextType: TVSTTextType);
+var
+  VirtualNodeData: PVirtualNodeData;
+begin
+  VirtualNodeData := Sender.GetNodeData(Node);
+  TargetCanvas.Font.Style := [fsBold];
+
+  if VirtualNodeData^.RuleID > 0 then
+    TargetCanvas.Font.Color := clRed;
 end;
 
 procedure TViewRules.btn2Click(Sender: TObject);
