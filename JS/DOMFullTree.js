@@ -107,7 +107,7 @@ function clearColorMark() {
 
     var node = $('[data-pia-nodecolor]');
     $(node).css('background-color', '');
-    $(node).find('*').css('background-color', '');
+    $(node).find('*:not([data-pia-rule_node_id])').css('background-color', '');
 
 }
 

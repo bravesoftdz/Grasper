@@ -56,6 +56,8 @@ type
     procedure SetNotes(aValue: string);
     function GetContainerOffset: integer;
     procedure SetContainerOffset(aValue: integer);
+    function GetSourceTypeID: integer;
+    procedure SetSourceTypeID(aValue: integer);
     function GetCriticalType: integer;
     procedure SetCriticalType(aValue: integer);
     function GetIsStrict: Boolean;
@@ -85,6 +87,7 @@ type
     function GetTreeChildRuleByID(aID: integer): TJobRule;
     property Notes: string read GetNotes write SetNotes;
     property ContainerOffset: Integer read GetContainerOffset write SetContainerOffset;
+    property SourceTypeID: Integer read GetSourceTypeID write SetSourceTypeID;
     property CriticalType: Integer read GetCriticalType write SetCriticalType;
     property IsStrict: Boolean read GetIsStrict write SetIsStrict;
     property VisualColor: TColor read GetVisualColor write SetVisualColor;
@@ -338,6 +341,16 @@ begin
   FData.AddOrSetValue('CONTAINER_OFFSET', aValue);
 end;
 
+function TJobRule.GetSourceTypeID: integer;
+begin
+  Result := FData.Items['SOURCE_TYPE_ID'];
+end;
+
+procedure TJobRule.SetSourceTypeID(aValue: integer);
+begin
+  FData.AddOrSetValue('SOURCE_TYPE_ID', aValue);
+end;
+
 function TJobRule.GetCriticalType: integer;
 begin
   Result := FData.Items['CRITICAL_TYPE'];
@@ -354,6 +367,7 @@ begin
 
   AddField(Result.FieldList, 'NOTES', ftString);
   AddField(Result.FieldList, 'CONTAINER_OFFSET', ftInteger);
+  AddField(Result.FieldList, 'SOURCE_TYPE_ID', ftInteger);
   AddField(Result.FieldList, 'CRITICAL_TYPE', ftInteger);
   AddField(Result.FieldList, 'VISUAL_COLOR', ftInteger);
   AddField(Result.FieldList, 'ORDER_NUM', ftInteger);

@@ -17,7 +17,6 @@ uses
   API_Files in '..\..\..\Libraries\Delphi\API_Files.pas',
   API_ORM_Cntrls in '..\..\..\Libraries\Delphi\API_ORM_Cntrls.pas',
   mParser in 'mParser.pas',
-  vRuleResult in 'vRuleResult.pas' {ViewRuleResult},
   Vcl.Themes,
   Vcl.Styles,
   API_DB_SQLite in '..\..\..\Libraries\Delphi\API_DB_SQLite.pas',

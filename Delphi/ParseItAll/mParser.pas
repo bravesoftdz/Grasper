@@ -455,8 +455,7 @@ begin
     begin
       jsnRule.AddPair('type', 'record');
       jsnRule.AddPair('key', aRule.Rec.Key);
-      jsnRule.AddPair('grab_type', TJSONNumber.Create(aRule.Rec.GrabType));
-      jsnRule.AddPair('special_id', TJSONNumber.Create(aRule.Rec.SpecialID));
+      jsnRule.AddPair('grab_type', TJSONNumber.Create(aRule.Rec.GrabTypeID));
     end;
 
   if aRule.Cut <> nil then

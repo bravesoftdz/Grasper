@@ -16,7 +16,7 @@ uses
   eRequest,
   eNodes,
   System.ImageList, System.Actions, Vcl.ActnList, Vcl.Menus, Vcl.ToolWin,
-  VirtualTrees;
+  VirtualTrees, Vcl.Imaging.GIFImg;
 
 type
   TEntityPanel = class(TEntityPanelAbstract)
@@ -171,7 +171,7 @@ type
   public
     {View interface procedures, can be called by Controller
     }
-    procedure ExecuteJavaScript(aJavaScript: string);
+    procedure ExecuteJavaScript(aJavaScript: string; aFrameName: string = '');
     ////////////////////////////////////////////////////////////////////////////
   end;
 
@@ -186,9 +186,9 @@ uses
   System.UITypes,
   System.Threading;
 
-procedure TViewRules.ExecuteJavaScript(aJavaScript: string);
+procedure TViewRules.ExecuteJavaScript(aJavaScript: string; aFrameName: string = '');
 begin
-  chrmBrowser.Browser.MainFrame.ExecuteJavaScript(aJavaScript, 'about:blank', 0);
+  chrmBrowser.Browser.MainFrame.ExecuteJavaScript(aJavaScript, aFrameName, 0);
 end;
 
 function TViewRules.GetSelectedNodesChain: TArray<TDOMNode>;
@@ -469,6 +469,7 @@ begin
 
   if GetSelectedLevel <> nil then
     begin
+      chrmBrowser.Enabled := False;
       chrmBrowser.Load(GetSelectedLevel.TestLink);
       RenderRulesTree(GetSelectedLevel.BodyRule);
     end

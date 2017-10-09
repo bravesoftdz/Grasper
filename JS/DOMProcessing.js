@@ -220,55 +220,54 @@ function getInsideContainerNodes(containerNode, ruleNodes) {
     return nodes;
 }
 
-function getContentByRegExps(grabData, rule) {
+function processIgnoreRegExps(source, node, regexps) {
 
-    var regexps = rule.regexps;
-    var results = [];
-    var hasRegEx = {
-        match: false,
-        replace: false,
-        ignore: false
-    };
-
-    // case text grab
-    if (rule.grab_type == 1)
-        var sourceText = grabData.innerText;
-
-    // case href grab
-    if (rule.grab_type == 2)
-        sourceText = grabData.innerText;
-
-    // case html grab
-    if (rule.grab_type == 3)
-        sourceText = grabData.innerHTML;
-
-    if (sourceText == null)
-        sourceText = grabData.innerText;
-
-    // type 3 - ignore
-    var isIgnoreExit = false;
+    var isIgnore = false;
+    
     regexps.forEach(function (regex) {
 
+        // ignore if match
         if (regex.type == 3) {
-            hasRegEx.ignore = true;
+            
             var reg = new RegExp(regex.regexp, 'g');
-            var matches = sourceText.match(reg);
-
+            var matches = source.match(reg);
+                
             if (matches != null)
-                isIgnoreExit = true;
+                isIgnore = true;
+            
+        }
+        
+        // ignore if not match
+        if (regex.type == 4) {
+            
+            var reg = new RegExp(regex.regexp, 'g');
+            var matches = source.match(reg);
+                
+            if (matches == null)
+                isIgnore = true;
+            
         }
 
     });
-    if (isIgnoreExit)
-        return results;
+    
+    if (isIgnore) 
+        setPIAIgnore(node);
+    
+}
 
+function processRegExps(content, regexps) {
+
+    var results = [];
+    var hasRegExp = false;
+    
     // type 1 - matches
     regexps.forEach(function (regex) {
 
         if (regex.type == 1) {
-            hasRegEx.match = true;
+            
+            hasRegExp = true;
             var reg = new RegExp(regex.regexp, 'g');
-            var matches = sourceText.match(reg);
+            var matches = content.match(reg);
 
             if (matches != null)
                 matches.forEach(function (match) {
@@ -276,95 +275,90 @@ function getContentByRegExps(grabData, rule) {
                 });
         }
     });
-    if (!hasRegEx.match)
-        results = [sourceText];
+    if (!hasRegExp && content != null)
+        results = [content];
 
     // type 2 - replaces
     regexps.forEach(function (regex) {
 
         if (regex.type == 2) {
-            hasRegEx.replace = true;
-            if (regex.replace == null)
-                regex.replace = '';
-
+ 
             var replacedResults = results.map(function (result) {
+                
                 var reg = new RegExp(regex.regexp, 'g');
                 return result.replace(reg, regex.replace);
+                
             });
+            
             results = replacedResults;
         }
+        
     });
-
-    // case href grab
-    if (rule.grab_type == 2 && results.length > 0)
-        results = [grabData.href];
 
     return results;
 }
 
 function processResultNodesByRule(rule, resultNodes, groupNum, parentGroupNum) {
 
-    if (rule.type == 'container')
-        return [];
-
     var result = [];
 
     resultNodes.forEach(function (node) {
-
-        var grabData = {};
-
-        //switch on cuts     
-        var ignoreNodes = $('.PIAIgnore', node);
-        $(ignoreNodes).css('display', 'none');
-
-        if (node.innerText != null)
-            grabData.innerText = node.innerText;
+        
+        if (rule.source_type == 1) 
+            var source = node.innerText;
         else
-            grabData.innerText = '';
+            source = node.innerHTML;
+         
+        // process ignore RegExps
+        processIgnoreRegExps(source, node, rule.regexps);
+        
+        //check ignores     
+        var ignoreNodes = $(node).closest('.PIAIgnore');
+        if (ignoreNodes.length > 0) return result;  
+        
+        // case text grab
+        if (rule.grab_type == 1)
+            var content = node.innerText;
 
-        var href = $('a', node).attr('href');
-        if (href != null)
-            grabData.href = href;
-        else
-            grabData.href = '';
+        // case HTML grab
+        if (rule.grab_type == 2)
+            content = node.innerHTML;
 
-        if (node.innerHTML != null)
-            grabData.innerHTML = node.innerHTML;
-        else
-            grabData.innerHTML = '';
+        // case href attr grab
+        if (rule.grab_type == 4)
+            content = $('a', node).attr('href');
+        
+        // case value attr grab
+        if (rule.grab_type == 5)
+            content = $(node).attr('value');
+        
+        // links
+        if (rule.type == 'link')
+            content = node.href;
 
-        //switch off cuts 
-        $(ignoreNodes).css('display', '');
+        //process matches and replaces regexps
+        var RegExpResults = processRegExps(content, rule.regexps);
 
-        //process grab type and regexps
-        var regExResults = getContentByRegExps(grabData, rule);
+        RegExpResults.forEach(function (matchText) {
 
-        regExResults.forEach(function (matchText) {
-
-            var objNodeRes = {};
-            objNodeRes.rule_id = rule.id;
-            objNodeRes.group = groupNum;
-            objNodeRes.parent_group = parentGroupNum;
+            var objRes = {};
+            objRes.rule_id = rule.id;
+            objRes.group = groupNum;
+            objRes.parent_group = parentGroupNum;
 
             if (rule.type == 'link') {
-                objNodeRes.type = 'link';
-                objNodeRes.href = node.href;
-                objNodeRes.level = rule.level;
+                objRes.type = 'link';
+                objRes.href = matchText;
+                objRes.level = rule.level;
             }
 
             if (rule.type == 'record') {
-                objNodeRes.type = 'record';
-                objNodeRes.key = rule.key;
-                objNodeRes.value = matchText;
+                objRes.type = 'record';
+                objRes.key = rule.key;
+                objRes.value = matchText;
             }
 
-            if (rule.type == 'action') {
-                objNodeRes.type = 'action';
-                objNodeRes.act_type = rule.act_type;
-                objNodeRes.regrab_after_action = rule.regrab_after_action;
-            }
-
-            result.push(objNodeRes);
+            result.push(objRes);
         });
 
     });
@@ -433,7 +427,7 @@ function clearPIAMarksAndColor() {
     var nodes = $('[data-pia-rule_node_id]');
     
 
-    $(nodes).data('data-pia-rule_node_id', 0);
+    $(nodes).attr('data-pia-rule_node_id', 0);
     $(nodes).css('background-color', '');
     $(nodes).find('*').css('background-color', '');
 
@@ -442,13 +436,15 @@ function clearPIAMarksAndColor() {
     
 }
 
+function setPIAIgnore(node) {
+    $(node).addClass('PIAIgnore');
+}
+
 function setPIAColor(rule, node) {
     
     $(node).css('background-color', rule.color);
     $(node).find('*').css('background-color', rule.color);
-
-    if (rule.type == 'cut')
-        $(node).addClass('PIAIgnore');
+    
 }
 
 function getRuleResult(rule, containerNode, groupNum, parentGroupNum) {
@@ -503,6 +499,9 @@ function getRuleResult(rule, containerNode, groupNum, parentGroupNum) {
     parentGroupNum = groupNum;
     resultNodes.forEach(function (node) {
 
+        if (rule.type == 'cut')
+            setPIAIgnore(node);
+        
         // set PIA color to result nodes
         setPIAColor(rule, node);
 

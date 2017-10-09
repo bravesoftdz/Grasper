@@ -42,7 +42,6 @@ type
     ////////////////////////////////////////////////////////////////////////////
   private
     FJSScript: string;
-    FLastParseResult: TJSONObject;
     FSelectNewLevelLink: Boolean;
     FGettingTestPage: Boolean;
     FCatchingRequests: Boolean;
@@ -76,25 +75,28 @@ type
       ORM:
         AddSomeEntity - creation entities
         RemoveSomeEntity - removing entities
+        EditSomeEntity - edition entities
         SomeEntitySelected - when entity assign control selected in the View GUI
 
       these procedures are for
       ORM munipulations with entities
       Models calls
+      Views calls
       single call View interface
 
       Controller have to be thin!
     }
-    procedure RuleSelected;
+    procedure EditJobRules;
 
+    procedure RuleSelected;
     ////////////////////////////////////////////////////////////////////////////
+
     procedure GetJobList;
 
     procedure CreateJob;
     procedure StoreJob;
 
     // Manage Job Rules
-    procedure EditJobRules;
     procedure StoreJobRules;
 
     // Events
@@ -162,7 +164,6 @@ uses
   vLogin,
   vJob,
   vRules,
-  vRuleResult,
   mParser,
   mTester,
   mExport,
@@ -590,7 +591,7 @@ var
   InjectJS: string;
 begin
   InjectJS := GetProcessingScript;
-  ViewRules.ExecuteJavaScript(InjectJS);
+  ViewRules.ExecuteJavaScript(InjectJS, 'about:blank');
 
   InjectJS := GetFullTreeScript(0);
   ViewRules.ExecuteJavaScript(InjectJS);
@@ -605,7 +606,7 @@ var
   jsnRuleValue: TJSONValue;
   value: string;
 begin
-  CallView(TViewRuleResult);
+  {allView(TViewRuleResult);
 
   jsnResultArray := FLastParseResult.GetValue('result') as TJSONArray;
 
@@ -620,13 +621,13 @@ begin
         value := jsnRuleObj.GetValue('value').Value;
 
       ViewRuleResult.redtResults.Lines.Add(value);
-    end;
+    end;}
 end;
 
 procedure TController.ParseDataReceived(aData: string);
 begin
-  if Assigned(FLastParseResult) then FreeAndNil(FLastParseResult);
-  FLastParseResult := TJSONObject.ParseJSONValue(aData) as TJSONObject;
+  {if Assigned(FLastParseResult) then FreeAndNil(FLastParseResult);
+  FLastParseResult := TJSONObject.ParseJSONValue(aData) as TJSONObject;}
 
   if FGettingTestPage then
     begin
@@ -640,6 +641,8 @@ var
   InjectJS: string;
 begin
   if not frame.IsMain or (httpStatusCode <> 200) then Exit;
+
+  ViewRules.chrmBrowser.Enabled := True;
 
   FCatchingRequests := True;
 
@@ -812,7 +815,6 @@ var
 begin
   Rule := AddRule;
   Rule.Rec := TJobRecord.Create(FDBEngine);
-  Rule.Rec.GrabType := 1;
 
   ViewRules.AddRuleToTree(ViewRules.GetSelectedRule, Rule);
 end;
@@ -849,6 +851,15 @@ begin
 
   CallView(TViewRules);
 
+  {FData.AddOrSetValue('JSScript', FJSScript);
+  FObjData.AddOrSetValue('Chromium', ViewRules.chrmBrowser);
+  FObjData.AddOrSetValue('Job', Job);
+
+  CallAsyncModel(TModelParser, 'StartJob');}
+
+
+
+
   ViewRules.chrmBrowser.OnProcessMessageReceived := crmProcessMessageReceived;
   ViewRules.chrmBrowser.OnLoadEnd := crmLoadEnd;
   ViewRules.chrmBrowser.OnResourceResponse := crmResourceResponse;
@@ -883,10 +894,11 @@ begin
   if aMsg = 'SelectNewLevelLink' then
       FSelectNewLevelLink := True;
 
+
+  // on close none modal views clear objects
   if aMsg = 'ViewRulesClosed' then
     begin
       FObjData.Items['Job'].Free;
-      if Assigned(FLastParseResult) then FreeAndNil(FLastParseResult);
     end;
 end;
 

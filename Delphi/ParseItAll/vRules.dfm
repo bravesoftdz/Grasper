@@ -306,6 +306,10 @@ object ViewRules: TViewRules
       TabOrder = 4
       object tsFields: TTabSheet
         Caption = 'tsFields'
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
       end
       object tsDOM: TTabSheet
         Caption = 'tsDOM'
@@ -380,10 +384,18 @@ object ViewRules: TViewRules
       object tsResults: TTabSheet
         Caption = 'tsResults'
         ImageIndex = 2
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
       end
       object tsRequests: TTabSheet
         Caption = 'tsRequests'
         ImageIndex = 3
+        ExplicitLeft = 0
+        ExplicitTop = 0
+        ExplicitWidth = 0
+        ExplicitHeight = 0
         object lvRequests: TListView
           Left = 0
           Top = 29
@@ -437,7 +449,7 @@ object ViewRules: TViewRules
     Left = 613
     Top = 158
     Bitmap = {
-      494C010108001800340010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C0101080018003C0010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000003000000001002000000000000030
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
