@@ -300,7 +300,7 @@ object ViewRules: TViewRules
       Top = 283
       Width = 301
       Height = 170
-      ActivePage = tsDOM
+      ActivePage = tsResults
       Align = alClient
       TabOrder = 4
       object tsFields: TTabSheet
@@ -379,6 +379,26 @@ object ViewRules: TViewRules
       object tsResults: TTabSheet
         Caption = 'tsResults'
         ImageIndex = 2
+        object vstResults: TVirtualStringTree
+          Left = 0
+          Top = 0
+          Width = 293
+          Height = 142
+          Align = alClient
+          Header.AutoSizeIndex = 0
+          Header.Font.Charset = DEFAULT_CHARSET
+          Header.Font.Color = clWindowText
+          Header.Font.Height = -11
+          Header.Font.Name = 'Tahoma'
+          Header.Font.Style = []
+          Header.MainColumn = -1
+          TabOrder = 0
+          ExplicitLeft = 56
+          ExplicitTop = 32
+          ExplicitWidth = 200
+          ExplicitHeight = 100
+          Columns = <>
+        end
       end
       object tsRequests: TTabSheet
         Caption = 'tsRequests'
@@ -415,7 +435,7 @@ object ViewRules: TViewRules
           object btnAssignRequest: TToolButton
             Left = 0
             Top = 0
-            Action = acAssignRequest
+            Caption = 'acAssignRequest'
           end
         end
       end
@@ -436,7 +456,7 @@ object ViewRules: TViewRules
     Left = 613
     Top = 158
     Bitmap = {
-      494C010108001800400010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C010108001800440010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000003000000001002000000000000030
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -893,14 +913,6 @@ object ViewRules: TViewRules
       Caption = 'acAddRequest'
       ImageIndex = 7
       OnExecute = acAddRequestExecute
-    end
-  end
-  object alRequestActions: TActionList
-    Left = 619
-    Top = 315
-    object acAssignRequest: TAction
-      Caption = 'acAssignRequest'
-      OnExecute = acAssignRequestExecute
     end
   end
 end

@@ -19,6 +19,18 @@ uses
   eRequest;
 
 type
+  TViewResult = record
+    Key: string;
+    Value: string;
+  end;
+
+  TViewGroup = record
+    Group: Integer;
+    Results: TArray<TViewResult>;
+  end;
+
+  TViewResults = TArray<TViewGroup>;
+
   TGroupBind = record
     DataGroupNum: Integer;
     GroupID: Integer;
@@ -26,7 +38,7 @@ type
 
   TScriptFor = (sfEditor, sfLoadEnd, sfRequestEnd, sfTriggerExecute);
 
-  TParseMode = (pmLevelTestPage);
+  TParseMode = (pmJobRun, pmLevelDesign, pmLevelRunTest);
 
   TState = (sWaitingReplay, sDone, sWaitingTriger);
 
@@ -55,6 +67,7 @@ type
 
   TModelParser = class(TModelDB)
   private
+    FParseMode: TParseMode;
     FJob: TJob;
     FCurrLink: TLink;
     FLevel: TJobLevel;
@@ -66,6 +79,7 @@ type
 
     FGroupBinds: TArray<TGroupBind>;
 
+    // Chromium Events
     procedure crmLoadEnd(Sender: TObject; const browser: ICefBrowser;
         const frame: ICefFrame; httpStatusCode: Integer);
     procedure crmBeforePopup(Sender: TObject; const browser: ICefBrowser;
@@ -79,7 +93,6 @@ type
             const message: ICefProcessMessage; out Result: Boolean);
 
     procedure ProcessNextLink(aPrivLinkHandled: Integer = 2);
-    procedure ProcessJScript(aScriptFor: TScriptFor; aRule: TJobRule = nil);
     procedure ProcessDataReceived(aData: string);
     procedure ProcessObserveEvent(aStrRuleID: string);
     procedure ProcessTrigerAction(aRequestID: integer);
@@ -99,9 +112,30 @@ type
     procedure AddError(aLinkID, aErrTypeID: Integer; aErrText: string);
     function GetGroupID(var aGroupBinds: TArray<TGroupBind>; aDataGroupNum, aDataParentGroupNum: Integer): Integer;
     function GetLinksCount(aJobID: Integer; aHandled: Integer = -1): Integer;
+  private
+    FViewResults: TViewResults;
+    {inside Model logic procedures, functions, variables
+     functions have to be a verb with "Get", "Try" prefix
+     procedures have to be a verb with "Do" prefix
+    }
+    function TryAddViewResult(aGroupNum: Integer; aKey, aValue: string): Boolean;
+    function GetViewGroup(aGroupNum: integer): TViewGroup;
+    function GetViewResult(aViewGroup: TViewGroup; aKey, aValue: string): TViewResult;
+    procedure DoLoadPage;
+    procedure DoProcessJScript(aScriptFor: TScriptFor; aRule: TJobRule = nil);
+    ////////////////////////////////////////////////////////////////////////////
+  public
+    destructor Destroy; override;
   published
+    {public Model interface that can be called via Controller.CallModel
+     simple parametrs have to be put into FData object
+     objects parametrs have to be put into FobjData object
+    }
     procedure Start;
     procedure GetJobProgress;
+    procedure LoadLevelDesign;
+    procedure ExecuteRuleJS;
+    ////////////////////////////////////////////////////////////////////////////
   end;
 
 implementation
@@ -118,6 +152,84 @@ uses
   eError,
   eGroup,
   eRuleAction;
+
+function TModelParser.GetViewResult(aViewGroup: TViewGroup; aKey, aValue: string): TViewResult;
+var
+  ViewResult: TViewResult;
+begin
+  for ViewResult in aViewGroup.Results do
+    if    (ViewResult.Key = aKey)
+      and (ViewResult.Value = aValue)
+    then
+      Exit(ViewResult);
+
+  Result.Key := '';
+  Result.Value := '';
+end;
+
+function TModelParser.GetViewGroup(aGroupNum: integer): TViewGroup;
+var
+  ViewGroup: TViewGroup;
+begin
+  for ViewGroup in FViewResults do
+    if ViewGroup.Group = aGroupNum then Exit(ViewGroup);
+
+  Result.Group := aGroupNum;
+  FViewResults := FViewResults + [Result];
+end;
+
+function TModelParser.TryAddViewResult(aGroupNum: Integer; aKey, aValue: string): Boolean;
+var
+  ViewGroup: TViewGroup;
+  ViewResult: TViewResult;
+begin
+  // try find view group
+  ViewGroup := GetViewGroup(aGroupNum);
+  // try find view result
+  ViewResult := GetViewResult(ViewGroup, aKey, aValue);
+
+  if not ViewResult.Key.IsEmpty then
+    Result := False
+  else
+    begin
+      ViewResult.Key := aKey;
+      ViewResult.Value := aValue;
+      ViewGroup.Results := ViewGroup.Results + [ViewResult];
+      Result := True;
+    end;
+end;
+
+procedure TModelParser.ExecuteRuleJS;
+var
+  Rule: TJobRule;
+begin
+  Rule := FObjData.Items['Rule'] as TJobRule;
+  FViewResults := [];
+  DoProcessJScript(sfEditor, Rule);
+end;
+
+destructor TModelParser.Destroy;
+begin
+  if Assigned(FCurrLink) then FreeAndNil(FCurrLink);
+end;
+
+procedure TModelParser.LoadLevelDesign;
+begin
+  if Assigned(FCurrLink) then FreeAndNil(FCurrLink);
+  FCurrLink := TLink.Create(FDBEngine);
+  FCurrLink.Level := FData.Items['Level'];
+  FCurrLink.Link := FData.Items['URL'];
+
+  DoLoadPage;
+end;
+
+procedure TModelParser.DoLoadPage;
+begin
+  FLevel := FJob.GetLevel(FCurrLink.Level);
+  FRequestStates := GetRequestStates;
+  FGroupBinds := [];
+  FChromium.Load(FCurrLink.Link);
+end;
 
 procedure TModelParser.crmBeforePopup(Sender: TObject; const browser: ICefBrowser;
     const frame: ICefFrame; const targetUrl, targetFrameName: ustring;
@@ -191,18 +303,24 @@ end;
 
 function TModelParser.GetRequestStates: TArray<TRequestState>;
 var
+  LevelRequestList: TJobRequestList;
   JobRequest: TJobRequest;
   RequestState: TRequestState;
 begin
   Result := [];
 
-  for JobRequest in FLevel.GetLevelRequestList do
-    begin
-      RequestState.RequestID := JobRequest.ID;
-      RequestState.TimeOut := JobRequest.TimeOut;
-      RequestState.State:= sWaitingReplay;
-      Result := Result + [RequestState];
-    end;
+  LevelRequestList := FLevel.GetLevelRequestList;
+  try
+    for JobRequest in LevelRequestList do
+      begin
+        RequestState.RequestID := JobRequest.ID;
+        RequestState.TimeOut := JobRequest.TimeOut;
+        RequestState.State:= sWaitingReplay;
+        Result := Result + [RequestState];
+      end;
+  finally
+    LevelRequestList.Free;
+  end;
 end;
 
 procedure TModelParser.StartTimeOutProc;
@@ -254,7 +372,7 @@ begin
     for TrigerAction in TrigerActionList do
       begin
         ActionRule := FLevel.BodyRule.GetTreeChildRuleByID(TrigerAction.JobRuleID);
-        ProcessJScript(sfTriggerExecute, ActionRule);
+        DoProcessJScript(sfTriggerExecute, ActionRule);
         SetRequestState(aRequestID, sWaitingReplay);
       end;
 
@@ -307,7 +425,7 @@ begin
   // not allowed body rule requests
   if Rule = nil then Exit;
 
-  ProcessJScript(sfRequestEnd, Rule);
+  DoProcessJScript(sfRequestEnd, Rule);
 end;
 
 function TModelJS.EncodeRequestToJSON(aJobRequest: TJobRequest): TJSONObject;
@@ -589,15 +707,27 @@ begin
 
         DataGroupNum := (jsnRuleObj.GetValue('group') as TJSONNumber).AsInt;
         DataParentGroupNum := (jsnRuleObj.GetValue('parent_group') as TJSONNumber).AsInt;
-        GroupID := GetGroupID(FGroupBinds, DataGroupNum, DataParentGroupNum);
+
+        if FParseMode = pmJobRun then
+          GroupID := GetGroupID(FGroupBinds, DataGroupNum, DataParentGroupNum);
 
         if jsnRuleObj.GetValue('type').Value = 'link' then
           begin
             Link := jsnRuleObj.GetValue('href').Value;
             Level := (jsnRuleObj.GetValue('level') as TJSONNumber).AsInt;
 
-            if AddLink(Link, FCurrLink.ID, Level, GroupID) then
-              StoredAnyData := True;
+            case FParseMode of
+              pmJobRun:
+                begin
+                  if AddLink(Link, FCurrLink.ID, Level, GroupID) then
+                    StoredAnyData := True;
+                end;
+              pmLevelDesign:
+                begin
+                  if TryAddViewResult(DataGroupNum, 'Link', Link) then
+                    StoredAnyData := True;
+                end;
+            end;
           end;
 
         if jsnRuleObj.GetValue('type').Value = 'record' then
@@ -605,8 +735,18 @@ begin
             Key := jsnRuleObj.GetValue('key').Value;
 
             if jsnRuleObj.TryGetValue('value', Value) then
-              if AddRecord(FCurrLink.ID, GroupID, Key, Value) then
-                StoredAnyData := True;
+              case FParseMode of
+                pmJobRun:
+                  begin
+                    if AddRecord(FCurrLink.ID, GroupID, Key, Value) then
+                      StoredAnyData := True;
+                  end;
+                pmLevelDesign:
+                  begin
+                    if TryAddViewResult(DataGroupNum, Key, Value) then
+                      StoredAnyData := True;
+                  end;
+              end;
           end;
       end;
 
@@ -619,7 +759,10 @@ begin
         ProcessTrigerAction(RequestID);
       end;
 
-    if not FIsWaitingForRequests then ProcessNextLink;
+    if    (not FIsWaitingForRequests)
+      and (FParseMode = pmJobRun)
+    then
+      ProcessNextLink;
   finally
     jsnData.Free;
   end;
@@ -636,12 +779,12 @@ begin
     if message.Name = 'observerevent' then
       ProcessObserveEvent(message.ArgumentList.GetString(0));
   finally
-    TFilesEngine.CreateFile('ProcessMessageReceived.log');
-    TFilesEngine.SaveTextToFile('ProcessMessageReceived.log', message.ArgumentList.GetString(0));
+    //TFilesEngine.CreateFile('ProcessMessageReceived.log');
+    //TFilesEngine.SaveTextToFile('ProcessMessageReceived.log', message.ArgumentList.GetString(0));
   end;
 end;
 
-procedure TModelParser.ProcessJScript(aScriptFor: TScriptFor; aRule: TJobRule = nil);
+procedure TModelParser.DoProcessJScript(aScriptFor: TScriptFor; aRule: TJobRule = nil);
 var
   ModelJS: TModelJS;
   ObjData: TObjectDictionary<string, TObject>;
@@ -702,7 +845,7 @@ begin
         InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\jquery-3.1.1.js');
         frame.ExecuteJavaScript(InjectJS, '', 0);
 
-        ProcessJScript(sfLoadEnd);
+        if FParseMode = pmJobRun then DoProcessJScript(sfLoadEnd);
       end;
 
     if httpStatusCode = 404 then
@@ -713,8 +856,8 @@ begin
       end;
 
   finally
-    TFilesEngine.CreateFile('LoadEnd.log');
-    TFilesEngine.SaveTextToFile('LoadEnd.log', httpStatusCode.ToString);
+    //TFilesEngine.CreateFile('LoadEnd.log');
+    //TFilesEngine.SaveTextToFile('LoadEnd.log', httpStatusCode.ToString);
   end;
 end;
 
@@ -775,10 +918,7 @@ begin
       if FCurrLink <> nil then
         begin
           SetCurrLinkHandle(1);
-          FLevel := FJob.GetLevel(FCurrLink.Level);
-          FRequestStates := GetRequestStates;
-          FGroupBinds := [];
-          FChromium.Load(FCurrLink.Link);
+          DoLoadPage;
         end
       else
         begin
@@ -791,14 +931,15 @@ end;
 
 procedure TModelParser.Start;
 begin
+  FParseMode := FData.Items['ParseMode'];
+  FJob := FObjData.Items['Job'] as TJob;
+
   FChromium := FObjData.Items['Chromium'] as TChromium;
   FChromium.OnLoadEnd := crmLoadEnd;
   FChromium.OnBeforePopup := crmBeforePopup;
   FChromium.OnProcessMessageReceived := crmProcessMessageReceived;
 
-  FJob := FObjData.Items['Job'] as TJob;
-
-  ProcessNextLink;
+  if FParseMode = pmJobRun then ProcessNextLink;
 end;
 
 function TModelJS.ColorToHex(color: TColor): String;

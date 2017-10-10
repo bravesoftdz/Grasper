@@ -9,6 +9,8 @@ uses
   API_DB_SQLite,
   cefvcl,
   cefLib,
+  mParser,
+
   eJob,
   eLevel,
   eRule,
@@ -35,36 +37,36 @@ type
 
   TController = class(TControllerDB)
   private
+    FJSProcessingScript: string;
+    FModelParser: TModelParser;
     {inside Controller logic procedures, functions, variables
      functions have to be a verb with "Get" prefix
-     procedures have to be a verb with "do" prefix
+     procedures have to be a verb with "Do" prefix
     }
-    function GetProcessingScript: string;
-    procedure DoCallModelParser;
+    function GetJob: TJob;
+    procedure DoCreateModelParser;
     ////////////////////////////////////////////////////////////////////////////
   private
-    FJSScript: string;
     FSelectNewLevelLink: Boolean;
     FGettingTestPage: Boolean;
     FCatchingRequests: Boolean;
     JobStates: TArray<TJobState>;
 
-    procedure crmLoadEnd(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame; httpStatusCode: Integer);
+    {procedure crmLoadEnd(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame; httpStatusCode: Integer);
     procedure crmProcessMessageReceived(Sender: TObject;
             const browser: ICefBrowser; sourceProcess: TCefProcessId;
             const message: ICefProcessMessage; out Result: Boolean);
     procedure crmResourceResponse(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
             const request: ICefRequest; const response: ICefResponse; out Result: Boolean);
-
-    procedure ParseDataReceived(aData: string);
-    procedure NodesFullTreeReceived(aData: string);
+    }
+    //procedure ParseDataReceived(aData: string);
+    //procedure NodesFullTreeReceived(aData: string);
 
     procedure SyncParentChildRuleNodes(aNodes, aParentNodes: TNodeList);
     procedure UpdateJobState(aJobID: integer);
     procedure UpdateBackgroundRequests(aRequest: ICefRequest);
     procedure AddNodes(aNodesData: string);
     function CanAddLevel(aJobRule: TJobLink): Boolean;
-    function GetJob: TJob;
     function AddRule: TJobRule;
     function GetFullTreeScript(aNodeKeyID: integer): string;
   protected
@@ -89,6 +91,8 @@ type
       Controller have to be thin!
     }
     procedure EditJobRules;
+
+    procedure LevelSelected;
 
     procedure RuleSelected;
     ////////////////////////////////////////////////////////////////////////////
@@ -166,7 +170,6 @@ uses
   vLogin,
   vJob,
   vRules,
-  mParser,
   mTester,
   mExport,
   mNodes,
@@ -174,24 +177,24 @@ uses
   FireDAC.Comp.Client,
   eTestLink;
 
-procedure TController.DoCallModelParser;
+procedure TController.LevelSelected;
 begin
-  FData.AddOrSetValue('JSScript', FJSScript);
-  FData.AddOrSetValue('ParseMode', pmLevelTestPage);
-  FObjData.AddOrSetValue('Chromium', ViewRules.chrmBrowser);
-  FObjData.AddOrSetValue('Level', ViewRules.GetSelectedLevel);
-  CallAsyncModel(TModelParser, 'Start');
+  FData.AddOrSetValue('Level', ViewRules.GetSelectedLevel.Level);
+  FData.AddOrSetValue('URL', ViewRules.GetSelectedLevel.TestLink);
+  FModelParser.LoadLevelDesign;
 end;
 
-function TController.GetProcessingScript: string;
+procedure TController.DoCreateModelParser;
 begin
-  FObjData.AddOrSetValue('Level', ViewRules.GetSelectedLevel);
-  FObjData.AddOrSetValue('Rule', ViewRules.GetSelectedRule);
-  FData.AddOrSetValue('JSScript', FJSScript);
-  FData.AddOrSetValue('ScriptFor', sfEditor);
+  FData.AddOrSetValue('JSScript', FJSProcessingScript);
+  FData.AddOrSetValue('ParseMode', pmLevelDesign);
 
-  CallModel(TModelJS, 'PrepareProcessingScript');
-  Result := FData.Items['JSScript'];
+  FObjData.AddOrSetValue('DBEngine', FDBEngine);
+  FObjData.AddOrSetValue('Chromium', ViewRules.chrmBrowser);
+  FObjData.AddOrSetValue('Job', GetJob);
+
+  FModelParser := TModelParser.Create(FData, FObjData);
+  FModelParser.Start;
 end;
 
 procedure TController.AssignNodeToRule;
@@ -230,12 +233,12 @@ begin
   ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
 end;
 
-procedure TController.crmResourceResponse(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
+{procedure TController.crmResourceResponse(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
         const request: ICefRequest; const response: ICefResponse; out Result: Boolean);
 begin
   //if FCatchingRequests then
   //  UpdateBackgroundRequests(request);
-end;
+end; }
 
 procedure TController.UpdateBackgroundRequests(aRequest: ICefRequest);
 begin
@@ -263,7 +266,7 @@ begin
   ViewRules.AddRequestToTree(ViewRules.tvRules.Selected, JobRequest);
 end;
 
-procedure TController.NodesFullTreeReceived(aData: string);
+{procedure TController.NodesFullTreeReceived(aData: string);
 var
   jsnNodes: TJSONObject;
   WrapObj: TWrapModelNodes;
@@ -284,7 +287,7 @@ begin
   finally
     jsnNodes.Free;
   end;
-end;
+end;}
 
 function TController.AddRule: TJobRule;
 var
@@ -423,7 +426,7 @@ begin
   JobID := ViewMain.SelectedJobID;
   UpdateJobState(JobID);
 
-  FData.AddOrSetValue('JSScript', FJSScript);
+  FData.AddOrSetValue('JSScript', FJSProcessingScript);
   FData.AddOrSetValue('IsJobStopped', False);
 
   FObjData.AddOrSetValue('Chromium', ViewMain.chrmBrowser);
@@ -498,7 +501,7 @@ end;
 procedure TController.OnTestPageLoaded;
 begin
   FObjData.AddOrSetValue('Level', FObjData.Items['LevelForScript']);
-  FData.AddOrSetValue('JSScript', FJSScript);
+  FData.AddOrSetValue('JSScript', FJSProcessingScript);
   CallModel(TModelJS, 'PrepareJSScriptForLevel');
 end;
 
@@ -601,11 +604,12 @@ procedure TController.RuleSelected;
 var
   InjectJS: string;
 begin
-  InjectJS := GetProcessingScript;
-  ViewRules.ExecuteJavaScript(InjectJS, 'about:blank');
+  FData.AddOrSetValue('JSScript', FJSProcessingScript);
+  FObjData.AddOrSetValue('Rule', ViewRules.GetSelectedRule);
+  FModelParser.ExecuteRuleJS;
 
-  InjectJS := GetFullTreeScript(0);
-  ViewRules.ExecuteJavaScript(InjectJS);
+  //InjectJS := GetFullTreeScript(0);
+  //ViewRules.ExecuteJavaScript(InjectJS);
 
   //FData.AddOrSetValue('CanAddLevel', CanAddLevel(ViewRules.GetSelectedRule.Link));
 end;
@@ -635,19 +639,19 @@ begin
     end;}
 end;
 
-procedure TController.ParseDataReceived(aData: string);
+{procedure TController.ParseDataReceived(aData: string);
 begin
-  {if Assigned(FLastParseResult) then FreeAndNil(FLastParseResult);
-  FLastParseResult := TJSONObject.ParseJSONValue(aData) as TJSONObject;}
+  if Assigned(FLastParseResult) then FreeAndNil(FLastParseResult);
+  FLastParseResult := TJSONObject.ParseJSONValue(aData) as TJSONObject;
 
   if FGettingTestPage then
     begin
       FData.AddOrSetValue('DataReceived', aData);
       CallModel(TModelTester, 'ProcessDataRecieved');
     end;
-end;
+end; }
 
-procedure TController.crmLoadEnd(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame; httpStatusCode: Integer);
+{procedure TController.crmLoadEnd(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame; httpStatusCode: Integer);
 var
   InjectJS: string;
 begin
@@ -670,7 +674,7 @@ begin
 
   //debug
   //ViewRules.tvRules.Select(ViewRules.tvRules.Items[0]);
-end;
+end;}
 
 function TController.GetJob: TJob;
 begin
@@ -752,7 +756,7 @@ begin
   if Assigned(jsnNodes) then jsnNodes.Free;
 end;
 
-procedure TController.crmProcessMessageReceived(Sender: TObject;
+{procedure TController.crmProcessMessageReceived(Sender: TObject;
         const browser: ICefBrowser; sourceProcess: TCefProcessId;
         const message: ICefProcessMessage; out Result: Boolean);
 begin
@@ -765,7 +769,7 @@ begin
   if message.Name = 'parsedataback' then ParseDataReceived(message.ArgumentList.GetString(0));
 
   if message.Name = 'fullnodestreeback' then NodesFullTreeReceived(message.ArgumentList.GetString(0));
-end;
+end; }
 
 procedure TController.SelectHTMLNode;
 var
@@ -861,9 +865,9 @@ begin
     end;
 
   CallView(TViewRules);
-  ViewRules.RenderLevels(GetJob.Levels);
+  DoCreateModelParser;
 
-  DoCallModelParser;
+  ViewRules.RenderLevels(GetJob.Levels);
 end;
 
 procedure TController.StoreJobRules;
@@ -897,6 +901,7 @@ begin
   // on close none modal views clear objects
   if aMsg = 'ViewRulesClosed' then
     begin
+      FModelParser.Free;
       FObjData.Items['Job'].Free;
     end;
 end;
@@ -907,8 +912,7 @@ begin
   FConnectParams.DataBase := GetCurrentDir + '\DB\local.db';
   FDBEngineClass := TSQLiteEngine;
 
-  FJSScript := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\DOMProcessing.js');
-  FData.AddOrSetValue('JSScript', FJSScript);
+  FJSProcessingScript := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\DOMProcessing.js');
 end;
 
 { TCustomRenderProcessHandler }

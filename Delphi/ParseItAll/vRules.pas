@@ -91,12 +91,11 @@ type
     btnAddAjax: TToolButton;
     acAddRequest: TAction;
     tlbRequestButtons: TToolBar;
-    alRequestActions: TActionList;
-    acAssignRequest: TAction;
     btnAssignRequest: TToolButton;
     btn2: TButton;
     vstNodesFullTree: TVirtualStringTree;
     btnAssignNode: TBitBtn;
+    vstResults: TVirtualStringTree;
     procedure btnCancelClick(Sender: TObject);
     procedure btnApplyClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -118,7 +117,6 @@ type
     procedure acAddRegExpExecute(Sender: TObject);
     procedure acRemoveRuleExecute(Sender: TObject);
     procedure acAddRequestExecute(Sender: TObject);
-    procedure acAssignRequestExecute(Sender: TObject);
     procedure btn2Click(Sender: TObject);
     procedure vstNodesFullTreeGetText(Sender: TBaseVirtualTree;
       Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType;
@@ -350,17 +348,6 @@ begin
   SendMessage('AddRegExp');
 end;
 
-procedure TViewRules.acAssignRequestExecute(Sender: TObject);
-begin
-  {if lvRequests.Selected.Caption = 'GET' then
-    GetSelectedRequest.Method := 1;
-
-  if lvRequests.Selected.Caption = 'POST' then
-    GetSelectedRequest.Method := 2;
-
-  GetSelectedRequest.Link := lvRequests.Selected.SubItems[0]; }
-end;
-
 procedure TViewRules.acRemoveRuleExecute(Sender: TObject);
 var
   Entity: TEntityAbstract;
@@ -468,8 +455,9 @@ begin
 
   if GetSelectedLevel <> nil then
     begin
-      chrmBrowser.Enabled := False;
-      chrmBrowser.Load(GetSelectedLevel.TestLink);
+      //chrmBrowser.Enabled := False;
+      //chrmBrowser.Load(GetSelectedLevel.TestLink);
+      SendMessage('LevelSelected');
       RenderRulesTree(GetSelectedLevel.BodyRule);
     end
   else
