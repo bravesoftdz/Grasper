@@ -107,7 +107,6 @@ type
     //procedure udContainerStepClick(Sender: TObject; Button: TUDBtnType);
     procedure btnAddLevelClick(Sender: TObject);
     procedure cbbLevelChange(Sender: TObject);
-    procedure tvRulesDblClick(Sender: TObject);
     procedure btnDLvClick(Sender: TObject);
     procedure udContainerStepClick(Sender: TObject; Button: TUDBtnType);
     procedure btnGetTestPageClick(Sender: TObject);
@@ -592,11 +591,6 @@ begin
 
       SendMessage('RuleSelected');
     end;
-end;
-
-procedure TViewRules.tvRulesDblClick(Sender: TObject);
-begin
-  SendMessage('ShowRuleResult');
 end;
 
 procedure TViewRules.udContainerStepClick(Sender: TObject; Button: TUDBtnType);

@@ -26,6 +26,8 @@ type
 
   TScriptFor = (sfEditor, sfLoadEnd, sfRequestEnd, sfTriggerExecute);
 
+  TParseMode = (pmLevelTestPage);
+
   TState = (sWaitingReplay, sDone, sWaitingTriger);
 
   TRequestState = record
@@ -98,7 +100,7 @@ type
     function GetGroupID(var aGroupBinds: TArray<TGroupBind>; aDataGroupNum, aDataParentGroupNum: Integer): Integer;
     function GetLinksCount(aJobID: Integer; aHandled: Integer = -1): Integer;
   published
-    procedure StartJob;
+    procedure Start;
     procedure GetJobProgress;
   end;
 
@@ -787,7 +789,7 @@ begin
     end;
 end;
 
-procedure TModelParser.StartJob;
+procedure TModelParser.Start;
 begin
   FChromium := FObjData.Items['Chromium'] as TChromium;
   FChromium.OnLoadEnd := crmLoadEnd;

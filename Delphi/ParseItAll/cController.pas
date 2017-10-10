@@ -36,9 +36,11 @@ type
   TController = class(TControllerDB)
   private
     {inside Controller logic procedures, functions, variables
-     functions have to be a verb with Get prefix
+     functions have to be a verb with "Get" prefix
+     procedures have to be a verb with "do" prefix
     }
     function GetProcessingScript: string;
+    procedure DoCallModelParser;
     ////////////////////////////////////////////////////////////////////////////
   private
     FJSScript: string;
@@ -171,6 +173,15 @@ uses
 
   FireDAC.Comp.Client,
   eTestLink;
+
+procedure TController.DoCallModelParser;
+begin
+  FData.AddOrSetValue('JSScript', FJSScript);
+  FData.AddOrSetValue('ParseMode', pmLevelTestPage);
+  FObjData.AddOrSetValue('Chromium', ViewRules.chrmBrowser);
+  FObjData.AddOrSetValue('Level', ViewRules.GetSelectedLevel);
+  CallAsyncModel(TModelParser, 'Start');
+end;
 
 function TController.GetProcessingScript: string;
 begin
@@ -850,21 +861,9 @@ begin
     end;
 
   CallView(TViewRules);
-
-  {FData.AddOrSetValue('JSScript', FJSScript);
-  FObjData.AddOrSetValue('Chromium', ViewRules.chrmBrowser);
-  FObjData.AddOrSetValue('Job', Job);
-
-  CallAsyncModel(TModelParser, 'StartJob');}
-
-
-
-
-  ViewRules.chrmBrowser.OnProcessMessageReceived := crmProcessMessageReceived;
-  ViewRules.chrmBrowser.OnLoadEnd := crmLoadEnd;
-  ViewRules.chrmBrowser.OnResourceResponse := crmResourceResponse;
-
   ViewRules.RenderLevels(GetJob.Levels);
+
+  DoCallModelParser;
 end;
 
 procedure TController.StoreJobRules;
