@@ -285,14 +285,14 @@ object ViewRules: TViewRules
         TabOrder = 0
         OnClick = btnGetTestPageClick
       end
-      object btn2: TButton
-        Left = 144
+      object btnTestAction: TButton
+        Left = 167
         Top = 4
-        Width = 75
+        Width = 92
         Height = 25
-        Caption = 'btn2'
+        Caption = 'btnTestAction'
         TabOrder = 1
-        OnClick = btn2Click
+        OnClick = btnTestActionClick
       end
     end
     object pgcRuleSections: TPageControl
@@ -300,7 +300,7 @@ object ViewRules: TViewRules
       Top = 283
       Width = 301
       Height = 170
-      ActivePage = tsResults
+      ActivePage = tsFields
       Align = alClient
       TabOrder = 4
       object tsFields: TTabSheet
@@ -393,50 +393,8 @@ object ViewRules: TViewRules
           Header.Font.Style = []
           Header.MainColumn = -1
           TabOrder = 0
-          ExplicitLeft = 56
-          ExplicitTop = 32
-          ExplicitWidth = 200
-          ExplicitHeight = 100
+          OnGetText = vstResultsGetText
           Columns = <>
-        end
-      end
-      object tsRequests: TTabSheet
-        Caption = 'tsRequests'
-        ImageIndex = 3
-        object lvRequests: TListView
-          Left = 0
-          Top = 29
-          Width = 293
-          Height = 113
-          Align = alClient
-          BevelInner = bvNone
-          BevelOuter = bvNone
-          Columns = <
-            item
-              Caption = 'method'
-            end
-            item
-              Caption = 'url'
-              Width = 235
-            end>
-          ColumnClick = False
-          GridLines = True
-          RowSelect = True
-          TabOrder = 0
-          ViewStyle = vsReport
-        end
-        object tlbRequestButtons: TToolBar
-          Left = 0
-          Top = 0
-          Width = 293
-          Height = 29
-          Caption = 'tlbRequestButtons'
-          TabOrder = 1
-          object btnAssignRequest: TToolButton
-            Left = 0
-            Top = 0
-            Caption = 'acAssignRequest'
-          end
         end
       end
     end
@@ -456,7 +414,7 @@ object ViewRules: TViewRules
     Left = 613
     Top = 158
     Bitmap = {
-      494C010108001800440010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C010108001800500010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000003000000001002000000000000030
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

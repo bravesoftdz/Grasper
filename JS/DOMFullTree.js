@@ -71,7 +71,7 @@ function processNode(node, i) {
         $(node).attr('data-pia-keyid', GIAnodeEnumenator);
         result.key_id = GIAnodeEnumenator;
 
-        result.rule_node_id = zeroIfnull($(node).attr('data-pia-rule_node_id'));
+        result.rule_node_id = zeroIfnull($(node).attr('data-pia-rule-node-id'));
 
     }
 
@@ -105,9 +105,10 @@ function setColorMark(node) {
 
 function clearColorMark() {
 
-    var node = $('[data-pia-nodecolor]');
+    var node = $('[data-pia-nodecolor=1]');
+    $(node).attr('data-pia-nodecolor', 0);
     $(node).css('background-color', '');
-    $(node).find('*:not([data-pia-rule_node_id])').css('background-color', '');
+    $(node).find('*').css('background-color', '');
 
 }
 

@@ -44,31 +44,23 @@ type
      procedures have to be a verb with "Do" prefix
     }
     function GetJob: TJob;
+    function GetFullTreeScript(aNodeKeyID: integer): string;
     procedure DoCreateModelParser;
+    procedure DoProcessSelectedNodes(aNodesData: string);
+    procedure DoProcessNodesFullTree(aData: string);
     ////////////////////////////////////////////////////////////////////////////
   private
     FSelectNewLevelLink: Boolean;
     FGettingTestPage: Boolean;
-    FCatchingRequests: Boolean;
     JobStates: TArray<TJobState>;
 
     {procedure crmLoadEnd(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame; httpStatusCode: Integer);
-    procedure crmProcessMessageReceived(Sender: TObject;
-            const browser: ICefBrowser; sourceProcess: TCefProcessId;
-            const message: ICefProcessMessage; out Result: Boolean);
-    procedure crmResourceResponse(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
-            const request: ICefRequest; const response: ICefResponse; out Result: Boolean);
-    }
-    //procedure ParseDataReceived(aData: string);
-    //procedure NodesFullTreeReceived(aData: string);
+    //procedure ParseDataReceived(aData: string);}
 
     procedure SyncParentChildRuleNodes(aNodes, aParentNodes: TNodeList);
     procedure UpdateJobState(aJobID: integer);
-    procedure UpdateBackgroundRequests(aRequest: ICefRequest);
-    procedure AddNodes(aNodesData: string);
     function CanAddLevel(aJobRule: TJobLink): Boolean;
     function AddRule: TJobRule;
-    function GetFullTreeScript(aNodeKeyID: integer): string;
   protected
     procedure InitDB; override;
     procedure PerfomViewMessage(aMsg: string); override;
@@ -131,8 +123,6 @@ type
 
     procedure SelectHTMLNode;
 
-    procedure ShowRuleResult;
-
     procedure ClearJobLinks;
 
     // Testing
@@ -194,6 +184,7 @@ begin
   FObjData.AddOrSetValue('Job', GetJob);
 
   FModelParser := TModelParser.Create(FData, FObjData);
+  FModelParser.OnEvent := Self.EventListener;
   FModelParser.Start;
 end;
 
@@ -209,7 +200,7 @@ begin
     CallModel(TModelNodes, 'GetJSONNodesChain');
 
     jsnNodes := FObjData.Items['JSONNodesChain'] as TJSONArray;
-    AddNodes(jsnNodes.ToJSON);
+    DoProcessSelectedNodes(jsnNodes.ToJSON);
   finally
     Wrap.Free;
     jsnNodes.Free;
@@ -233,18 +224,6 @@ begin
   ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
 end;
 
-{procedure TController.crmResourceResponse(Sender: TObject; const browser: ICefBrowser; const frame: ICefFrame;
-        const request: ICefRequest; const response: ICefResponse; out Result: Boolean);
-begin
-  //if FCatchingRequests then
-  //  UpdateBackgroundRequests(request);
-end; }
-
-procedure TController.UpdateBackgroundRequests(aRequest: ICefRequest);
-begin
-  ViewRules.RenderBackgroundRequest(aRequest.Method, aRequest.Url);
-end;
-
 procedure TController.RemoveRequest;
 var
   ParentRule: TJobRule;
@@ -266,7 +245,7 @@ begin
   ViewRules.AddRequestToTree(ViewRules.tvRules.Selected, JobRequest);
 end;
 
-{procedure TController.NodesFullTreeReceived(aData: string);
+procedure TController.DoProcessNodesFullTree(aData: string);
 var
   jsnNodes: TJSONObject;
   WrapObj: TWrapModelNodes;
@@ -287,7 +266,7 @@ begin
   finally
     jsnNodes.Free;
   end;
-end;}
+end;
 
 function TController.AddRule: TJobRule;
 var
@@ -296,6 +275,7 @@ var
 begin
   RuleRel := TRuleRuleRel.Create(FDBEngine);
   RuleRel.ChildRule := TJobRule.Create(FDBEngine);
+  RuleRel.ChildRule.SourceTypeID := 1;
 
   ParentRule := ViewRules.GetSelectedRule;
   ParentRule.ChildRuleRels.Add(RuleRel);
@@ -608,35 +588,10 @@ begin
   FObjData.AddOrSetValue('Rule', ViewRules.GetSelectedRule);
   FModelParser.ExecuteRuleJS;
 
-  //InjectJS := GetFullTreeScript(0);
-  //ViewRules.ExecuteJavaScript(InjectJS);
+  InjectJS := GetFullTreeScript(0);
+  ViewRules.ExecuteJavaScript(InjectJS);
 
   //FData.AddOrSetValue('CanAddLevel', CanAddLevel(ViewRules.GetSelectedRule.Link));
-end;
-
-procedure TController.ShowRuleResult;
-var
-  jsnResultArray: TJSONArray;
-  jsnRuleObj: TJSONObject;
-  jsnRuleValue: TJSONValue;
-  value: string;
-begin
-  {allView(TViewRuleResult);
-
-  jsnResultArray := FLastParseResult.GetValue('result') as TJSONArray;
-
-  for jsnRuleValue in jsnResultArray do
-    begin
-      jsnRuleObj := jsnRuleValue as TJSONObject;
-
-      if jsnRuleObj.TryGetValue('href', value) then
-        value := jsnRuleObj.GetValue('href').Value;
-
-      if value.IsEmpty and jsnRuleObj.TryGetValue('value', value) then
-        value := jsnRuleObj.GetValue('value').Value;
-
-      ViewRuleResult.redtResults.Lines.Add(value);
-    end;}
 end;
 
 {procedure TController.ParseDataReceived(aData: string);
@@ -710,7 +665,7 @@ begin
   ViewRules.RenderLevels(GetJob.Levels, GetJob.Levels.Count - 1);
 end;
 
-procedure TController.AddNodes(aNodesData: string);
+procedure TController.DoProcessSelectedNodes(aNodesData: string);
 var
   jsnNodes: TJSONArray;
   jsnValue: TJSONValue;
@@ -755,21 +710,6 @@ begin
 
   if Assigned(jsnNodes) then jsnNodes.Free;
 end;
-
-{procedure TController.crmProcessMessageReceived(Sender: TObject;
-        const browser: ICefBrowser; sourceProcess: TCefProcessId;
-        const message: ICefProcessMessage; out Result: Boolean);
-begin
-  if message.Name = 'selectdataback' then
-    begin
-      AddNodes(message.ArgumentList.GetString(0));
-        RuleSelected;
-    end;
-
-  if message.Name = 'parsedataback' then ParseDataReceived(message.ArgumentList.GetString(0));
-
-  if message.Name = 'fullnodestreeback' then NodesFullTreeReceived(message.ArgumentList.GetString(0));
-end; }
 
 procedure TController.SelectHTMLNode;
 var
@@ -881,6 +821,15 @@ end;
 
 procedure TController.EventListener(aEventMsg: string);
 begin
+  if aEventMsg = 'OnSelectedNodesReceived' then
+    DoProcessSelectedNodes(FData.Items['SelectedNodes']);
+
+  if aEventMsg = 'OnNodesFullTreeReceived' then
+    DoProcessNodesFullTree(FData.Items['NodesFullTree']);
+
+  if aEventMsg = 'OnViewResultsReceived' then
+    ViewRules.RenderViewResults((FObjData.Items['ViewResults'] as TWrapViewResults).ViewResults);
+
   if aEventMsg = 'OnJobDone' then OnJobDone;
 
   if aEventMsg = 'OnTestLinkPrepared' then

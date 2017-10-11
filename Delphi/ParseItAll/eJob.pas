@@ -103,7 +103,7 @@ end;
 function TJob.GetLevels: TLevelList;
 begin
   if not Assigned(FLevels) then
-    FLevels := TLevelList.Create(Self, 'JOB_ID', ID);
+    FLevels := TLevelList.Create(Self, 'JOB_ID', ID, 'LEVEL');
 
   Result := FLevels;
 end;

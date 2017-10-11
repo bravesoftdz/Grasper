@@ -31,6 +31,11 @@ type
 
   TViewResults = TArray<TViewGroup>;
 
+  TWrapViewResults = class
+  public
+    ViewResults: TViewResults
+  end;
+
   TGroupBind = record
     DataGroupNum: Integer;
     GroupID: Integer;
@@ -119,10 +124,11 @@ type
      procedures have to be a verb with "Do" prefix
     }
     function TryAddViewResult(aGroupNum: Integer; aKey, aValue: string): Boolean;
-    function GetViewGroup(aGroupNum: integer): TViewGroup;
+    function GetViewGroup(aGroupNum: integer; out aGroupIndex: integer): TViewGroup;
     function GetViewResult(aViewGroup: TViewGroup; aKey, aValue: string): TViewResult;
     procedure DoLoadPage;
     procedure DoProcessJScript(aScriptFor: TScriptFor; aRule: TJobRule = nil);
+    procedure DoCreateEventOnViewResultsReceived;
     ////////////////////////////////////////////////////////////////////////////
   public
     destructor Destroy; override;
@@ -153,6 +159,20 @@ uses
   eGroup,
   eRuleAction;
 
+procedure TModelParser.DoCreateEventOnViewResultsReceived;
+var
+  WrapViewResults: TWrapViewResults;
+begin
+  WrapViewResults := TWrapViewResults.Create;
+  try
+    WrapViewResults.ViewResults := FViewResults;
+    FObjData.AddOrSetValue('ViewResults', WrapViewResults);
+    CreateEvent('OnViewResultsReceived');
+  finally
+    WrapViewResults.Free;
+  end;
+end;
+
 function TModelParser.GetViewResult(aViewGroup: TViewGroup; aKey, aValue: string): TViewResult;
 var
   ViewResult: TViewResult;
@@ -167,26 +187,36 @@ begin
   Result.Value := '';
 end;
 
-function TModelParser.GetViewGroup(aGroupNum: integer): TViewGroup;
+function TModelParser.GetViewGroup(aGroupNum: integer; out aGroupIndex: integer): TViewGroup;
 var
   ViewGroup: TViewGroup;
 begin
+  aGroupIndex := -1;
   for ViewGroup in FViewResults do
-    if ViewGroup.Group = aGroupNum then Exit(ViewGroup);
+    begin
+      Inc(aGroupIndex);
+      if ViewGroup.Group = aGroupNum then
+        begin
+          Exit(ViewGroup);
+        end;
+    end;
 
   Result.Group := aGroupNum;
   FViewResults := FViewResults + [Result];
+  aGroupIndex := High(FViewResults);
 end;
 
 function TModelParser.TryAddViewResult(aGroupNum: Integer; aKey, aValue: string): Boolean;
 var
-  ViewGroup: TViewGroup;
+  VGroup: TViewGroup;
+  GroupIndex: Integer;
   ViewResult: TViewResult;
 begin
-  // try find view group
-  ViewGroup := GetViewGroup(aGroupNum);
-  // try find view result
-  ViewResult := GetViewResult(ViewGroup, aKey, aValue);
+  // find view group
+  VGroup := GetViewGroup(aGroupNum, GroupIndex);
+
+  // find view result
+  ViewResult := GetViewResult(VGroup, aKey, aValue);
 
   if not ViewResult.Key.IsEmpty then
     Result := False
@@ -194,7 +224,9 @@ begin
     begin
       ViewResult.Key := aKey;
       ViewResult.Value := aValue;
-      ViewGroup.Results := ViewGroup.Results + [ViewResult];
+
+      VGroup.Results := VGroup.Results + [ViewResult];
+      FViewResults[GroupIndex] := VGroup;
       Result := True;
     end;
 end;
@@ -418,6 +450,8 @@ var
   RuleID: Integer;
   Rule: TJobRule;
 begin
+  if FParseMode <> pmJobRun then Exit;
+
   RuleID := aStrRuleID.ToInteger;
 
   Rule := FJob.GetLevel(FCurrLink.Level).BodyRule.GetTreeChildRuleByID(RuleID);
@@ -607,7 +641,7 @@ begin
 
   jsnRule.AddPair('regexps', EncodeRegExpsToJSON(aRule.RegExps));
 
-  if     (FScriptFor in [sfLoadEnd, sfEditor])
+  if     (FScriptFor in [sfLoadEnd])
      and (aRule.Request <> nil)
   then
     jsnRule.AddPair('request', EncodeRequestToJSON(aRule.Request));
@@ -759,10 +793,17 @@ begin
         ProcessTrigerAction(RequestID);
       end;
 
-    if    (not FIsWaitingForRequests)
-      and (FParseMode = pmJobRun)
-    then
-      ProcessNextLink;
+    if not FIsWaitingForRequests then
+      case FParseMode of
+        pmJobRun:
+          begin
+            ProcessNextLink;
+          end;
+        pmLevelDesign:
+          begin
+            DoCreateEventOnViewResultsReceived;
+          end;
+      end;
   finally
     jsnData.Free;
   end;
@@ -778,6 +819,18 @@ begin
 
     if message.Name = 'observerevent' then
       ProcessObserveEvent(message.ArgumentList.GetString(0));
+
+    if message.Name = 'fullnodestreeback' then
+      begin
+        FData.AddOrSetValue('NodesFullTree', message.ArgumentList.GetString(0));
+        CreateEvent('OnNodesFullTreeReceived');
+      end;
+
+    if message.Name = 'selectdataback' then
+      begin
+        FData.AddOrSetValue('SelectedNodes', message.ArgumentList.GetString(0));
+        CreateEvent('OnSelectedNodesReceived');
+      end;
   finally
     //TFilesEngine.CreateFile('ProcessMessageReceived.log');
     //TFilesEngine.SaveTextToFile('ProcessMessageReceived.log', message.ArgumentList.GetString(0));

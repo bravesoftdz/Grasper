@@ -111,11 +111,16 @@ function getNodeByClass(ruleNode, tagCollection, matches) {
 function getNodeByID(ruleNode, tagCollection, matches) {
 
     if (ruleNode.tagID !== "") {
+        
         for (var i = 0; i < tagCollection.length; i++) {
-            var node = tagCollection[i];
-            if (node.id === ruleNode.tagID)
+
+            if (tagCollection[i].id === ruleNode.tagID) {
+                var node = tagCollection[i]; 
                 break;
+            }  
+            
         }
+        
     }
 
     checkNodeMatches(matches, ruleNode, node);
@@ -170,7 +175,6 @@ function getNodeByRuleNode(ruleNode, tagCollection, keepSearch, isStrict) {
         }
     }
 
-    
     setPIAMarks(node, ruleNode.id)
     return node;
 }
@@ -368,7 +372,7 @@ function processResultNodesByRule(rule, resultNodes, groupNum, parentGroupNum) {
 
 function processActionsByRule(rule, resultNodes) {
 
-    //if (skipActions) return false;
+    if (skipActions) return false;
 
     if (rule.type == 'action') {
 
@@ -418,22 +422,22 @@ function processRequestsByRule(rule, resultNodes) {
 
 function setPIAMarks(node, ruleNodeid) {
 
-    $(node).attr('data-pia-rule_node_id', ruleNodeid);
+    $(node).attr('data-pia-rule-node-id', ruleNodeid);
  
 }
 
 function clearPIAMarksAndColor() {
     
-    var nodes = $('[data-pia-rule_node_id]');
-    
+    var nodes = $('[data-pia-rule-node-id!=0]');
+    $(nodes).attr('data-pia-rule-node-id', 0);
 
-    $(nodes).attr('data-pia-rule_node_id', 0);
+    
+    nodes = $('[data-pia-rule-colored=1]');
     $(nodes).css('background-color', '');
-    $(nodes).find('*').css('background-color', '');
+    $(nodes).attr('data-pia-rule-colored', 0);
 
-    
     $('.PIAIgnore').removeClass('PIAIgnore');
-    
+   
 }
 
 function setPIAIgnore(node) {
@@ -442,8 +446,12 @@ function setPIAIgnore(node) {
 
 function setPIAColor(rule, node) {
     
+    $(node).attr('data-pia-rule-colored', 1);
     $(node).css('background-color', rule.color);
-    $(node).find('*').css('background-color', rule.color);
+    
+    var nodes = $(node).find('*'); 
+    $(nodes).attr('data-pia-rule-colored', 1);
+    $(nodes).css('background-color', rule.color);
     
 }
 

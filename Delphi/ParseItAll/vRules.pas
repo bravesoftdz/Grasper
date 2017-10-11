@@ -15,6 +15,7 @@ uses
   eRegExp,
   eRequest,
   eNodes,
+  mParser,
   System.ImageList, System.Actions, Vcl.ActnList, Vcl.Menus, Vcl.ToolWin,
   VirtualTrees, Vcl.Imaging.GIFImg;
 
@@ -33,6 +34,12 @@ type
     ClassName: string[255];
     Name: ShortString;
     TagID: string[255];
+  end;
+
+  PVirtualResult = ^TVirtualResult;
+  TVirtualResult = record
+    Key: ShortString;
+    Value: ShortString;
   end;
 
   TViewRules = class(TViewORM)
@@ -86,13 +93,9 @@ type
     btnSep4: TToolButton;
     btnRemove: TToolButton;
     acRemoveRule: TAction;
-    tsRequests: TTabSheet;
-    lvRequests: TListView;
     btnAddAjax: TToolButton;
     acAddRequest: TAction;
-    tlbRequestButtons: TToolBar;
-    btnAssignRequest: TToolButton;
-    btn2: TButton;
+    btnTestAction: TButton;
     vstNodesFullTree: TVirtualStringTree;
     btnAssignNode: TBitBtn;
     vstResults: TVirtualStringTree;
@@ -117,7 +120,7 @@ type
     procedure acAddRegExpExecute(Sender: TObject);
     procedure acRemoveRuleExecute(Sender: TObject);
     procedure acAddRequestExecute(Sender: TObject);
-    procedure btn2Click(Sender: TObject);
+    procedure btnTestActionClick(Sender: TObject);
     procedure vstNodesFullTreeGetText(Sender: TBaseVirtualTree;
       Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType;
       var CellText: string);
@@ -127,6 +130,8 @@ type
     procedure vstNodesFullTreePaintText(Sender: TBaseVirtualTree;
       const TargetCanvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex;
       TextType: TVSTTextType);
+    procedure vstResultsGetText(Sender: TBaseVirtualTree; Node: PVirtualNode;
+      Column: TColumnIndex; TextType: TVSTTextType; var CellText: string);
   private
     { Private declarations }
     FDevToolsEnabled: Boolean;
@@ -155,7 +160,7 @@ type
     procedure RenderLevels(aLevelList: TLevelList; aIndex: Integer = 0);
     procedure RenderRulesTree(aBodyRule: TJobRule);
     procedure RenderNodesTree(aDOMTree: TDOMNode);
-    procedure RenderBackgroundRequest(aMethod, aUrl: string);
+    procedure RenderViewResults(aViewResults: TViewResults);
 
     procedure AddRuleToTree(aParentRule: TJobRule; aRule: TJobRule);
     procedure AddRegExpToTree(aParentNode: TTreeNode; aRegExp: TJobRegExp);
@@ -182,6 +187,33 @@ implementation
 uses
   System.UITypes,
   System.Threading;
+
+procedure TViewRules.RenderViewResults(aViewResults: TViewResults);
+var
+  ViewGroup: TViewGroup;
+  ViewResult: TViewResult;
+  gVirtualNode, rVirtualNode: PVirtualNode;
+  VirtualResult: PVirtualResult;
+begin
+  vstResults.Clear;
+
+  for ViewGroup in aViewResults do
+    begin
+      gVirtualNode := vstResults.AddChild(nil);
+      VirtualResult := vstResults.GetNodeData(gVirtualNode);
+      VirtualResult^.Key := 'group';
+
+      for ViewResult in ViewGroup.Results do
+        begin
+          rVirtualNode := vstResults.AddChild(gVirtualNode);
+          VirtualResult := vstResults.GetNodeData(rVirtualNode);
+          VirtualResult^.Key := ViewResult.Key;
+          VirtualResult^.Value := ViewResult.Value;
+        end;
+
+      vstResults.Expanded[gVirtualNode] := True;
+    end;
+end;
 
 procedure TViewRules.ExecuteJavaScript(aJavaScript: string; aFrameName: string = '');
 begin
@@ -211,22 +243,6 @@ begin
     VirtualNode := VirtualNode.Parent;
 
   until VirtualNodeData = nil;
-end;
-
-procedure TViewRules.RenderBackgroundRequest(aMethod, aUrl: string);
-var
-  Task: ITask;
-  item: TListItem;
-begin
-  Task := TTask.Create(procedure
-    begin
-      item := lvRequests.Items.Add;
-
-      item.Caption := aMethod;
-      item.SubItems.Add(aUrl);
-    end
-  );
-  Task.Start;
 end;
 
 function TViewRules.GetSelectedRequest: TJobRequest;
@@ -462,8 +478,6 @@ begin
     end
   else
     ClearRuleTree;
-
-  lvRequests.Clear;
 end;
 
 function TViewRules.GetSelectedRule: TJobRule;
@@ -636,7 +650,21 @@ begin
     TargetCanvas.Font.Color := clRed;
 end;
 
-procedure TViewRules.btn2Click(Sender: TObject);
+procedure TViewRules.vstResultsGetText(Sender: TBaseVirtualTree;
+  Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType;
+  var CellText: string);
+var
+  VirtualResult: PVirtualResult;
+begin
+  VirtualResult := Sender.GetNodeData(Node);
+
+  if VirtualResult^.Key = 'group' then
+    CellText := VirtualResult^.Key
+  else
+    CellText := Format('%s: %s', [VirtualResult^.Key, VirtualResult^.Value]);
+end;
+
+procedure TViewRules.btnTestActionClick(Sender: TObject);
 begin
   SendMessage('Test');
 end;
@@ -685,6 +713,7 @@ procedure TViewRules.FormCreate(Sender: TObject);
 begin
   pnlEntityFields := TEntityPanel.Create(tsFields);
   vstNodesFullTree.NodeDataSize := SizeOf(TVirtualNodeData);
+  vstResults.NodeDataSize := SizeOf(TVirtualResult);
 end;
 
 procedure TViewRules.DevToolsActivate(Sender: Tobject);
