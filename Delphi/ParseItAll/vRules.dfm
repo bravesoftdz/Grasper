@@ -300,7 +300,7 @@ object ViewRules: TViewRules
       Top = 283
       Width = 301
       Height = 170
-      ActivePage = tsFields
+      ActivePage = tsRuntimeTest
       Align = alClient
       TabOrder = 4
       object tsFields: TTabSheet
@@ -397,6 +397,27 @@ object ViewRules: TViewRules
           Columns = <>
         end
       end
+      object tsRuntimeTest: TTabSheet
+        Caption = 'tsRuntimeTest'
+        ImageIndex = 3
+        object btnRunTest: TButton
+          Left = 24
+          Top = 16
+          Width = 75
+          Height = 25
+          Caption = 'btnRunTest'
+          TabOrder = 0
+          OnClick = btnRunTestClick
+        end
+        object edtTestTime: TEdit
+          Left = 117
+          Top = 18
+          Width = 140
+          Height = 21
+          TabOrder = 1
+          Text = 'edtTestTime'
+        end
+      end
     end
   end
   object ActionList: TActionList
@@ -414,7 +435,7 @@ object ViewRules: TViewRules
     Left = 613
     Top = 158
     Bitmap = {
-      494C010108001800500010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C010108001800540010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000003000000001002000000000000030
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

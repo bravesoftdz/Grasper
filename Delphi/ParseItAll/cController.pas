@@ -85,8 +85,11 @@ type
     procedure EditJobRules;
 
     procedure LevelSelected;
+    procedure RunLevelTest;
 
     procedure RuleSelected;
+
+    procedure TestAction;
     ////////////////////////////////////////////////////////////////////////////
 
     procedure GetJobList;
@@ -133,9 +136,6 @@ type
 
     procedure TempCopy;
 
-    // Test
-    procedure Test;
-
     // Start/Stop Job
     procedure StartJob;
     procedure StopJob;
@@ -167,11 +167,19 @@ uses
   FireDAC.Comp.Client,
   eTestLink;
 
+procedure TController.RunLevelTest;
+begin
+  FData.AddOrSetValue('ParseMode', pmLevelRunTest);
+  FObjData.AddOrSetValue('Chromium', ViewMain.chrmBrowser);
+
+  CallAsyncModel(TModelParser, 'Start');
+end;
+
 procedure TController.LevelSelected;
 begin
   FData.AddOrSetValue('Level', ViewRules.GetSelectedLevel.Level);
   FData.AddOrSetValue('URL', ViewRules.GetSelectedLevel.TestLink);
-  FModelParser.LoadLevelDesign;
+  FModelParser.LoadLevelTest;
 end;
 
 procedure TController.DoCreateModelParser;
@@ -420,13 +428,13 @@ begin
   FData.AddOrSetValue('IsJobStopped', True);
 end;
 
-procedure TController.Test;
+procedure TController.TestAction;
 var
   InjectJS: string;
 begin
-  InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\DOMOBServer.js');
-
-  ViewRules.chrmBrowser.Browser.MainFrame.ExecuteJavaScript(InjectJS, 'about:blank', 0);
+  FData.AddOrSetValue('IsSkipActions', False);
+  RuleSelected;
+  FData.AddOrSetValue('IsSkipActions', True);
 end;
 
 procedure TController.TempCopy;
@@ -583,9 +591,15 @@ end;
 procedure TController.RuleSelected;
 var
   InjectJS: string;
+  IsSkipActions: Variant;
 begin
   FData.AddOrSetValue('JSScript', FJSProcessingScript);
+
+  if not FData.TryGetValue('IsSkipActions', IsSkipActions) then
+    FData.AddOrSetValue('IsSkipActions', True);
+
   FObjData.AddOrSetValue('Rule', ViewRules.GetSelectedRule);
+
   FModelParser.ExecuteRuleJS;
 
   InjectJS := GetFullTreeScript(0);
@@ -821,6 +835,9 @@ end;
 
 procedure TController.EventListener(aEventMsg: string);
 begin
+  if aEventMsg = 'OnLevelTestOver' then
+    ViewRules.edtTestTime.Text := IntToStr(FData.Items['LevelTestTime']);
+
   if aEventMsg = 'OnSelectedNodesReceived' then
     DoProcessSelectedNodes(FData.Items['SelectedNodes']);
 
@@ -845,7 +862,6 @@ procedure TController.PerfomViewMessage(aMsg: string);
 begin
   if aMsg = 'SelectNewLevelLink' then
       FSelectNewLevelLink := True;
-
 
   // on close none modal views clear objects
   if aMsg = 'ViewRulesClosed' then

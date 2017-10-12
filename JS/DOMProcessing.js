@@ -2,6 +2,7 @@ console.log('domparser');
 
 var income = %s;
 var skipActions = false;
+var designMode = income.design_mode;
 
 if (window.Prototype) {
     delete Object.prototype.toJSON;
@@ -175,7 +176,9 @@ function getNodeByRuleNode(ruleNode, tagCollection, keepSearch, isStrict) {
         }
     }
 
-    setPIAMarks(node, ruleNode.id)
+    if (designMode)
+        setPIAMarks(node, ruleNode.id);
+    
     return node;
 }
 
@@ -511,7 +514,8 @@ function getRuleResult(rule, containerNode, groupNum, parentGroupNum) {
             setPIAIgnore(node);
         
         // set PIA color to result nodes
-        setPIAColor(rule, node);
+        if (designMode)
+            setPIAColor(rule, node);
 
         if (rule.rules != null) {
 
@@ -553,7 +557,8 @@ function processDOM(income) {
 $(function () {
 
     // clear previous selection
-    clearPIAMarksAndColor();
+    if (designMode)
+        clearPIAMarksAndColor();
 
     app.parsedataback(processDOM(income));
 

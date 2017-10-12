@@ -99,6 +99,9 @@ type
     vstNodesFullTree: TVirtualStringTree;
     btnAssignNode: TBitBtn;
     vstResults: TVirtualStringTree;
+    tsRuntimeTest: TTabSheet;
+    btnRunTest: TButton;
+    edtTestTime: TEdit;
     procedure btnCancelClick(Sender: TObject);
     procedure btnApplyClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -132,6 +135,7 @@ type
       TextType: TVSTTextType);
     procedure vstResultsGetText(Sender: TBaseVirtualTree; Node: PVirtualNode;
       Column: TColumnIndex; TextType: TVSTTextType; var CellText: string);
+    procedure btnRunTestClick(Sender: TObject);
   private
     { Private declarations }
     FDevToolsEnabled: Boolean;
@@ -666,7 +670,7 @@ end;
 
 procedure TViewRules.btnTestActionClick(Sender: TObject);
 begin
-  SendMessage('Test');
+  SendMessage('TestAction');
 end;
 
 procedure TViewRules.btnAddLevelClick(Sender: TObject);
@@ -702,6 +706,11 @@ end;
 procedure TViewRules.btnSelectHTMLClick(Sender: TObject);
 begin
   SendMessage('SelectHTMLNode');
+end;
+
+procedure TViewRules.btnRunTestClick(Sender: TObject);
+begin
+  SendMessage('RunLevelTest');
 end;
 
 procedure TViewRules.cbbLevelChange(Sender: TObject);

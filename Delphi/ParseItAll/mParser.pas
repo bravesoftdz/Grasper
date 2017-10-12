@@ -109,7 +109,6 @@ type
     procedure StartTimeOutProc;
     procedure OnRequestTimeOut;
 
-    procedure StopJob;
     function GetNextLink: TLink;
     function AddGroup(aParentGroupID: Integer): Integer;
     function AddLink(aLink: string; aParentLinkID, aLevel, aGroupID: Integer): Boolean;
@@ -119,6 +118,7 @@ type
     function GetLinksCount(aJobID: Integer; aHandled: Integer = -1): Integer;
   private
     FViewResults: TViewResults;
+    FLevelTestTime: TDateTime;
     {inside Model logic procedures, functions, variables
      functions have to be a verb with "Get", "Try" prefix
      procedures have to be a verb with "Do" prefix
@@ -126,9 +126,11 @@ type
     function TryAddViewResult(aGroupNum: Integer; aKey, aValue: string): Boolean;
     function GetViewGroup(aGroupNum: integer; out aGroupIndex: integer): TViewGroup;
     function GetViewResult(aViewGroup: TViewGroup; aKey, aValue: string): TViewResult;
+    procedure DoStop;
     procedure DoLoadPage;
     procedure DoProcessJScript(aScriptFor: TScriptFor; aRule: TJobRule = nil);
     procedure DoCreateEventOnViewResultsReceived;
+    procedure DoStopLevelTestRun;
     ////////////////////////////////////////////////////////////////////////////
   public
     destructor Destroy; override;
@@ -139,7 +141,7 @@ type
     }
     procedure Start;
     procedure GetJobProgress;
-    procedure LoadLevelDesign;
+    procedure LoadLevelTest;
     procedure ExecuteRuleJS;
     ////////////////////////////////////////////////////////////////////////////
   end;
@@ -152,12 +154,21 @@ uses
   System.SysUtils,
   System.Generics.Collections,
   System.Hash,
+  System.DateUtils,
   Math,
   FireDAC.Comp.Client,
   API_Files,
   eError,
   eGroup,
   eRuleAction;
+
+procedure TModelParser.DoStopLevelTestRun;
+begin
+  FData.AddOrSetValue('LevelTestTime', MilliSecondsBetween(Now, FLevelTestTime));
+  CreateEvent('OnLevelTestOver');
+  DoCreateEventOnViewResultsReceived;
+  DoStop;
+end;
 
 procedure TModelParser.DoCreateEventOnViewResultsReceived;
 var
@@ -234,6 +245,7 @@ end;
 procedure TModelParser.ExecuteRuleJS;
 var
   Rule: TJobRule;
+  IsSkipAction: Boolean;
 begin
   Rule := FObjData.Items['Rule'] as TJobRule;
   FViewResults := [];
@@ -245,8 +257,10 @@ begin
   if Assigned(FCurrLink) then FreeAndNil(FCurrLink);
 end;
 
-procedure TModelParser.LoadLevelDesign;
+procedure TModelParser.LoadLevelTest;
 begin
+  FLevelTestTime := Now;
+
   if Assigned(FCurrLink) then FreeAndNil(FCurrLink);
   FCurrLink := TLink.Create(FDBEngine);
   FCurrLink.Level := FData.Items['Level'];
@@ -330,7 +344,11 @@ begin
         isAnyWaitingTriger := True;
     end;
 
-  if isAnyWaitingReplay and not isAnyWaitingTriger then ProcessNextLink;
+  if isAnyWaitingReplay and not isAnyWaitingTriger then
+    case FParseMode of
+      pmJobRun: ProcessNextLink;
+      pmLevelRunTest: DoStopLevelTestRun;
+    end;
 end;
 
 function TModelParser.GetRequestStates: TArray<TRequestState>;
@@ -373,17 +391,7 @@ begin
     procedure
       begin
         Sleep(TimeOut);
-
-        TThread.Synchronize(nil,
-          procedure
-            begin
-              try
-                LocalTask.CheckCanceled;
-                OnRequestTimeOut;
-              except
-              end;
-            end
-        );
+        LocalTask.CheckCanceled;
       end
   );
 
@@ -571,11 +579,15 @@ begin
   FData.AddOrSetValue('HandledCount', GetLinksCount(JobID, 2));
 end;
 
-procedure TModelParser.StopJob;
+procedure TModelParser.DoStop;
 begin
-  FJob.Free;
+  if FParseMode = pmJobRun then
+    FJob.Free;
 
-  FCurrLink.Free;
+  FJSTimeOutTask.Status;
+  FJSTimeOutTask.CheckCanceled;
+  TTask.WaitForAll(FJSTimeOutTask);
+
   Self.Free;
 end;
 
@@ -756,7 +768,7 @@ begin
                   if AddLink(Link, FCurrLink.ID, Level, GroupID) then
                     StoredAnyData := True;
                 end;
-              pmLevelDesign:
+              pmLevelDesign, pmLevelRunTest:
                 begin
                   if TryAddViewResult(DataGroupNum, 'Link', Link) then
                     StoredAnyData := True;
@@ -775,7 +787,7 @@ begin
                     if AddRecord(FCurrLink.ID, GroupID, Key, Value) then
                       StoredAnyData := True;
                   end;
-                pmLevelDesign:
+                pmLevelDesign, pmLevelRunTest:
                   begin
                     if TryAddViewResult(DataGroupNum, Key, Value) then
                       StoredAnyData := True;
@@ -796,13 +808,13 @@ begin
     if not FIsWaitingForRequests then
       case FParseMode of
         pmJobRun:
-          begin
-            ProcessNextLink;
-          end;
+          ProcessNextLink;
+
         pmLevelDesign:
-          begin
-            DoCreateEventOnViewResultsReceived;
-          end;
+          DoCreateEventOnViewResultsReceived;
+
+        pmLevelRunTest:
+          DoStopLevelTestRun;
       end;
   finally
     jsnData.Free;
@@ -859,6 +871,8 @@ begin
     Data.AddOrSetValue('ScriptFor', aScriptFor);
     Data.AddOrSetValue('JSScript', FData.Items['JSScript']);
     Data.AddOrSetValue('LinkID', FCurrLink.ID);
+    if FParseMode = pmLevelDesign then
+      Data.AddOrSetValue('IsSkipActions', FData.items['IsSkipActions']);
 
     ModelJS := TModelJS.Create(Data, ObjData);
     try
@@ -872,6 +886,7 @@ begin
         begin
           FIsWaitingForRequests := True;
           StartTimeOutProc;
+
         end
       else
         FIsWaitingForRequests := False;
@@ -898,7 +913,7 @@ begin
         InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\jquery-3.1.1.js');
         frame.ExecuteJavaScript(InjectJS, '', 0);
 
-        if FParseMode = pmJobRun then DoProcessJScript(sfLoadEnd);
+        if FParseMode in [pmJobRun, pmLevelRunTest] then DoProcessJScript(sfLoadEnd);
       end;
 
     if httpStatusCode = 404 then
@@ -957,7 +972,7 @@ end;
 procedure TModelParser.ProcessNextLink(aPrivLinkHandled: Integer = 2);
 begin
   if FData.Items['IsJobStopped'] then
-    StopJob
+    DoStop
   else
     begin
       if Assigned(FCurrLink) then
@@ -976,8 +991,7 @@ begin
       else
         begin
           CreateEvent('OnJobDone');
-          FJob.Free;
-          Self.Free;
+          DoStop;
         end;
     end;
 end;
@@ -992,7 +1006,10 @@ begin
   FChromium.OnBeforePopup := crmBeforePopup;
   FChromium.OnProcessMessageReceived := crmProcessMessageReceived;
 
-  if FParseMode = pmJobRun then ProcessNextLink;
+  case FParseMode of
+    pmJobRun: ProcessNextLink;
+    pmLevelRunTest: LoadLevelTest;
+  end;
 end;
 
 function TModelJS.ColorToHex(color: TColor): String;
@@ -1046,6 +1063,7 @@ var
   jsnRules: TJSONArray;
   JSScript: string;
   LinkID: Integer;
+  IsSkipActions: Boolean;
 begin
   FScriptFor := FData.Items['ScriptFor'];
   FRootRule := FObjData.Items['Rule'] as TJobRule;
@@ -1063,8 +1081,12 @@ begin
 
     if FScriptFor = sfEditor then
       begin
-        jsnLevel.AddPair('skip_actions', TJSONBool.Create(True));
-        jsnLevel.AddPair('mark_nodes', TJSONBool.Create(True));
+        IsSkipActions := FData.Items['IsSkipActions'];
+
+        if IsSkipActions then
+          jsnLevel.AddPair('skip_actions', TJSONBool.Create(True));
+
+        jsnLevel.AddPair('design_mode', TJSONBool.Create(True));
       end;
 
     if FScriptFor = sfRequestEnd then
