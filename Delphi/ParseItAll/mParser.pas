@@ -6,6 +6,7 @@ uses
   System.JSON,
   System.UITypes,
   System.Threading,
+  Vcl.ExtCtrls,
   cefvcl,
   cefLib,
   API_MVC_DB,
@@ -79,7 +80,6 @@ type
     FChromium: TChromium;
 
     FIsWaitingForRequests: Boolean;
-    FJSTimeOutTask: ITask;
     FRequestStates: TArray<TRequestState>;
 
     FGroupBinds: TArray<TGroupBind>;
@@ -107,7 +107,6 @@ type
     function GetRequestStates: TArray<TRequestState>;
     procedure SetRequestState(aReqID: integer; aState: TState);
     procedure StartTimeOutProc;
-    procedure OnRequestTimeOut;
 
     function GetNextLink: TLink;
     function AddGroup(aParentGroupID: Integer): Integer;
@@ -119,6 +118,8 @@ type
   private
     FViewResults: TViewResults;
     FLevelTestTime: TDateTime;
+    FLoadTimeOut: TTimer;
+    FRequestTimeOut: TTimer;
     {inside Model logic procedures, functions, variables
      functions have to be a verb with "Get", "Try" prefix
      procedures have to be a verb with "Do" prefix
@@ -126,20 +127,20 @@ type
     function TryAddViewResult(aGroupNum: Integer; aKey, aValue: string): Boolean;
     function GetViewGroup(aGroupNum: integer; out aGroupIndex: integer): TViewGroup;
     function GetViewResult(aViewGroup: TViewGroup; aKey, aValue: string): TViewResult;
-    procedure DoStop;
     procedure DoLoadPage;
     procedure DoProcessJScript(aScriptFor: TScriptFor; aRule: TJobRule = nil);
     procedure DoCreateEventOnViewResultsReceived;
     procedure DoStopLevelTestRun;
+    procedure DoRequestTimeOut(Sender: TObject);
+    procedure OnLoadTimeOut(Sender: TObject);
     ////////////////////////////////////////////////////////////////////////////
-  public
-    destructor Destroy; override;
   published
     {public Model interface that can be called via Controller.CallModel
      simple parametrs have to be put into FData object
      objects parametrs have to be put into FobjData object
     }
     procedure Start;
+    procedure Stop;
     procedure GetJobProgress;
     procedure LoadLevelTest;
     procedure ExecuteRuleJS;
@@ -162,12 +163,23 @@ uses
   eGroup,
   eRuleAction;
 
+procedure TModelParser.OnLoadTimeOut(Sender: TObject);
+begin
+  case FParseMode of
+    pmJobRun:
+      begin
+        ProcessNextLink;
+      end;
+    pmLevelRunTest: DoStopLevelTestRun;
+  end;
+end;
+
 procedure TModelParser.DoStopLevelTestRun;
 begin
   FData.AddOrSetValue('LevelTestTime', MilliSecondsBetween(Now, FLevelTestTime));
   CreateEvent('OnLevelTestOver');
   DoCreateEventOnViewResultsReceived;
-  DoStop;
+  Stop;
 end;
 
 procedure TModelParser.DoCreateEventOnViewResultsReceived;
@@ -252,11 +264,6 @@ begin
   DoProcessJScript(sfEditor, Rule);
 end;
 
-destructor TModelParser.Destroy;
-begin
-  if Assigned(FCurrLink) then FreeAndNil(FCurrLink);
-end;
-
 procedure TModelParser.LoadLevelTest;
 begin
   FLevelTestTime := Now;
@@ -327,11 +334,12 @@ begin
       end;
 end;
 
-procedure TModelParser.OnRequestTimeOut;
+procedure TModelParser.DoRequestTimeOut(Sender: TObject);
 var
   i: Integer;
   isAnyWaitingReplay, isAnyWaitingTriger: Boolean;
 begin
+  FRequestTimeOut.Enabled := False;
   isAnyWaitingReplay := False;
   isAnyWaitingTriger := False;
 
@@ -377,7 +385,6 @@ procedure TModelParser.StartTimeOutProc;
 var
   TimeOut: Integer;
   RequestState: TRequestState;
-  LocalTask: ITask;
 begin
   TimeOut := 1;
   for RequestState in FRequestStates do
@@ -385,18 +392,8 @@ begin
       TimeOut := Max(RequestState.TimeOut, TimeOut);
     end;
 
-  if FJSTimeOutTask <> nil then FJSTimeOutTask.Cancel;
-
-  LocalTask := TTask.Create(
-    procedure
-      begin
-        Sleep(TimeOut);
-        LocalTask.CheckCanceled;
-      end
-  );
-
-  LocalTask.Start;
-  FJSTimeOutTask := LocalTask;
+  FRequestTimeOut.Interval := TimeOut;
+  FRequestTimeOut.Enabled := True;
 end;
 
 procedure TModelParser.ProcessTrigerAction(aRequestID: integer);
@@ -458,7 +455,7 @@ var
   RuleID: Integer;
   Rule: TJobRule;
 begin
-  if FParseMode <> pmJobRun then Exit;
+  if FParseMode = pmLevelDesign then Exit;
 
   RuleID := aStrRuleID.ToInteger;
 
@@ -579,14 +576,19 @@ begin
   FData.AddOrSetValue('HandledCount', GetLinksCount(JobID, 2));
 end;
 
-procedure TModelParser.DoStop;
+procedure TModelParser.Stop;
 begin
   if FParseMode = pmJobRun then
     FJob.Free;
 
-  FJSTimeOutTask.Status;
-  FJSTimeOutTask.CheckCanceled;
-  TTask.WaitForAll(FJSTimeOutTask);
+  FChromium.OnLoadEnd := nil;
+  FChromium.OnBeforePopup := nil;
+  FChromium.OnProcessMessageReceived := nil;
+
+  if Assigned(FCurrLink) then FreeAndNil(FCurrLink);
+
+  FLoadTimeOut.Free;
+  FRequestTimeOut.Free;
 
   Self.Free;
 end;
@@ -800,8 +802,8 @@ begin
       and StoredAnyData
     then
       begin
+        FRequestTimeOut.Enabled := False;
         SetRequestState(RequestID, sDone);
-        //FJSTimeOutTask.Cancel;
         ProcessTrigerAction(RequestID);
       end;
 
@@ -885,8 +887,8 @@ begin
       then
         begin
           FIsWaitingForRequests := True;
-          StartTimeOutProc;
-
+          if not FRequestTimeOut.Enabled then
+            StartTimeOutProc;
         end
       else
         FIsWaitingForRequests := False;
@@ -924,8 +926,8 @@ begin
       end;
 
   finally
-    //TFilesEngine.CreateFile('LoadEnd.log');
-    //TFilesEngine.SaveTextToFile('LoadEnd.log', httpStatusCode.ToString);
+    TFilesEngine.CreateFile('LoadEnd.log');
+    TFilesEngine.SaveTextToFile('LoadEnd.log', httpStatusCode.ToString);
   end;
 end;
 
@@ -972,7 +974,7 @@ end;
 procedure TModelParser.ProcessNextLink(aPrivLinkHandled: Integer = 2);
 begin
   if FData.Items['IsJobStopped'] then
-    DoStop
+    Stop
   else
     begin
       if Assigned(FCurrLink) then
@@ -991,7 +993,7 @@ begin
       else
         begin
           CreateEvent('OnJobDone');
-          DoStop;
+          Stop;
         end;
     end;
 end;
@@ -1005,6 +1007,14 @@ begin
   FChromium.OnLoadEnd := crmLoadEnd;
   FChromium.OnBeforePopup := crmBeforePopup;
   FChromium.OnProcessMessageReceived := crmProcessMessageReceived;
+
+  FLoadTimeOut := TTimer.Create(nil);
+  FLoadTimeOut.Enabled := False;
+  FLoadTimeOut.OnTimer := DoRequestTimeOut;
+
+  FRequestTimeOut := TTimer.Create(nil);
+  FRequestTimeOut.Enabled := False;
+  FRequestTimeOut.OnTimer := OnLoadTimeOut;
 
   case FParseMode of
     pmJobRun: ProcessNextLink;

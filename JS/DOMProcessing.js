@@ -461,18 +461,15 @@ function setPIAColor(rule, node) {
 function getRuleResult(rule, containerNode, groupNum, parentGroupNum) {
 
     // special rules
-    if (rule.special_id > 0) {
-
-        if (rule.special_id == 1) {
-            return [{
-                    rule_id: rule.id,
-                    group: groupNum,
-                    parent_group: 0,
-                    type: 'record',
-                    key: rule.key,
-                    value: document.URL
-                }];
-        }
+    if (rule.grab_type == 3) {
+        return [{
+            rule_id: rule.id,
+            group: groupNum,
+            parent_group: 0,
+            type: 'record',
+            key: rule.key,
+            value: document.URL
+        }];
     }
 
     var containerSize = rule.nodes.length - rule.container_offset;

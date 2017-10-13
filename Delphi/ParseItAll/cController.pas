@@ -170,6 +170,7 @@ uses
 procedure TController.RunLevelTest;
 begin
   FData.AddOrSetValue('ParseMode', pmLevelRunTest);
+  FData.AddOrSetValue('JSScript', FJSProcessingScript);
   FObjData.AddOrSetValue('Chromium', ViewMain.chrmBrowser);
 
   CallAsyncModel(TModelParser, 'Start');
@@ -415,12 +416,13 @@ begin
   UpdateJobState(JobID);
 
   FData.AddOrSetValue('JSScript', FJSProcessingScript);
+  FData.AddOrSetValue('ParseMode', pmJobRun);
   FData.AddOrSetValue('IsJobStopped', False);
 
   FObjData.AddOrSetValue('Chromium', ViewMain.chrmBrowser);
   FObjData.AddOrSetValue('Job', TJob.Create(FDBEngine, JobID));
 
-  CallAsyncModel(TModelParser, 'StartJob');
+  CallAsyncModel(TModelParser, 'Start');
 end;
 
 procedure TController.StopJob;
@@ -866,7 +868,7 @@ begin
   // on close none modal views clear objects
   if aMsg = 'ViewRulesClosed' then
     begin
-      FModelParser.Free;
+      FModelParser.Stop;
       FObjData.Items['Job'].Free;
     end;
 end;
