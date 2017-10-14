@@ -106,7 +106,8 @@ type
 
     function GetRequestStates: TArray<TRequestState>;
     procedure SetRequestState(aReqID: integer; aState: TState);
-    procedure StartTimeOutProc;
+    procedure StartRequestTimeOut;
+    procedure StartLoadTimeOut;
 
     function GetNextLink: TLink;
     function AddGroup(aParentGroupID: Integer): Integer;
@@ -163,12 +164,20 @@ uses
   eGroup,
   eRuleAction;
 
+procedure TModelParser.StartLoadTimeOut;
+begin
+  FLoadTimeOut.Interval := 5000;
+  FLoadTimeOut.Enabled := True;
+end;
+
 procedure TModelParser.OnLoadTimeOut(Sender: TObject);
 begin
   case FParseMode of
     pmJobRun:
       begin
-        ProcessNextLink;
+        AddError(FCurrLink.ID, 5, 'Page Load Time Out');
+
+        ProcessNextLink(3);
       end;
     pmLevelRunTest: DoStopLevelTestRun;
   end;
@@ -281,6 +290,12 @@ begin
   FLevel := FJob.GetLevel(FCurrLink.Level);
   FRequestStates := GetRequestStates;
   FGroupBinds := [];
+
+  if    (FParseMode in [pmJobRun, pmLevelRunTest])
+    and (FLoadTimeOut.Enabled = False)
+  then
+    StartLoadTimeOut;
+
   FChromium.Load(FCurrLink.Link);
 end;
 
@@ -293,6 +308,7 @@ procedure TModelParser.crmBeforePopup(Sender: TObject; const browser: ICefBrowse
 begin
   Result := True;
   FIsWaitingForRequests := True;
+  StartLoadTimeOut;
   TChromium(Sender).Load(targetUrl);
 end;
 
@@ -381,7 +397,7 @@ begin
   end;
 end;
 
-procedure TModelParser.StartTimeOutProc;
+procedure TModelParser.StartRequestTimeOut;
 var
   TimeOut: Integer;
   RequestState: TRequestState;
@@ -888,7 +904,7 @@ begin
         begin
           FIsWaitingForRequests := True;
           if not FRequestTimeOut.Enabled then
-            StartTimeOutProc;
+            StartRequestTimeOut;
         end
       else
         FIsWaitingForRequests := False;
@@ -912,6 +928,8 @@ begin
       and frame.IsMain
     then
       begin
+        FLoadTimeOut.Enabled := False;
+
         InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\jquery-3.1.1.js');
         frame.ExecuteJavaScript(InjectJS, '', 0);
 
@@ -1010,11 +1028,11 @@ begin
 
   FLoadTimeOut := TTimer.Create(nil);
   FLoadTimeOut.Enabled := False;
-  FLoadTimeOut.OnTimer := DoRequestTimeOut;
+  FLoadTimeOut.OnTimer := OnLoadTimeOut;
 
   FRequestTimeOut := TTimer.Create(nil);
   FRequestTimeOut.Enabled := False;
-  FRequestTimeOut.OnTimer := OnLoadTimeOut;
+  FRequestTimeOut.OnTimer := DoRequestTimeOut;
 
   case FParseMode of
     pmJobRun: ProcessNextLink;

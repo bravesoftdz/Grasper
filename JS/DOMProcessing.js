@@ -14,7 +14,7 @@ if (window.Prototype) {
 function getNormalizeString(str) {
     str = str.replace(/\n/g, "");
     str = str.replace(/ {1,}/g, " ");
-    return str.trim(str);
+    return str.trim();
 }
 
 function getClassMatch(ruleNode, node) {
@@ -46,12 +46,12 @@ function getClassMatch(ruleNode, node) {
 
 function checkNodeMatches(matches, ruleNode, node) {
 
+    if (node === undefined)
+        return false;
+    
     matches.IDMatch = false;
     matches.ClassMatch = 0;
     matches.NameMatch = false;
-
-    if (node === undefined)
-        return false;
 
     // ID match
     if (ruleNode.tagID === undefined)
@@ -112,16 +112,16 @@ function getNodeByClass(ruleNode, tagCollection, matches) {
 function getNodeByID(ruleNode, tagCollection, matches) {
 
     if (ruleNode.tagID !== "") {
-        
+
         for (var i = 0; i < tagCollection.length; i++) {
 
             if (tagCollection[i].id === ruleNode.tagID) {
-                var node = tagCollection[i]; 
+                var node = tagCollection[i];
                 break;
-            }  
-            
+            }
+
         }
-        
+
     }
 
     checkNodeMatches(matches, ruleNode, node);
@@ -154,7 +154,10 @@ function getNodeByRuleNode(ruleNode, tagCollection, keepSearch, isStrict) {
         }
 
         // find element by class
-        if (node == null || ((matches.ClassMatch != 1000) && (ruleNode.tagID === ""))) {
+        if (node == null
+                || ((matches.ClassMatch != 1000)
+                        && (matches.ClassMatch != -1)
+                        && (ruleNode.tagID === ""))) {
             matchedNode = getNodeByClass(ruleNode, tagCollection, matches);
             if (matchedNode != null)
                 node = matchedNode;
@@ -178,7 +181,7 @@ function getNodeByRuleNode(ruleNode, tagCollection, keepSearch, isStrict) {
 
     if (designMode)
         setPIAMarks(node, ruleNode.id);
-    
+
     return node;
 }
 
@@ -230,48 +233,48 @@ function getInsideContainerNodes(containerNode, ruleNodes) {
 function processIgnoreRegExps(source, node, regexps) {
 
     var isIgnore = false;
-    
+
     regexps.forEach(function (regex) {
 
         // ignore if match
         if (regex.type == 3) {
-            
+
             var reg = new RegExp(regex.regexp, 'g');
             var matches = source.match(reg);
-                
+
             if (matches != null)
                 isIgnore = true;
-            
+
         }
-        
+
         // ignore if not match
         if (regex.type == 4) {
-            
+
             var reg = new RegExp(regex.regexp, 'g');
             var matches = source.match(reg);
-                
+
             if (matches == null)
                 isIgnore = true;
-            
+
         }
 
     });
-    
-    if (isIgnore) 
+
+    if (isIgnore)
         setPIAIgnore(node);
-    
+
 }
 
 function processRegExps(content, regexps) {
 
     var results = [];
     var hasRegExp = false;
-    
+
     // type 1 - matches
     regexps.forEach(function (regex) {
 
         if (regex.type == 1) {
-            
+
             hasRegExp = true;
             var reg = new RegExp(regex.regexp, 'g');
             var matches = content.match(reg);
@@ -289,17 +292,17 @@ function processRegExps(content, regexps) {
     regexps.forEach(function (regex) {
 
         if (regex.type == 2) {
- 
+
             var replacedResults = results.map(function (result) {
-                
+
                 var reg = new RegExp(regex.regexp, 'g');
                 return result.replace(reg, regex.replace);
-                
+
             });
-            
+
             results = replacedResults;
         }
-        
+
     });
 
     return results;
@@ -310,19 +313,20 @@ function processResultNodesByRule(rule, resultNodes, groupNum, parentGroupNum) {
     var result = [];
 
     resultNodes.forEach(function (node) {
-        
-        if (rule.source_type == 1) 
+
+        if (rule.source_type == 1)
             var source = node.innerText;
         else
             source = node.innerHTML;
-         
+
         // process ignore RegExps
         processIgnoreRegExps(source, node, rule.regexps);
-        
+
         //check ignores     
         var ignoreNodes = $(node).closest('.PIAIgnore');
-        if (ignoreNodes.length > 0) return result;  
-        
+        if (ignoreNodes.length > 0)
+            return result;
+
         // case text grab
         if (rule.grab_type == 1)
             var content = node.innerText;
@@ -334,11 +338,11 @@ function processResultNodesByRule(rule, resultNodes, groupNum, parentGroupNum) {
         // case href attr grab
         if (rule.grab_type == 4)
             content = $('a', node).attr('href');
-        
+
         // case value attr grab
         if (rule.grab_type == 5)
             content = $(node).attr('value');
-        
+
         // links
         if (rule.type == 'link')
             content = node.href;
@@ -375,7 +379,8 @@ function processResultNodesByRule(rule, resultNodes, groupNum, parentGroupNum) {
 
 function processActionsByRule(rule, resultNodes) {
 
-    if (skipActions) return false;
+    if (skipActions)
+        return false;
 
     if (rule.type == 'action') {
 
@@ -426,21 +431,21 @@ function processRequestsByRule(rule, resultNodes) {
 function setPIAMarks(node, ruleNodeid) {
 
     $(node).attr('data-pia-rule-node-id', ruleNodeid);
- 
+
 }
 
 function clearPIAMarksAndColor() {
-    
+
     var nodes = $('[data-pia-rule-node-id!=0]');
     $(nodes).attr('data-pia-rule-node-id', 0);
 
-    
+
     nodes = $('[data-pia-rule-colored=1]');
     $(nodes).css('background-color', '');
     $(nodes).attr('data-pia-rule-colored', 0);
 
     $('.PIAIgnore').removeClass('PIAIgnore');
-   
+
 }
 
 function setPIAIgnore(node) {
@@ -448,14 +453,14 @@ function setPIAIgnore(node) {
 }
 
 function setPIAColor(rule, node) {
-    
+
     $(node).attr('data-pia-rule-colored', 1);
     $(node).css('background-color', rule.color);
-    
-    var nodes = $(node).find('*'); 
+
+    var nodes = $(node).find('*');
     $(nodes).attr('data-pia-rule-colored', 1);
     $(nodes).css('background-color', rule.color);
-    
+
 }
 
 function getRuleResult(rule, containerNode, groupNum, parentGroupNum) {
@@ -463,13 +468,13 @@ function getRuleResult(rule, containerNode, groupNum, parentGroupNum) {
     // special rules
     if (rule.grab_type == 3) {
         return [{
-            rule_id: rule.id,
-            group: groupNum,
-            parent_group: 0,
-            type: 'record',
-            key: rule.key,
-            value: document.URL
-        }];
+                rule_id: rule.id,
+                group: groupNum,
+                parent_group: 0,
+                type: 'record',
+                key: rule.key,
+                value: document.URL
+            }];
     }
 
     var containerSize = rule.nodes.length - rule.container_offset;
@@ -509,7 +514,7 @@ function getRuleResult(rule, containerNode, groupNum, parentGroupNum) {
 
         if (rule.type == 'cut')
             setPIAIgnore(node);
-        
+
         // set PIA color to result nodes
         if (designMode)
             setPIAColor(rule, node);
