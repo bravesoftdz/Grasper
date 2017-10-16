@@ -616,6 +616,8 @@ var
   RuleRel: TRuleRuleRel;
   Value: string;
 begin
+  if not aRule.IsEnabled then Exit;
+
   if FScriptFor = sfLoadEnd then
     begin
       if    (aRule.Action <> nil)
@@ -628,6 +630,7 @@ begin
   jsnRule.AddPair('container_offset', TJSONNumber.Create(aRule.ContainerOffset));
   jsnRule.AddPair('is_strict', TJSONBool.Create(aRule.IsStrict));
   jsnRule.AddPair('color', ColorToHex(aRule.VisualColor));
+  jsnRule.AddPair('source_type', TJSONNumber.Create(aRule.SourceTypeID));
 
   if aRule.Link <> nil then
     begin
@@ -635,7 +638,7 @@ begin
       jsnRule.AddPair('level', TJSONNumber.Create(aRule.Link.Level));
     end;
 
-  if aRule.Rec <> nil then
+  if (aRule.Rec <> nil) and not aRule.Rec.Key.IsEmpty then
     begin
       jsnRule.AddPair('type', 'record');
       jsnRule.AddPair('key', aRule.Rec.Key);

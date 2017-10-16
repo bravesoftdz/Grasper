@@ -62,6 +62,8 @@ type
     procedure SetCriticalType(aValue: integer);
     function GetIsStrict: Boolean;
     procedure SetIsStrict(aValue: Boolean);
+    function GetIsEnabled: Boolean;
+    procedure SetIsEnabled(aValue: Boolean);
     function GetVisualColor: TColor;
     procedure SetVisualColor(aValue: TColor);
     function GetOrderNum: Integer;
@@ -90,6 +92,7 @@ type
     property SourceTypeID: Integer read GetSourceTypeID write SetSourceTypeID;
     property CriticalType: Integer read GetCriticalType write SetCriticalType;
     property IsStrict: Boolean read GetIsStrict write SetIsStrict;
+    property IsEnabled: Boolean read GetIsEnabled write SetIsEnabled;
     property VisualColor: TColor read GetVisualColor write SetVisualColor;
     property OrderNum: Integer read GetOrderNum write SetOrderNum;
     property Link: TJobLink read GetLink write SetLink;
@@ -109,6 +112,16 @@ implementation
 
 uses
   Data.DB;
+
+function TJobRule.GetIsEnabled: Boolean;
+begin
+  Result := FData.Items['IS_ENABLED'];
+end;
+
+procedure TJobRule.SetIsEnabled(aValue: Boolean);
+begin
+  FData.AddOrSetValue('IS_ENABLED', aValue);
+end;
 
 function TJobRule.GetIsStrict: Boolean;
 begin
@@ -372,6 +385,7 @@ begin
   AddField(Result.FieldList, 'VISUAL_COLOR', ftInteger);
   AddField(Result.FieldList, 'ORDER_NUM', ftInteger);
   AddField(Result.FieldList, 'IS_STRICT', ftBoolean);
+  AddField(Result.FieldList, 'IS_ENABLED', ftBoolean);
 
   AddOneRelation(Result.OneRelatedList, 'JOB_RULE_ID', '', TJobLink);
   AddOneRelation(Result.OneRelatedList, 'JOB_RULE_ID', '', TJobRecord);

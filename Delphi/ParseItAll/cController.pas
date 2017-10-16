@@ -285,6 +285,7 @@ begin
   RuleRel := TRuleRuleRel.Create(FDBEngine);
   RuleRel.ChildRule := TJobRule.Create(FDBEngine);
   RuleRel.ChildRule.SourceTypeID := 1;
+  RuleRel.ChildRule.IsEnabled := True;
 
   ParentRule := ViewRules.GetSelectedRule;
   ParentRule.ChildRuleRels.Add(RuleRel);
@@ -441,42 +442,24 @@ end;
 
 procedure TController.TempCopy;
 var
-  SourceLevel, DestLevel: TJobLevel;
-  //RuleRel, NewRuleRel: TLevelRuleRel;
-  SourceJob, DestJob: TJob;
+  TargerRule, SourceRule, NewRule: TJobRule;
+  NewRuleRel: TRuleRuleRel;
 begin
-  // copy Levels Rules
-  {SourceLevel := TJobLevel.Create(FDBEngine, 3);
-  EngLevel := TJobLevel.Create(FDBEngine, 5);
+  TargerRule := TJobRule.Create(FDBEngine, 7439);
+  SourceRule := TJobRule.Create(FDBEngine, 7469);
+  NewRule := TJobRule.Create(FDBEngine, 0);
+  NewRuleRel := TRuleRuleRel.Create(FDBEngine);
   try
-    for RuleRel in SourceLevel.RuleRels do
-      begin
-        NewRuleRel := TLevelRuleRel.Create(FDBEngine);
-        NewRuleRel.Rule := TJobRule.Create(FDBEngine);
-        NewRuleRel.Rule.Assign(RuleRel.Rule);
+    NewRule.Assign(SourceRule);
+    NewRuleRel.ChildRule := NewRule;
 
-        EngLevel.RuleRels.Add(NewRuleRel);
-      end;
+    TargerRule.ChildRuleRels.Add(NewRuleRel);
 
-    EngLevel.SaveAll;
+    TargerRule.SaveAll;
   finally
-    SourceLevel.Free;
-    EngLevel.Free;
-  end;   }
-
-  // copy all Levels
-  SourceJob := TJob.Create(FDBEngine, 1);
-  DestJob := TJob.Create(FDBEngine, 4);
-
-  for SourceLevel in SourceJob.Levels do
-    begin
-      DestLevel := TJobLevel.Create(FDBEngine);
-      DestLevel.Assign(SourceLevel);
-
-      DestJob.Levels.Add(DestLevel);
-    end;
-
-  DestJob.SaveAll;
+    TargerRule.Free;
+    SourceRule.Free;
+  end;
 end;
 
 procedure TController.ExportJobResultsToCSV;
@@ -786,6 +769,7 @@ var
 begin
   Rule := AddRule;
   Rule.Rec := TJobRecord.Create(FDBEngine);
+  Rule.Rec.GrabTypeID := 1;
 
   ViewRules.AddRuleToTree(ViewRules.GetSelectedRule, Rule);
 end;

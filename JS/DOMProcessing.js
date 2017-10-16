@@ -1,6 +1,7 @@
 console.log('domparser');
 
 var income = %s;
+var groupCounter = 1;
 var skipActions = false;
 var designMode = income.design_mode;
 
@@ -322,10 +323,13 @@ function processResultNodesByRule(rule, resultNodes, groupNum, parentGroupNum) {
         // process ignore RegExps
         processIgnoreRegExps(source, node, rule.regexps);
 
-        //check ignores     
+        //check parent and self ignores     
         var ignoreNodes = $(node).closest('.PIAIgnore');
-        if (ignoreNodes.length > 0)
+        if (ignoreNodes.length > 0) 
             return result;
+        
+        // take off child ignores
+        $('.PIAIgnore', node).css('display', 'none');
 
         // case text grab
         if (rule.grab_type == 1)
@@ -347,6 +351,10 @@ function processResultNodesByRule(rule, resultNodes, groupNum, parentGroupNum) {
         if (rule.type == 'link')
             content = node.href;
 
+        // take back child ignores
+        $('.PIAIgnore', node).css('display', '');
+        $('.PIAIgnore', node).removeClass('PIAIgnore');
+        
         //process matches and replaces regexps
         var RegExpResults = processRegExps(content, rule.regexps);
 
@@ -443,9 +451,6 @@ function clearPIAMarksAndColor() {
     nodes = $('[data-pia-rule-colored=1]');
     $(nodes).css('background-color', '');
     $(nodes).attr('data-pia-rule-colored', 0);
-
-    $('.PIAIgnore').removeClass('PIAIgnore');
-
 }
 
 function setPIAIgnore(node) {
@@ -507,9 +512,8 @@ function getRuleResult(rule, containerNode, groupNum, parentGroupNum) {
     processActionsByRule(rule, resultNodes);
     processRequestsByRule(rule, resultNodes);
 
-    var result = processResultNodesByRule(rule, resultNodes, groupNum, parentGroupNum);
-
-    parentGroupNum = groupNum;
+    var result = [];
+    
     resultNodes.forEach(function (node) {
 
         if (rule.type == 'cut')
@@ -521,15 +525,19 @@ function getRuleResult(rule, containerNode, groupNum, parentGroupNum) {
 
         if (rule.rules != null) {
 
-            groupNum++;
+            groupCounter++;
+            var newGroupNum = groupCounter; 
             rule.rules.forEach(function (rule) {
-                result = result.concat(getRuleResult(rule, node, groupNum, parentGroupNum));
+                result = result.concat(getRuleResult(rule, node, newGroupNum, groupNum));
             });
 
         }
 
     });
 
+    var currResult = processResultNodesByRule(rule, resultNodes, groupNum, parentGroupNum);
+    result = result.concat(currResult);
+    
     return result;
 }
 
@@ -548,7 +556,7 @@ function processDOM(income) {
 
     income.rules.forEach(function (rule) {
 
-        var objRuleResult = getRuleResult(rule, document, 1, 0);
+        var objRuleResult = getRuleResult(rule, document, groupCounter, 0);
         objResult.result = objResult.result.concat(objRuleResult);
 
     });
