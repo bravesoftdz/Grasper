@@ -119,8 +119,14 @@ type
   private
     FViewResults: TViewResults;
     FLevelTestTime: TDateTime;
+
     FLoadTimeOut: TTimer;
+    FLastLoadStartTime: TDateTime;
+    FLastLoadTime: Integer;
+
     FRequestTimeOut: TTimer;
+    FLastRequestStartTime: TDateTime;
+    FLastRequestTime: Integer;
     {inside Model logic procedures, functions, variables
      functions have to be a verb with "Get", "Try" prefix
      procedures have to be a verb with "Do" prefix
@@ -166,12 +172,15 @@ uses
 
 procedure TModelParser.StartLoadTimeOut;
 begin
-  FLoadTimeOut.Interval := 5000;
+  FLoadTimeOut.Interval := 20000;
+  FLastLoadStartTime := Now;
   FLoadTimeOut.Enabled := True;
 end;
 
 procedure TModelParser.OnLoadTimeOut(Sender: TObject);
 begin
+  FLastLoadTime := MilliSecondsBetween(FLastLoadStartTime, Now);
+
   case FParseMode of
     pmJobRun:
       begin
@@ -931,6 +940,7 @@ begin
       and frame.IsMain
     then
       begin
+        FLastLoadTime := MilliSecondsBetween(FLastLoadStartTime, Now);
         FLoadTimeOut.Enabled := False;
 
         InjectJS := TFilesEngine.GetTextFromFile(GetCurrentDir + '\JS\jquery-3.1.1.js');
@@ -994,6 +1004,9 @@ end;
 
 procedure TModelParser.ProcessNextLink(aPrivLinkHandled: Integer = 2);
 begin
+  FLoadTimeOut.Enabled := False;
+  FRequestTimeOut.Enabled := False;
+
   if FData.Items['IsJobStopped'] then
     Stop
   else

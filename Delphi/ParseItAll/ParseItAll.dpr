@@ -38,7 +38,9 @@ uses
   eGroup in 'eGroup.pas',
   eRuleAction in 'eRuleAction.pas',
   eRequest in 'eRequest.pas',
-  mNodes in 'mNodes.pas';
+  mNodes in 'mNodes.pas',
+  eExportField in 'eExportField.pas',
+  vExportFields in 'vExportFields.pas' {ViewExportFields};
 
 {$R *.res}
 

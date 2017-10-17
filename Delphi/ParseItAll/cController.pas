@@ -67,12 +67,14 @@ type
     procedure EventListener(aEventMsg: string); override;
   published
     { procedures assign with View message call
-      have to be verb sach as
+      have to be verb phrase, for example
       ORM:
         AddSomeEntity - creation entities
         RemoveSomeEntity - removing entities
         EditSomeEntity - edition entities
-        SomeEntitySelected - when entity assign control selected in the View GUI
+      Events:
+        OnSomeEntitySelected - when entity assign control selected in the View GUI
+        OnSomeModelStopped - when Model event fire
 
       these procedures are for
       ORM munipulations with entities
@@ -82,6 +84,9 @@ type
 
       Controller have to be thin!
     }
+    procedure EditExportFields;
+    ////////////////////////////////////////////////////////////////////////////
+
     procedure EditJobRules;
 
     procedure LevelSelected;
@@ -90,7 +95,6 @@ type
     procedure RuleSelected;
 
     procedure TestAction;
-    ////////////////////////////////////////////////////////////////////////////
 
     procedure GetJobList;
 
@@ -160,12 +164,23 @@ uses
   vLogin,
   vJob,
   vRules,
+  vExportFields,
   mTester,
   mExport,
   mNodes,
 
   FireDAC.Comp.Client,
   eTestLink;
+
+procedure TController.EditExportFields;
+var
+  Job: TJob;
+begin
+  Job := TJob.Create(FDBEngine, ViewMain.SelectedJobID);
+  FObjData.Add('Job', Job);
+
+  CallView(TViewExportFields);
+end;
 
 procedure TController.RunLevelTest;
 begin
@@ -855,6 +870,8 @@ begin
       FModelParser.Stop;
       FObjData.Items['Job'].Free;
     end;
+  if aMsg = 'ViewExportFieldsClosed' then
+    FObjData.Items['Job'].Free;
 end;
 
 procedure TController.InitDB;

@@ -38,6 +38,9 @@ type
     mniService: TMenuItem;
     mniVacuumCommand: TMenuItem;
     mniClearSequences: TMenuItem;
+    tmr1: TTimer;
+    Edit1: TEdit;
+    btnEditExportFields: TBitBtn;
     procedure FormShow(Sender: TObject);
     procedure btnEditJobClick(Sender: TObject);
     procedure btnEditRulesClick(Sender: TObject);
@@ -51,6 +54,8 @@ type
     procedure tmrJobsGridUpdateTimer(Sender: TObject);
     procedure mniVacuumCommandClick(Sender: TObject);
     procedure mniClearSequencesClick(Sender: TObject);
+    procedure tmr1Timer(Sender: TObject);
+    procedure btnEditExportFieldsClick(Sender: TObject);
   private
     { Private declarations }
     function GetSelectedJobID: integer;
@@ -110,6 +115,11 @@ begin
     end;
 end;
 
+procedure TViewMain.tmr1Timer(Sender: TObject);
+begin
+ Edit1.Text := TimeToStr(Time);
+end;
+
 procedure TViewMain.tmrJobsGridUpdateTimer(Sender: TObject);
 begin
   SendMessage('UpdateProcessInfo');
@@ -155,12 +165,19 @@ end;
 
 procedure TViewMain.btnTestClick(Sender: TObject);
 begin
-  SendMessage('Test');
+  //SendMessage('Test');
+  if tmr1.Enabled then tmr1.Enabled := False;
+  if not tmr1.Enabled then tmr1.Enabled := True;
 end;
 
 procedure TViewMain.btnClearClick(Sender: TObject);
 begin
   SendMessage('ClearJobLinks');
+end;
+
+procedure TViewMain.btnEditExportFieldsClick(Sender: TObject);
+begin
+  SendMessage('EditExportFields');
 end;
 
 procedure TViewMain.btnEditJobClick(Sender: TObject);

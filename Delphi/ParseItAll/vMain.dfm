@@ -184,7 +184,6 @@ object ViewMain: TViewMain
       Width = 75
       Height = 25
       Caption = 'btnTest'
-      Enabled = False
       TabOrder = 6
       OnClick = btnTestClick
     end
@@ -196,6 +195,23 @@ object ViewMain: TViewMain
       Caption = 'btnStop'
       TabOrder = 7
       OnClick = btnStopClick
+    end
+    object Edit1: TEdit
+      Left = 328
+      Top = 46
+      Width = 121
+      Height = 21
+      TabOrder = 8
+      Text = 'Edit1'
+    end
+    object btnEditExportFields: TBitBtn
+      Left = 55
+      Top = 32
+      Width = 75
+      Height = 25
+      Caption = 'btnEditExportFields'
+      TabOrder = 9
+      OnClick = btnEditExportFieldsClick
     end
   end
   object chrmBrowser: TChromium
@@ -242,7 +258,7 @@ object ViewMain: TViewMain
     Left = 456
     Top = 150
     Bitmap = {
-      494C010101000800500010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C010101000800540010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       000000000000000000000000000000000000323232FF000000FF000000FF0000
       00FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF0202
@@ -395,5 +411,12 @@ object ViewMain: TViewMain
     OnTimer = tmrJobsGridUpdateTimer
     Left = 40
     Top = 155
+  end
+  object tmr1: TTimer
+    Enabled = False
+    Interval = 10000
+    OnTimer = tmr1Timer
+    Left = 288
+    Top = 40
   end
 end

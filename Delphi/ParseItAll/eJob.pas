@@ -4,6 +4,7 @@ interface
 
 uses
   API_ORM,
+  eRuleRecords,
   eLevel;
 
 type
@@ -25,6 +26,8 @@ type
     procedure SetZeroLink(aValue: string);
   //////////////////
   public
+    function CreateRuleRecFullList: TRecordList;
+
     function GetLevel(aLevel: integer): TJobLevel;
     function GetMaxLevel: TJobLevel;
     function GetMinLevel: TJobLevel;
@@ -44,6 +47,18 @@ implementation
 
 uses
   Data.DB;
+
+function TJob.CreateRuleRecFullList: TRecordList;
+var
+  Level: TJobLevel;
+begin
+  Result := TRecordList.Create(False);
+
+  for Level in Self.Levels do
+    begin
+
+    end;
+end;
 
 procedure TJob.Assign(aSourceEntity: TEntityAbstract);
 begin
