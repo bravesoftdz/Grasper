@@ -103,6 +103,7 @@ type
 
     // Manage Job Rules
     procedure StoreJobRules;
+    procedure StoreExportFields;
 
     // Events
     procedure OnNodeSelected;
@@ -119,11 +120,14 @@ type
     procedure AddAction;
     procedure AddRegExp;
     procedure AddRequest;
+    procedure AddExportField;
+    procedure AddExportFieldCustom;
 
     // Rule Removing
     procedure RemoveRule;
     procedure RemoveRegExp;
     procedure RemoveRequest;
+    procedure RemoveExportField;
 
     // Nodes
     procedure AssignNodeToRule;
@@ -170,16 +174,61 @@ uses
   mNodes,
 
   FireDAC.Comp.Client,
-  eTestLink;
+  eTestLink,
+  eExportField;
+
+procedure TController.AddExportFieldCustom;
+var
+  ExportField: TExportField;
+begin
+  ExportField := TExportField.Create(FDBEngine);
+  ExportField.Title := 'Enter Field Title';
+  ExportField.OrderNum := GetJob.ExportFields.Count + 1;
+  ExportField.IsEnabled := True;
+
+  GetJob.ExportFields.Add(ExportField);
+  ViewExportFields.InsertExportField(ExportField);
+end;
+
+procedure TController.RemoveExportField;
+begin
+  GetJob.ExportFields.DeleteByEntity(ViewExportFields.SelectedExportField);
+
+  ViewExportFields.RemoveExportField;
+end;
+
+procedure TController.StoreExportFields;
+begin
+  GetJob.ExportFields.SaveList(GetJob.ID);
+end;
+
+procedure TController.AddExportField;
+var
+  ExportField: TExportField;
+begin
+  ExportField := TExportField.Create(FDBEngine);
+  ExportField.RuleRecID := ViewExportFields.SelectedRuleRec.ID;
+  ExportField.Title := ViewExportFields.SelectedRuleRec.Key;
+  ExportField.OrderNum := GetJob.ExportFields.Count + 1;
+  ExportField.IsEnabled := True;
+
+  GetJob.ExportFields.Add(ExportField);
+  ViewExportFields.InsertExportField(ExportField);
+end;
 
 procedure TController.EditExportFields;
 var
   Job: TJob;
+  RecList: TJobRecordList;
 begin
   Job := TJob.Create(FDBEngine, ViewMain.SelectedJobID);
-  FObjData.Add('Job', Job);
+  FObjData.AddOrSetValue('Job', Job);
 
   CallView(TViewExportFields);
+
+  RecList := Job.CreateRuleRecFullList;
+  ViewExportFields.RenderRuleRecKeys(RecList);
+  ViewExportFields.RenderExportFields(Job.ExportFields);
 end;
 
 procedure TController.RunLevelTest;

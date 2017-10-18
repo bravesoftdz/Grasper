@@ -40,7 +40,8 @@ uses
   eRequest in 'eRequest.pas',
   mNodes in 'mNodes.pas',
   eExportField in 'eExportField.pas',
-  vExportFields in 'vExportFields.pas' {ViewExportFields};
+  vExportFields in 'vExportFields.pas' {ViewExportFields},
+  API_ORM_Helper in '..\..\..\Libraries\Delphi\API_ORM_Helper.pas';
 
 {$R *.res}
 

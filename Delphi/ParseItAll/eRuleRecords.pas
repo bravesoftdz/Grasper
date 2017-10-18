@@ -23,7 +23,7 @@ type
     property GrabTypeID: Integer read GetGrabTypeID write SetGrabTypeID;
   end;
 
-  TRecordList = TEntityList<TJobRecord>;
+  TJobRecordList = TEntityList<TJobRecord>;
 
 implementation
 

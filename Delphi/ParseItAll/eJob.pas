@@ -3,9 +3,12 @@ unit eJob;
 interface
 
 uses
+  System.Generics.Collections,
   API_ORM,
-  eRuleRecords,
-  eLevel;
+  eExportField,
+  eLevel,
+  eRule,
+  eRuleRecords;
 
 type
   TJob = class(TEntityAbstract)
@@ -17,6 +20,7 @@ type
     procedure Assign(aSourceEntity: TEntityAbstract); override;
   ////////////////////
   private
+    FExportFields: TExportFieldList;
     FLevels: TLevelList;
   // Getters Setters
     function GetLevels: TLevelList;
@@ -24,16 +28,19 @@ type
     procedure SetCaption(aValue: string);
     function GetZeroLink: string;
     procedure SetZeroLink(aValue: string);
-  //////////////////
+
+    function GetExportFields: TExportFieldList;
   public
-    function CreateRuleRecFullList: TRecordList;
+    function CreateRuleRecFullList: TJobRecordList;
 
     function GetLevel(aLevel: integer): TJobLevel;
     function GetMaxLevel: TJobLevel;
     function GetMinLevel: TJobLevel;
+
     property Caption: string read GetCaption write SetCaption;
-    property ZeroLink: string read GetZeroLink write SetZeroLink;
+    property ExportFields: TExportFieldList read GetExportFields;
     property Levels: TLevelList read GetLevels;
+    property ZeroLink: string read GetZeroLink write SetZeroLink;
   end;
 
   TJobList = TEntityList<TJob>;
@@ -46,18 +53,52 @@ type
 implementation
 
 uses
-  Data.DB;
+  Data.DB,
+  API_ORM_Helper;
 
-function TJob.CreateRuleRecFullList: TRecordList;
+function TJob.GetExportFields: TExportFieldList;
+begin
+  if not Assigned(FExportFields) then
+    FExportFields := TExportFieldList.Create(Self, 'JOB_ID', ID, 'ORDER_NUM');
+
+  Result := FExportFields;
+end;
+
+function TJob.CreateRuleRecFullList: TJobRecordList;
 var
   Level: TJobLevel;
+  RuleRelList: TRuleRuleRelList;
+  RuleRel: TRuleRuleRel;
 begin
-  Result := TRecordList.Create(False);
+  RuleRelList := TRuleRuleRelList.Create(False);
+  Result := TJobRecordList.Create(False);
+  try
+    for Level in Self.Levels do
+      begin
+        for RuleRel in Level.BodyRule.ChildRuleRels  do
 
-  for Level in Self.Levels do
-    begin
+          RuleRel.RecursionSearch<TRuleRuleRel>(
+            RuleRelList,
+            function(aEntity: TRuleRuleRel): TEntityList<TRuleRuleRel>
+              begin
+                Result := aEntity.ChildRule.ChildRuleRels;
+              end,
+            function(aEntity: TRuleRuleRel): Boolean
+              begin
+                if aEntity.ChildRule.Rec <> nil then
+                  Result := True
+                else
+                  Result := False;
+              end
+          );
 
-    end;
+      end;
+
+    for RuleRel in RuleRelList do
+      Result.Add(RuleRel.ChildRule.Rec);
+  finally
+    RuleRelList.Free;
+  end;
 end;
 
 procedure TJob.Assign(aSourceEntity: TEntityAbstract);
@@ -68,6 +109,7 @@ begin
   if aSourceEntity is TJob then
     begin
       Levels.Assign(TJob(aSourceEntity).Levels);
+      ExportFields.Assign(TJob(aSourceEntity).FExportFields);
     end;
 end;
 
@@ -113,6 +155,7 @@ end;
 procedure TJob.SaveLists;
 begin
   if Assigned(FLevels) then FLevels.SaveList(ID);
+  if Assigned(FExportFields) then FExportFields.SaveList(ID);
 end;
 
 function TJob.GetLevels: TLevelList;

@@ -17,6 +17,8 @@ type
     procedure SetJobID(aValue: Integer);
     function GetRuleRecID: Integer;
     procedure SetRuleRecID(aValue: Integer);
+    function GetTitle: string;
+    procedure SetTitle(aValue: string);
     function GetOrderNum: Integer;
     procedure SetOrderNum(aValue: Integer);
     function GetIsEnabled: Boolean;
@@ -25,6 +27,7 @@ type
   public
     property JobID: Integer read GetJobID write SetJobID;
     property RuleRecID: Integer read GetRuleRecID write SetRuleRecID;
+    property Title: string read GetTitle write SetTitle;
     property OrderNum: Integer read GetOrderNum write SetOrderNum;
     property IsEnabled: Boolean read GetIsEnabled write SetIsEnabled;
   end;
@@ -35,6 +38,16 @@ implementation
 
 uses
   Data.DB;
+
+function TExportField.GetTitle: string;
+begin
+  Result := FData.Items['TITLE'];
+end;
+
+procedure TExportField.SetTitle(aValue: string);
+begin
+  FData.AddOrSetValue('TITLE', aValue);
+end;
 
 function TExportField.GetRuleRecID: Integer;
 begin
@@ -82,6 +95,7 @@ begin
 
   AddField(Result.FieldList, 'JOB_ID', ftInteger);
   AddField(Result.FieldList, 'JOB_RULE_REC_ID', ftInteger);
+  AddField(Result.FieldList, 'TITLE', ftString);
   AddField(Result.FieldList, 'ORDER_NUM', ftInteger);
   AddField(Result.FieldList, 'IS_ENABLED', ftBoolean);
 end;
