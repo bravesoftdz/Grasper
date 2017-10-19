@@ -554,6 +554,8 @@ function processDOM(income) {
     if (income.link_id != null)
         objResult.link_id = income.link_id;
 
+    groupCounter = 1; 
+
     income.rules.forEach(function (rule) {
 
         var objRuleResult = getRuleResult(rule, document, groupCounter, 0);

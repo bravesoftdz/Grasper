@@ -495,7 +495,7 @@ end;
 function TModelJS.EncodeRequestToJSON(aJobRequest: TJobRequest): TJSONObject;
 begin
   Result := TJSONObject.Create;
-  Result.AddPair('id', TJSONNumber.Create(aJobRequest.JobRuleID));
+  Result.AddPair('id', TJSONNumber.Create(aJobRequest.ID));
 end;
 
 function TModelParser.GetGroupID(var aGroupBinds: TArray<TGroupBind>; aDataGroupNum, aDataParentGroupNum: Integer): Integer;

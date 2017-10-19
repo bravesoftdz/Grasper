@@ -152,7 +152,7 @@ object ViewMain: TViewMain
       OnClick = btnGoClick
     end
     object btnClear: TButton
-      Left = 344
+      Left = 409
       Top = 3
       Width = 57
       Height = 25
@@ -160,14 +160,14 @@ object ViewMain: TViewMain
       TabOrder = 3
       OnClick = btnClearClick
     end
-    object btnSaveToCSV: TBitBtn
-      Left = 407
+    object btnExportToCSV: TBitBtn
+      Left = 263
       Top = 3
       Width = 59
       Height = 25
-      Caption = 'btnSaveToCSV'
+      Caption = 'btnExportToCSV'
       TabOrder = 4
-      OnClick = btnSaveToCSVClick
+      OnClick = btnExportToCSVClick
     end
     object btnCopy: TBitBtn
       Left = 472
@@ -258,7 +258,7 @@ object ViewMain: TViewMain
     Left = 456
     Top = 150
     Bitmap = {
-      494C010101000800540010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C010101000800580010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       000000000000000000000000000000000000323232FF000000FF000000FF0000
       00FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF0202

@@ -5,15 +5,15 @@ interface
 uses
   API_MVC_DB,
   API_Yandex,
+  eExportField,
   eLevel,
+  eLink,
   eRule,
-  eLink;
+  FireDAC.Comp.Client;
 
 type
   TModelExport = class(TModelDB)
   private
-    FFileName: string;
-
     FTranslater: TYaTranslater;
 
     FRuTitle: string;
@@ -24,15 +24,17 @@ type
     FEnCity: string;
     FUaCity: string;
 
-    function GetRuleKeysFromLevel(aLevel: TJobLevel): TArray<string>;
-    function GetKeysFromRule(aRule: TJobRule): TArray<string>;
-    procedure GetLinkslist(aJobID: Integer; aKeys: TArray<string>);
-    procedure ProcessLinkResults(aLinkID: Integer; aKeys:TArray<string>);
-    procedure AddToCSVString(var aString: string; aValue: string);
-    procedure AddToValueString(var aString: string; aValue: string);
-    procedure WriteToFile(aString: string);
-
     procedure TryGetTranslate(var aValueStrings: string; aKey: string; aLink: TLink);
+  private
+    ////////////////////////////////////////////////////////////////////////////
+    FFileName: string;
+    function CreateLinkslist(aJobID: Integer): TFDQuery;
+    procedure AddToCSVString(var aString: string; aValue: string);
+    procedure AddToCSVValue(var aValue: string; aText: string);
+    procedure ProcessLink(aExportFields: TExportFieldList; aLinkID: Integer);
+    procedure WriteHeader(aExportFields: TExportFieldList);
+    procedure WriteToFile(aString: string);
+    ////////////////////////////////////////////////////////////////////////////
   published
     procedure ExportToCSV;
   end;
@@ -42,10 +44,23 @@ implementation
 uses
   System.SysUtils,
   System.Generics.Collections,
-  FireDAC.Comp.Client,
   API_Files,
   eJob,
   eRecord;
+
+procedure TModelExport.WriteHeader(aExportFields: TExportFieldList);
+var
+  CSVString: string;
+  ExportField: TExportField;
+begin
+  for ExportField in aExportFields do
+    begin
+      if ExportField.IsEnabled then
+        AddToCSVString(CSVString, ExportField.Title);
+    end;
+
+  WriteToFile(CSVString);
+end;
 
 procedure TModelExport.TryGetTranslate(var aValueStrings: string; aKey: string; aLink: TLink);
 var
@@ -111,12 +126,12 @@ begin
     end;
 end;
 
-procedure TModelExport.AddToValueString(var aString: string; aValue: string);
+procedure TModelExport.AddToCSVValue(var aValue: string; aText: string);
 begin
-  if aString <> '' then
-    aString := aString + #13#10 + aValue
+  if aValue <> '' then
+    aValue := aValue + #13#10 + aText
   else
-    aString := aValue;
+    aValue := aText;
 end;
 
 procedure TModelExport.AddToCSVString(var aString: string; aValue: string);
@@ -133,16 +148,50 @@ begin
   TFilesEngine.AppendToFile(FFileName, aString);
 end;
 
-procedure TModelExport.ProcessLinkResults(aLinkID: Integer; aKeys:TArray<string>);
+procedure TModelExport.ProcessLink(aExportFields: TExportFieldList; aLinkID: Integer);
 var
-  Link: TLink;
-  Key, Value: string;
-  CSVString, ValueStrings: string;
-  RecList: TObjectList<TRecord>;
-  Rec: TRecord;
+  CSVString: string;
+  CSVValue: string;
+  ExportField: TExportField;
   i: Integer;
+  InvertCSVString: TArray<string>;
+  Link: TLink;
+  Rec: TRecord;
+  RecList: TRecordList;
 begin
   Link := TLink.Create(FDBEngine, aLinkID);
+  try
+    for i := aExportFields.Count - 1 downto 0 do
+      begin
+        CSVValue := '';
+
+        ExportField := aExportFields[i];
+        if not ExportField.IsEnabled then Continue;
+
+        if ExportField.RuleRecID > 0 then
+          RecList := Link.CreateRecListByKey(ExportField.RuleRec.Key)
+        else
+          RecList := TRecordList.Create(True);
+        try
+          for Rec in RecList do
+            AddToCSVValue(CSVValue, Rec.Value);
+        finally
+          if Assigned(RecList) then FreeAndNil(RecList);
+        end;
+
+        InvertCSVString := [CSVValue] + InvertCSVString;
+      end;
+
+    CSVString := '';
+    for CSVValue in InvertCSVString do
+      AddToCSVString(CSVString, CSVValue);
+
+    WriteToFile(CSVString);
+  finally
+    Link.Free;
+  end;
+
+  {Link := TLink.Create(FDBEngine, aLinkID);
   try
     CSVString := '';
 
@@ -239,96 +288,52 @@ begin
     WriteToFile(CSVString);
   finally
     FreeAndNil(Link);
-  end;
+  end;}
 end;
 
-procedure TModelExport.GetLinkslist(aJobID: Integer; aKeys: TArray<string>);
-var
-  dsQuery: TFDQuery;
+function TModelExport.CreateLinkslist(aJobID: Integer): TFDQuery;
 begin
-  dsQuery := TFDQuery.Create(nil);
-  try
-    dsQuery.SQL.Text :=
-      'select l.Id ' +
-      'from links l ' +
-      'join groups g on g.id = l.group_id ' +
-      'join link2link l2l on l2l.child_link_id = l.id ' +
-      'where not exists (select Id from link2link l2l where l2l.parent_link_id = l.Id) ' +
-      'and exists (select Id from records r where r.link_id = l.Id) ' +
-      'and g.job_id = :JobID ' +
-      'group by l2l.parent_link_id '+
-    //  'order by l.id';
-      'order by l.handle_time, level';
+  Result := TFDQuery.Create(nil);
 
-    dsQuery.ParamByName('JobID').AsInteger := aJobID;
-    FDBEngine.OpenQuery(dsQuery, False);
+  Result.SQL.Text :=
+    'select l.Id ' +
+    'from links l ' +
+    'join groups g on g.id = l.group_id ' +
+    'join link2link l2l on l2l.child_link_id = l.id ' +
+    'where not exists (select Id from link2link l2l where l2l.parent_link_id = l.Id) ' +
+    'and exists (select Id from records r where r.link_id = l.Id) ' +
+    'and g.job_id = :JobID ' +
+    'group by l2l.parent_link_id '+
+    'order by l.handle_time, level';
 
-    while not dsQuery.EOF do
-      begin
-        ProcessLinkResults(dsQuery.FieldByName('Id').AsInteger, aKeys);
-        dsQuery.Next;
-      end;
-  finally
-    dsQuery.Free;
-  end;
-end;
-
-function TModelExport.GetKeysFromRule(aRule: TJobRule): TArray<string>;
-var
-  RuleRuleRel: TRuleRuleRel;
-begin
-  Result := [];
-
-  if aRule.Rec <> nil then
-    Result := Result + [aRule.Rec.Key];
-
-  for RuleRuleRel in aRule.ChildRuleRels do
-    Result := Result + GetKeysFromRule(RuleRuleRel.ChildRule);
-end;
-
-function TModelExport.GetRuleKeysFromLevel(aLevel: TJobLevel): TArray<string>;
-begin
-  Result := [];
-  Result := Result + GetKeysFromRule(aLevel.BodyRule);
+  Result.ParamByName('JobID').AsInteger := aJobID;
+  FDBEngine.OpenQuery(Result, False);
 end;
 
 procedure TModelExport.ExportToCSV;
 var
-  i: Integer;
   Job: TJob;
-  Level: TJobLevel;
-  Keys: TArray<string>;
-  Key: string;
-  CSVString: string;
+  dsQuery: TFDQuery;
 begin
   Job := (FObjData.Items['Job'] as TJob);
+  try
+    // create file
+    FFileName := GetCurrentDir + '\Export\' +Job.ID.ToString + '_' + IntToStr(Trunc(Now))+'.csv';
+    TFilesEngine.CreateFile(FFileName);
 
-  Keys := ['ctime'];
-  for i := 0 to Job.Levels.Count - 1 do
-    begin
-      Level := Job.Levels[i];
-      Keys := Keys + GetRuleKeysFromLevel(Level);
-    end;
-  Keys := Keys + ['category_identifier', 'ua_title', 'ua_city', 'ua_country', 'ua_address'];
-  Keys := Keys + ['en_country'];
-  Keys := Keys + ['ru_content', 'en_content', 'ua_content'];
-  Keys := Keys + ['ru_contacts', 'en_contacts', 'ua_contacts'];
-  Keys := Keys + ['ru_source', 'en_source', 'ua_source'];
+    // header
+    WriteHeader(Job.ExportFields);
 
-  // create file
-  FFileName := GetCurrentDir + '\Export\' +Job.ID.ToString + '_' + IntToStr(Trunc(Now))+'.csv';
-  TFilesEngine.CreateFile(FFileName);
-
-  // header
-  CSVString := '';
-  for Key in Keys do
-    AddToCSVString(CSVString, Key);
-  WriteToFile(CSVString);
-
-  // traslater
-  FTranslater := TYaTranslater.Create;
-
-  GetLinkslist(Job.ID, Keys);
+    dsQuery := CreateLinkslist(Job.ID);
+    while not dsQuery.EOF do
+      begin
+        ProcessLink(Job.ExportFields, dsQuery.FieldByName('Id').AsInteger);
+        dsQuery.Next;
+      end;
+  finally
+    dsQuery.Free;
+    Job.Free;
+  end;
 end;
 
 end.

@@ -30,7 +30,7 @@ type
     actlstMain: TActionList;
     acCreateJob: TAction;
     btnClear: TButton;
-    btnSaveToCSV: TBitBtn;
+    btnExportToCSV: TBitBtn;
     btnCopy: TBitBtn;
     btnTest: TButton;
     btnStop: TBitBtn;
@@ -47,7 +47,7 @@ type
     procedure btnGoClick(Sender: TObject);
     procedure acCreateJobExecute(Sender: TObject);
     procedure btnClearClick(Sender: TObject);
-    procedure btnSaveToCSVClick(Sender: TObject);
+    procedure btnExportToCSVClick(Sender: TObject);
     procedure btnCopyClick(Sender: TObject);
     procedure btnTestClick(Sender: TObject);
     procedure btnStopClick(Sender: TObject);
@@ -195,9 +195,9 @@ begin
   SendMessage('StartJob');
 end;
 
-procedure TViewMain.btnSaveToCSVClick(Sender: TObject);
+procedure TViewMain.btnExportToCSVClick(Sender: TObject);
 begin
-  SendMessage('ExportJobResultsToCSV');
+  SendMessage('ExportToCSV');
 end;
 
 procedure TViewMain.btnStopClick(Sender: TObject);

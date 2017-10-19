@@ -3,7 +3,8 @@ unit eExportField;
 interface
 
 uses
-  API_ORM;
+  API_ORM,
+  eRuleRecords;
 
 type
   TExportField = class(TEntityAbstract)
@@ -23,6 +24,8 @@ type
     procedure SetOrderNum(aValue: Integer);
     function GetIsEnabled: Boolean;
     procedure SetIsEnabled(aValue: Boolean);
+    function GetRuleRec: TJobRecord;
+    procedure SetRuleRec(aValue: TJobRecord);
   ///////////////////////
   public
     property JobID: Integer read GetJobID write SetJobID;
@@ -30,6 +33,8 @@ type
     property Title: string read GetTitle write SetTitle;
     property OrderNum: Integer read GetOrderNum write SetOrderNum;
     property IsEnabled: Boolean read GetIsEnabled write SetIsEnabled;
+
+    property RuleRec: TJobRecord read GetRuleRec write SetRuleRec;
   end;
 
   TExportFieldList = TEntityList<TExportField>;
@@ -38,6 +43,16 @@ implementation
 
 uses
   Data.DB;
+
+function TExportField.GetRuleRec: TJobRecord;
+begin
+  Result := FOneRelations.Items['JOB_RULE_RECORDS'] as TJobRecord;
+end;
+
+procedure TExportField.SetRuleRec(aValue: TJobRecord);
+begin
+  FOneRelations.AddOrSetValue('JOB_RULE_RECORDS', aValue);
+end;
 
 function TExportField.GetTitle: string;
 begin
@@ -98,6 +113,8 @@ begin
   AddField(Result.FieldList, 'TITLE', ftString);
   AddField(Result.FieldList, 'ORDER_NUM', ftInteger);
   AddField(Result.FieldList, 'IS_ENABLED', ftBoolean);
+
+  AddOneRelation(Result.OneRelatedList, 'ID', 'JOB_RULE_REC_ID', TJobRecord);
 end;
 
 end.

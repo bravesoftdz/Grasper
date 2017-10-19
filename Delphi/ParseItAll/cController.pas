@@ -140,7 +140,7 @@ type
     procedure GetNextTestPage;
 
     // Exports
-    procedure ExportJobResultsToCSV;
+    procedure ExportToCSV;
 
     procedure TempCopy;
 
@@ -526,7 +526,7 @@ begin
   end;
 end;
 
-procedure TController.ExportJobResultsToCSV;
+procedure TController.ExportToCSV;
 var
   Job: TJob;
 begin

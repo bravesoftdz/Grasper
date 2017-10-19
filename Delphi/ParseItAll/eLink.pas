@@ -56,7 +56,15 @@ type
     function GetRecordList: TRecordList;
     function GetChildLinkRels: TLinkRelList;
   ////////////////////
+  private
+  //////////////////////////////////////////////////////////////////////////////
+    function GetParentLinkID(aLinkID: integer; out aGroupID: Integer): Integer;
+    function GetRecIDsByKey(aKey: string): TArray<Integer>;
+  //////////////////////////////////////////////////////////////////////////////
   public
+  //////////////////////////////////////////////////////////////////////////////
+    function CreateRecListByKey(aKey: string): TRecordList;
+  //////////////////////////////////////////////////////////////////////////////
     function GetRecordsByKey(aKey: string; aResult: TObjectList<TRecord> = nil; aOrignLink: TLink = nil; aGroupID: Integer = 0): TObjectList<TRecord>;
     property GroupID: Integer read GetGroupID write SetGroupID;
     property Level: Integer read GetLevel write SetLevel;
@@ -73,7 +81,80 @@ implementation
 
 uses
   Data.DB,
-  eGroup;
+  FireDAC.Comp.Client,
+  eGroup,
+  System.SysUtils;
+
+function TLink.GetParentLinkID(aLinkID: Integer; out aGroupID: Integer): Integer;
+var
+  ParentLink: TLink;
+begin
+  ParentLink := TLink.Create(FDBEngine, aLinkID);
+  try
+    if ParentLink.ParentRel <> nil then
+      begin
+        Result := ParentLink.ParentRel.ParentLinkID;
+        aGroupID := ParentLink.GroupID;
+      end
+    else
+      Result := 0;
+  finally
+    ParentLink.Free;
+  end;
+end;
+
+function TLink.GetRecIDsByKey(aKey: string): TArray<Integer>;
+var
+  dsQuery: TFDQuery;
+  GroupID: Integer;
+  LinkID: Integer;
+  ParentLinkID: Integer;
+  SQL: string;
+begin
+  LinkID := Self.ID;
+  ParentLinkID := 0;
+
+  dsQuery := TFDQuery.Create(nil);
+  try
+    repeat
+      SQL := 'select Id from records where link_id = :LinkID and key = :Key';
+      if ParentLinkID > 0 then SQL := SQL + ' and group_id = :GroupID';
+
+      dsQuery.SQL.Text := SQL;
+      dsQuery.ParamByName('LinkID').AsInteger := LinkID;
+      dsQuery.ParamByName('Key').AsString := aKey;
+      if ParentLinkID > 0 then dsQuery.ParamByName('GroupID').AsInteger := GroupID;
+
+      FDBEngine.OpenQuery(dsQuery);
+
+      while not dsQuery.EOF  do
+        begin
+          Result := Result + [dsQuery.FieldByName('Id').AsInteger];
+          dsQuery.Next;
+        end;
+
+      ParentLinkID := GetParentLinkID(LinkID, GroupID);
+      if (Length(Result) = 0) and (ParentLinkID > 0) then
+        LinkID := ParentLinkID;
+
+    until (Length(Result) > 0) or (ParentLinkID = 0);
+  finally
+    dsQuery.Free;
+  end;
+end;
+
+function TLink.CreateRecListByKey(aKey: string): TRecordList;
+var
+  RecID: Integer;
+  RecIDs: TArray<Integer>;
+begin
+  Result := TRecordList.Create(True);
+
+  RecIDs := GetRecIDsByKey(aKey);
+
+  for RecID in RecIDs do
+    Result.Add(TRecord.Create(FDBEngine, RecID));
+end;
 
 function TLink.CheckGroupInChain(aRecGroupID, aCheckGroupID: integer): Boolean;
 var
