@@ -9,25 +9,20 @@ uses
   eLevel,
   eLink,
   eRule,
+  eRecord,
   FireDAC.Comp.Client;
 
 type
+  TCacheRecord = record
+    Key: string;
+    Value: string;
+  end;
+
   TModelExport = class(TModelDB)
-  private
-    FTranslater: TYaTranslater;
-
-    FRuTitle: string;
-    FEnTitle: string;
-    FUaTitle: string;
-
-    FRuCity: string;
-    FEnCity: string;
-    FUaCity: string;
-
-    procedure TryGetTranslate(var aValueStrings: string; aKey: string; aLink: TLink);
   private
     ////////////////////////////////////////////////////////////////////////////
     FFileName: string;
+    FCache: TArray<TCacheRecord>;
     function CreateLinkslist(aJobID: Integer): TFDQuery;
     procedure AddToCSVString(var aString: string; aValue: string);
     procedure AddToCSVValue(var aValue: string; aText: string);
@@ -35,6 +30,10 @@ type
     procedure WriteHeader(aExportFields: TExportFieldList);
     procedure WriteToFile(aString: string);
     ////////////////////////////////////////////////////////////////////////////
+  protected
+    procedure CustomHandle(aExportField: TExportField; aLink: TLink;
+      aRecList: TRecordList; var aCSVValue: string); virtual;
+    function GetVal(aLink: TLink; aKey: string): string;
   published
     procedure ExportToCSV;
   end;
@@ -45,8 +44,27 @@ uses
   System.SysUtils,
   System.Generics.Collections,
   API_Files,
-  eJob,
-  eRecord;
+  eJob;
+
+function TModelExport.GetVal(aLink: TLink; aKey: string): string;
+var
+  CacheRec: TCacheRecord;
+begin
+  for CacheRec in FCache do
+    if CacheRec.Key = aKey then
+      Exit(CacheRec.Value);
+
+  Result := aLink.GetFirstValueByKey(aKey);
+
+  CacheRec.Key := aKey;
+  CacheRec.Value := Result;
+  FCache := FCache + [CacheRec];
+end;
+
+procedure TModelExport.CustomHandle(aExportField: TExportField; aLink: TLink;
+  aRecList: TRecordList; var aCSVValue: string);
+begin
+end;
 
 procedure TModelExport.WriteHeader(aExportFields: TExportFieldList);
 var
@@ -60,70 +78,6 @@ begin
     end;
 
   WriteToFile(CSVString);
-end;
-
-procedure TModelExport.TryGetTranslate(var aValueStrings: string; aKey: string; aLink: TLink);
-var
-  ruKey, ruValue: string;
-  Lang: string;
-  Rec: TRecord;
-begin
-  //if aValueStrings <> '' then Exit;
-
-  if (aKey = 'ru_title') then
-    if (aValueStrings.Length < 5) then
-      ruKey := 'en_title'
-    else
-      exit;
-
-  if aKey = 'en_country' then ruKey := 'ru_country';
-  if aKey = 'ua_title' then ruKey := 'ru_title';
-  if aKey = 'ua_country' then ruKey := 'ru_country';
-  if aKey = 'ua_address' then ruKey := 'ru_address';
-  if aKey = 'ua_city' then ruKey := 'ru_city';
-
-  if aKey = 'ru_content' then
-    aValueStrings := Format(aValueStrings, [
-      FRuTitle,
-      FRuCity,
-      FRuTitle,
-      FRuCity
-    ]);
-
-  if aKey = 'en_content' then
-    aValueStrings := Format(aValueStrings, [
-      FEnTitle,
-      FEnCity,
-      FEnTitle,
-      FEnCity
-    ]);
-
-  if aKey = 'ua_content' then
-    aValueStrings := Format(aValueStrings, [
-      FUaTitle,
-      FUaCity,
-      FUaTitle,
-      FUaCity
-    ]);
-
-  if ruKey = '' then Exit;
-
-  for Rec in aLink.GetRecordsByKey(ruKey) do
-    begin
-      ruValue := Rec.Value;
-      Break;
-    end;
-
-  if aKey.Contains('en_') then Lang := 'en';
-  if aKey.Contains('ru_') then Lang := 'ru';
-  if aKey.Contains('ua_') then Lang := 'uk';
-
-  if ruValue <> '' then
-    try
-      aValueStrings := FTranslater.Translate(Lang, ruValue);
-    except
-
-    end;
 end;
 
 procedure TModelExport.AddToCSVValue(var aValue: string; aText: string);
@@ -159,6 +113,8 @@ var
   Rec: TRecord;
   RecList: TRecordList;
 begin
+  FCache := [];
+
   Link := TLink.Create(FDBEngine, aLinkID);
   try
     for i := aExportFields.Count - 1 downto 0 do
@@ -175,6 +131,9 @@ begin
         try
           for Rec in RecList do
             AddToCSVValue(CSVValue, Rec.Value);
+
+          // custom proc
+          CustomHandle(ExportField, Link, RecList, CSVValue);
         finally
           if Assigned(RecList) then FreeAndNil(RecList);
         end;

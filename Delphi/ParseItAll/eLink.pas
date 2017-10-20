@@ -64,6 +64,7 @@ type
   public
   //////////////////////////////////////////////////////////////////////////////
     function CreateRecListByKey(aKey: string): TRecordList;
+    function GetFirstValueByKey(aKey: string): string;
   //////////////////////////////////////////////////////////////////////////////
     function GetRecordsByKey(aKey: string; aResult: TObjectList<TRecord> = nil; aOrignLink: TLink = nil; aGroupID: Integer = 0): TObjectList<TRecord>;
     property GroupID: Integer read GetGroupID write SetGroupID;
@@ -84,6 +85,21 @@ uses
   FireDAC.Comp.Client,
   eGroup,
   System.SysUtils;
+
+function TLink.GetFirstValueByKey(aKey: string): string;
+var
+  RecList: TRecordList;
+begin
+  RecList := CreateRecListByKey(aKey);
+  try
+    if RecList.Count > 0 then
+      Result := RecList[0].Value
+    else
+      Result := '';
+  finally
+    RecList.Free;
+  end;
+end;
 
 function TLink.GetParentLinkID(aLinkID: Integer; out aGroupID: Integer): Integer;
 var
@@ -117,19 +133,23 @@ begin
   dsQuery := TFDQuery.Create(nil);
   try
     repeat
-      SQL := 'select Id from records where link_id = :LinkID and key = :Key';
-      if ParentLinkID > 0 then SQL := SQL + ' and group_id = :GroupID';
+      SQL := 'select Id, group_id from records where link_id = :LinkID and key = :Key order by Id';
 
       dsQuery.SQL.Text := SQL;
       dsQuery.ParamByName('LinkID').AsInteger := LinkID;
       dsQuery.ParamByName('Key').AsString := aKey;
-      if ParentLinkID > 0 then dsQuery.ParamByName('GroupID').AsInteger := GroupID;
 
       FDBEngine.OpenQuery(dsQuery);
 
       while not dsQuery.EOF  do
         begin
-          Result := Result + [dsQuery.FieldByName('Id').AsInteger];
+          if ((ParentLinkID > 0) and
+              CheckGroupInChain(GroupID, dsQuery.FieldByName('group_id').AsInteger)
+             )
+             or (ParentLinkID = 0)
+          then
+            Result := Result + [dsQuery.FieldByName('Id').AsInteger];
+
           dsQuery.Next;
         end;
 

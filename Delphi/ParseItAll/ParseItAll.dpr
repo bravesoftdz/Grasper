@@ -41,7 +41,8 @@ uses
   mNodes in 'mNodes.pas',
   eExportField in 'eExportField.pas',
   vExportFields in 'vExportFields.pas' {ViewExportFields},
-  API_ORM_Helper in '..\..\..\Libraries\Delphi\API_ORM_Helper.pas';
+  API_ORM_Helper in '..\..\..\Libraries\Delphi\API_ORM_Helper.pas',
+  mExportRoman in 'mExportRoman.pas';
 
 {$R *.res}
 

@@ -171,6 +171,7 @@ uses
   vExportFields,
   mTester,
   mExport,
+  mExportRoman,
   mNodes,
 
   FireDAC.Comp.Client,
@@ -532,7 +533,7 @@ var
 begin
   Job := TJob.Create(FDBEngine, ViewMain.SelectedJobID);
   FObjData.AddOrSetValue('Job', Job);
-  CallModel(TModelExport, 'ExportToCSV');
+  CallModel(TModelExportRoman, 'ExportToCSV');
 end;
 
 procedure TController.OnTestPageLoaded;
