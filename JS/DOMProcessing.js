@@ -563,7 +563,12 @@ function processDOM(income) {
 
     });
 
-    return JSON.stringify(objResult);
+    
+ if (JSON.stringify === undefined) {
+	if (JSON.encode != null) JSON.stringify = JSON.encode;
+ }
+
+   return JSON.stringify(objResult);
 }
 
 $(function () {

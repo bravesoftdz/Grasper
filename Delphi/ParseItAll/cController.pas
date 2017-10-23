@@ -507,24 +507,18 @@ end;
 
 procedure TController.TempCopy;
 var
-  TargerRule, SourceRule, NewRule: TJobRule;
-  NewRuleRel: TRuleRuleRel;
+  SourceJob, TargerJob: TJob;
 begin
-  TargerRule := TJobRule.Create(FDBEngine, 7439);
-  SourceRule := TJobRule.Create(FDBEngine, 7469);
-  NewRule := TJobRule.Create(FDBEngine, 0);
-  NewRuleRel := TRuleRuleRel.Create(FDBEngine);
-  try
-    NewRule.Assign(SourceRule);
-    NewRuleRel.ChildRule := NewRule;
-
-    TargerRule.ChildRuleRels.Add(NewRuleRel);
-
-    TargerRule.SaveAll;
-  finally
-    TargerRule.Free;
-    SourceRule.Free;
-  end;
+    SourceJob := TJob.Create(FDBEngine, 1);
+    TargerJob := TJob.Create(FDBEngine);
+    try
+      TargerJob.Assign(SourceJob);
+      TargerJob.Caption := 'TripAdvisor.com Restaurants';
+      TargerJob.SaveAll;
+    finally
+      SourceJob.Free;
+      TargerJob.Free;
+    end;
 end;
 
 procedure TController.ExportToCSV;

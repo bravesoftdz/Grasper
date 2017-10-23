@@ -109,7 +109,7 @@ begin
   if aSourceEntity is TJob then
     begin
       Levels.Assign(TJob(aSourceEntity).Levels);
-      ExportFields.Assign(TJob(aSourceEntity).FExportFields);
+      ExportFields.Assign(TJob(aSourceEntity).ExportFields);
     end;
 end;
 
