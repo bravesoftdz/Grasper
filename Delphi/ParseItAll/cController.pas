@@ -509,11 +509,11 @@ procedure TController.TempCopy;
 var
   SourceJob, TargerJob: TJob;
 begin
-    SourceJob := TJob.Create(FDBEngine, 1);
+    SourceJob := TJob.Create(FDBEngine, 2);
     TargerJob := TJob.Create(FDBEngine);
     try
       TargerJob.Assign(SourceJob);
-      TargerJob.Caption := 'TripAdvisor.com Restaurants';
+      TargerJob.Caption := 'TripAdvisor.com Sights';
       TargerJob.SaveAll;
     finally
       SourceJob.Free;
@@ -527,7 +527,12 @@ var
 begin
   Job := TJob.Create(FDBEngine, ViewMain.SelectedJobID);
   FObjData.AddOrSetValue('Job', Job);
-  CallModel(TModelExportRoman, 'ExportToCSV');
+
+  case Job.ID of
+    1: CallModel(TModelExportRomanH, 'ExportToCSV');
+    2: CallModel(TModelExportRomanR, 'ExportToCSV');
+    3: CallModel(TModelExportRomanS, 'ExportToCSV');
+  end;
 end;
 
 procedure TController.OnTestPageLoaded;

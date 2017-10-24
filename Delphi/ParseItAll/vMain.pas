@@ -96,7 +96,7 @@ end;
 
 procedure TViewMain.btnCopyClick(Sender: TObject);
 begin
- SendMessage('TempCopy');
+  SendMessage('TempCopy');
 end;
 
 procedure TViewMain.SetJobsGrid(aJobs: TJobList);
