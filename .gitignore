@@ -6,3 +6,6 @@
 /Delphi/ParseItAll/*.identcache
 /Delphi/ParseItAll/*.local
 /Delphi/ParseItAll/*.stat
+/Delphi/Grasper/Win32/DCU/*.dcu
+/Delphi/Grasper/Win32
+/Delphi/Grasper/__history
