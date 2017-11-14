@@ -1,9 +1,9 @@
 object ViewMain: TViewMain
-  Left = 0
-  Top = 0
+  Left = 600
+  Top = 394
   Caption = 'Grasper'
-  ClientHeight = 290
-  ClientWidth = 554
+  ClientHeight = 424
+  ClientWidth = 773
   Color = clBtnFace
   TransparentColorValue = clNone
   Font.Charset = DEFAULT_CHARSET
@@ -13,35 +13,30 @@ object ViewMain: TViewMain
   Font.Style = []
   Menu = mmMenu
   OldCreateOrder = False
-  Position = poScreenCenter
+  Position = poDesigned
   OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
   object splJobBrowser: TSplitter
     Left = 0
-    Top = 233
+    Top = 342
     Width = 554
     Height = 3
-    Cursor = crVSplit
-    Align = alTop
+    Align = alNone
     Beveled = True
-    ExplicitTop = 171
-    ExplicitWidth = 119
   end
   object pnlJobs: TPanel
-    Left = 0
-    Top = 73
+    Left = 71
+    Top = 125
     Width = 554
     Height = 160
-    Align = alTop
     BevelOuter = bvNone
     TabOrder = 0
     object strgrdJobs: TZColorStringGrid
-      Left = 0
-      Top = 0
+      Left = 36
+      Top = 25
       Width = 554
-      Height = 160
-      Align = alClient
+      Height = 200
       ColCount = 4
       DefaultRowHeight = 18
       DefaultDrawing = False
@@ -76,11 +71,10 @@ object ViewMain: TViewMain
     end
   end
   object pnlButtons: TPanel
-    Left = 0
-    Top = 0
+    Left = 176
+    Top = 49
     Width = 554
-    Height = 73
-    Align = alTop
+    Height = 129
     BevelOuter = bvNone
     Color = clWindow
     Ctl3D = True
@@ -214,21 +208,47 @@ object ViewMain: TViewMain
       OnClick = btnEditExportFieldsClick
     end
   end
-  object chrmBrowser: TChromium
+  object pgc1: TPageControl
     Left = 0
     Top = 236
     Width = 554
-    Height = 54
-    Align = alClient
-    DefaultUrl = 'about:blank'
+    Height = 188
+    ActivePage = ts1
     TabOrder = 2
-    Options.ImageLoading = STATE_DISABLED
-    Options.Webgl = STATE_DISABLED
+    object ts1: TTabSheet
+      Caption = 'ts1'
+      ExplicitHeight = 68
+      object chrmBrowser: TChromium
+        Left = 0
+        Top = 0
+        Width = 546
+        Height = 160
+        Align = alClient
+        DefaultUrl = 'about:blank'
+        TabOrder = 0
+        Options.ImageLoading = STATE_DISABLED
+        Options.Webgl = STATE_DISABLED
+        ExplicitLeft = 3
+        ExplicitTop = 24
+        ExplicitHeight = 116
+      end
+    end
+  end
+  object tlbButtons: TToolBar
+    Left = 0
+    Top = 0
+    Width = 773
+    Height = 29
+    Caption = 'tlbButtons'
+    TabOrder = 3
+    ExplicitLeft = 8
+    ExplicitTop = 8
+    ExplicitWidth = 554
   end
   object mmMenu: TMainMenu
     Images = ilIcons
-    Left = 356
-    Top = 150
+    Left = 236
+    Top = 286
     object mniProject: TMenuItem
       Caption = 'Projects'
       object mniNewProject: TMenuItem
@@ -249,16 +269,16 @@ object ViewMain: TViewMain
     end
   end
   object xpmnfstXP: TXPManifest
-    Left = 505
-    Top = 150
+    Left = 385
+    Top = 286
   end
   object ilIcons: TImageList
     ColorDepth = cd32Bit
     DrawingStyle = dsTransparent
-    Left = 456
-    Top = 150
+    Left = 336
+    Top = 286
     Bitmap = {
-      494C0101010008005C0010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C010101000800600010001000FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       000000000000000000000000000000000000323232FF000000FF000000FF0000
       00FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF0202
@@ -398,8 +418,8 @@ object ViewMain: TViewMain
       000000000000}
   end
   object actlstMain: TActionList
-    Left = 408
-    Top = 150
+    Left = 288
+    Top = 286
     object acCreateJob: TAction
       Hint = 'New Project'
       ImageIndex = 0
@@ -409,14 +429,14 @@ object ViewMain: TViewMain
   object tmrJobsGridUpdate: TTimer
     Interval = 2500
     OnTimer = tmrJobsGridUpdateTimer
-    Left = 40
-    Top = 155
+    Left = 64
+    Top = 291
   end
   object tmr1: TTimer
     Enabled = False
     Interval = 10000
     OnTimer = tmr1Timer
-    Left = 288
-    Top = 40
+    Left = 136
+    Top = 288
   end
 end

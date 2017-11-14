@@ -1,7 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <BorlandProject>
-  <Transactions>
-    <Transaction>2017/11/13 14:44:57.806,D:\Git\Grasper\Delphi\Grasper\Grasper.dproj=D:\Git\Grasper\Delphi\Grasper\ParseItAll.dproj</Transaction>
-    <Transaction>2017/11/13 16:47:42.753,D:\Git\Libraries\Delphi\API_ORM_GUI.pas=D:\Git\Libraries\Delphi\API_ORM_Cntrls.pas</Transaction>
+	<Transactions>
+    <Transaction>2017/11/13 14:44:57.000.806,D:\Git\Grasper\Delphi\Grasper\ParseItAll.dproj=D:\Git\Grasper\Delphi\Grasper\Grasper.dproj</Transaction>
+    <Transaction>2017/11/13 16:47:42.000.753,D:\Git\Libraries\Delphi\API_ORM_Cntrls.pas=D:\Git\Libraries\Delphi\API_ORM_GUI.pas</Transaction>
+    <Transaction>2017/11/14 17:31:40.787,=D:\Git\Grasper\Delphi\Grasper\Unit1.pas</Transaction>
+    <Transaction>2017/11/14 17:33:18.513,D:\Git\Libraries\Delphi\API_MVC_Threads.pas=D:\Git\Grasper\Delphi\Grasper\Unit1.pas</Transaction>
   </Transactions>
 </BorlandProject>

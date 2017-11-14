@@ -8,7 +8,7 @@ uses
   Vcl.Buttons, cefvcl, Vcl.Menus, System.ImageList, Vcl.ImgList, Vcl.XPMan,
   ZColorStringGrid, System.Actions, Vcl.ActnList,
   API_ORM_GUI,
-  eJob;
+  eJob, Vcl.ToolWin;
 
 type
   TViewMain = class(TViewORM)
@@ -21,8 +21,6 @@ type
     mniProject: TMenuItem;
     mniNewProject: TMenuItem;
     xpmnfstXP: TXPManifest;
-    splJobBrowser: TSplitter;
-    chrmBrowser: TChromium;
     btnCreateJob: TSpeedButton;
     ilIcons: TImageList;
     strgrdJobs: TZColorStringGrid;
@@ -40,6 +38,11 @@ type
     tmr1: TTimer;
     Edit1: TEdit;
     btnEditExportFields: TBitBtn;
+    pgc1: TPageControl;
+    splJobBrowser: TSplitter;
+    ts1: TTabSheet;
+    chrmBrowser: TChromium;
+    tlbButtons: TToolBar;
     procedure FormShow(Sender: TObject);
     procedure btnEditJobClick(Sender: TObject);
     procedure btnEditRulesClick(Sender: TObject);

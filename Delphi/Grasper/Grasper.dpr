@@ -42,7 +42,8 @@ uses
   eExportField in 'eExportField.pas',
   vExportFields in 'vExportFields.pas' {ViewExportFields},
   API_ORM_Helper in '..\..\..\Libraries\Delphi\API_ORM_Helper.pas',
-  mExportRoman in 'mExportRoman.pas';
+  mExportRoman in 'mExportRoman.pas',
+  API_MVC_Threads in '..\..\..\Libraries\Delphi\API_MVC_Threads.pas';
 
 {$R *.res}
 
