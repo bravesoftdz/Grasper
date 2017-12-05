@@ -1,5 +1,0 @@
-# отключить проверку внешних ключей
-SET foreign_key_checks = 0
-
-# удалить все ссылки задания TripAdvisor
-delete from links where job_id=4
