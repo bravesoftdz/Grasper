@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+  <Transactions>
+    <Transaction>2017/12/06 10:20:43.952,D:\Git\Grasper\Delphi\GrasperProject.groupproj=C:\Users\nekrash\Documents\Embarcadero\Studio\Projects\ProjectGroup1.groupproj</Transaction>
+    <Transaction>2017/12/06 10:27:12.207,D:\Git\Grasper\Delphi\GrasperGroup.groupproj=D:\Git\Grasper\Delphi\GrasperProject.groupproj</Transaction>
+  </Transactions>
+  <Default.Personality>
+    <Projects ActiveProject="D:\Git\Grasper\Delphi\GrasperShell\Grasper.dproj"/>
+  </Default.Personality>
+</BorlandProject>

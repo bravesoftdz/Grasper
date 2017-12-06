@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+  <Transactions>
+    <Transaction>2017/12/06 10:18:22.065,C:\Users\nekrash\Documents\Embarcadero\Studio\Projects\GrasperLib.dproj=C:\Users\nekrash\Documents\Embarcadero\Studio\Projects\Project1.dproj</Transaction>
+    <Transaction>2017/12/06 10:18:51.095,D:\Git\Grasper\Delphi\GrasperDLL\GrasperLib.dproj=C:\Users\nekrash\Documents\Embarcadero\Studio\Projects\GrasperLib.dproj</Transaction>
+    <Transaction>2017/12/06 11:31:32.579,=D:\Git\Libs\Delphi\API_MVC_VCL.pas</Transaction>
+    <Transaction>2017/12/06 11:32:05.942,=D:\Git\Grasper\Delphi\GrasperDLL\Unit1.pas</Transaction>
+    <Transaction>2017/12/06 11:32:33.735,D:\Git\Grasper\Delphi\GrasperDLL\vMain.dfm=D:\Git\Grasper\Delphi\GrasperDLL\Unit1.dfm</Transaction>
+    <Transaction>2017/12/06 11:32:33.735,D:\Git\Grasper\Delphi\GrasperDLL\vMain.pas=D:\Git\Grasper\Delphi\GrasperDLL\Unit1.pas</Transaction>
+  </Transactions>
+</BorlandProject>
