@@ -3,3 +3,6 @@
 /Delphi/GrasperDLL/__history
 /Delphi/Debug
 /Delphi/Release
+*.local
+*.identcache
+*.stat
