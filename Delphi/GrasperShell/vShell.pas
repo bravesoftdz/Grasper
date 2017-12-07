@@ -32,14 +32,9 @@ procedure TViewShell.tmr1Timer(Sender: TObject);
 begin
   inherited;
 
-  pbStarting.StepIt;
-
-  if pbStarting.Position >= pbStarting.Max then
-    begin
-      tmr1.Enabled := False;
-      Self.Hide;
-      StartGrasperLib;
-    end;
+  tmr1.Enabled := False;
+  Self.Hide;
+  StartGrasperLib;
 end;
 
 end.

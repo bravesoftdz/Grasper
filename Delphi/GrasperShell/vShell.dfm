@@ -19,10 +19,11 @@ inherited ViewShell: TViewShell
     Top = 32
     Width = 305
     Height = 17
+    Style = pbstMarquee
     TabOrder = 0
   end
   object tmr1: TTimer
-    Interval = 100
+    Interval = 2500
     OnTimer = tmr1Timer
     Left = 120
     Top = 8

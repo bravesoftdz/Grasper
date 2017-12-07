@@ -23,8 +23,13 @@ implementation
 {$R *.dfm}
 
 procedure TViewMain.FormClose(Sender: TObject; var Action: TCloseAction);
+var
+  SL: TStringList;
 begin
   inherited;
+
+  SL := TStringList.Create;
+  SL.Text := '21';
 
   Application.Terminate;
 end;
