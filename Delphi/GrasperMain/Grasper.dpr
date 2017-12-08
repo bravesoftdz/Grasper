@@ -2,9 +2,9 @@ program Grasper;
 
 uses
   Vcl.Forms,
-  API_MVC in '..\..\..\Libs\Delphi\API_MVC.pas',
   API_MVC_VCL in '..\..\..\Libs\Delphi\API_MVC_VCL.pas' {ViewVCLBase},
-  vShell in 'vShell.pas' {ViewShell};
+  vMain in 'vMain.pas' {ViewMain},
+  API_MVC in '..\..\..\Libs\Delphi\API_MVC.pas';
 
 {$R *.res}
 
@@ -15,6 +15,6 @@ begin
 
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
-  Application.CreateForm(TViewShell, ViewShell);
+  Application.CreateForm(TViewMain, ViewMain);
   Application.Run;
 end.

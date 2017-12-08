@@ -16,7 +16,7 @@ inherited ViewShell: TViewShell
   end
   object pbStarting: TProgressBar
     Left = 8
-    Top = 32
+    Top = 30
     Width = 305
     Height = 17
     Style = pbstMarquee

@@ -6,3 +6,4 @@
 *.local
 *.identcache
 *.stat
+/Delphi/GrasperMain/__history
