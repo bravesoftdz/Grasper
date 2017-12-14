@@ -10,6 +10,7 @@ type
   protected
     procedure InitDB; override;
   published
+    procedure GetJobList;
     procedure Test;
   end;
 
@@ -21,6 +22,22 @@ uses
 
 
   FireDAC.Comp.Client;
+
+procedure TController.GetJobList;
+var
+  dsQuery: TFDQuery;
+  s: string;
+begin
+  dsQuery := TFDQuery.Create(nil);
+  try
+    dsQuery.SQL.Text := 'select * from jobs';
+    FDBEngine.OpenQuery(dsQuery);
+
+    s := dsQuery.FieldByName('caption').AsString;
+  finally
+    dsQuery.Free;
+  end;
+end;
 
 procedure TController.Test;
 var
