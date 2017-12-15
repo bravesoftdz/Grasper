@@ -32,7 +32,7 @@ procedure TViewMain.FormCreate(Sender: TObject);
 begin
   inherited;
 
-  SendMessage('GetJobList');
+  SendMessage('PullJobList');
 end;
 
 procedure TViewMain.InitView;

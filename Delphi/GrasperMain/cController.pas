@@ -3,56 +3,50 @@ unit cController;
 interface
 
 uses
+  API_DB,
   API_MVC_DB;
 
 type
   TController = class(TControllerDB)
   protected
     procedure InitDB; override;
+  public
+    constructor Create; override;
   published
-    procedure GetJobList;
+    procedure PullJobList;
     procedure Test;
   end;
+
+var
+  DBEngine: TDBEngine;
 
 implementation
 
 uses
   API_DB_SQLite,
-  System.SysUtils,
+  eJob,
+  System.SysUtils;
 
-
-  FireDAC.Comp.Client;
-
-procedure TController.GetJobList;
-var
-  dsQuery: TFDQuery;
-  s: string;
+constructor TController.Create;
 begin
-  dsQuery := TFDQuery.Create(nil);
-  try
-    dsQuery.SQL.Text := 'select * from jobs';
-    FDBEngine.OpenQuery(dsQuery);
+  inherited;
 
-    s := dsQuery.FieldByName('caption').AsString;
-  finally
-    dsQuery.Free;
-  end;
+  // for use in global project context
+  DBEngine := FDBEngine;
+end;
+
+procedure TController.PullJobList;
+var
+  Job: TJob;
+  JobList: TJobList;
+begin
+  JobList := TJobList.Create([], ['ID']);
+
+  Job := JobList[0];
 end;
 
 procedure TController.Test;
-var
-  dsQuery: TFDQuery;
-  s: string;
 begin
-  dsQuery := TFDQuery.Create(nil);
-  try
-    dsQuery.SQL.Text := 'select * from jobs';
-    FDBEngine.OpenQuery(dsQuery);
-
-    s := dsQuery.FieldByName('caption').AsString;
-  finally
-    dsQuery.Free;
-  end;
 end;
 
 procedure TController.InitDB;

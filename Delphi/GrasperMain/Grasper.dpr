@@ -10,7 +10,10 @@ uses
   cController in 'cController.pas',
   API_DB in '..\..\..\Libs\Delphi\API_DB.pas',
   API_DB_SQLite in '..\..\..\Libs\Delphi\API_DB_SQLite.pas',
-  API_MVC_DB in '..\..\..\Libs\Delphi\API_MVC_DB.pas';
+  API_MVC_DB in '..\..\..\Libs\Delphi\API_MVC_DB.pas',
+  API_ORM in '..\..\..\Libs\Delphi\API_ORM.pas',
+  eJob in 'eJob.pas',
+  eCommon in 'eCommon.pas';
 
 {$R *.res}
 
