@@ -7,6 +7,7 @@ uses
   eCommon;
 
 type
+  PJob = ^TJob;
   TJob = class(TCommonEntity)
   private
     FCaption: string;

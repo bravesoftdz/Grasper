@@ -15,6 +15,7 @@ type
   published
     procedure PullJobList;
     procedure Test;
+    procedure ViewMainClosed;
   end;
 
 var
@@ -25,7 +26,16 @@ implementation
 uses
   API_DB_SQLite,
   eJob,
-  System.SysUtils;
+  System.SysUtils,
+  vMain;
+
+procedure TController.ViewMainClosed;
+var
+  JobList: TJobList;
+begin
+  JobList := FDataObj.Items['JobList'] as TJobList;
+  JobList.Free;
+end;
 
 constructor TController.Create;
 begin
@@ -37,12 +47,12 @@ end;
 
 procedure TController.PullJobList;
 var
-  Job: TJob;
   JobList: TJobList;
 begin
   JobList := TJobList.Create([], ['ID']);
+  FDataObj.AddOrSetValue('JobList', JobList);
 
-  Job := JobList[0];
+  ViewMain.RenderJobList(JobList);
 end;
 
 procedure TController.Test;
