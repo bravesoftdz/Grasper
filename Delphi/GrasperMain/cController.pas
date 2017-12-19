@@ -3,37 +3,62 @@ unit cController;
 interface
 
 uses
-  API_DB,
-  API_MVC_DB;
+  API_MVC_VCL,
+  eJob;
 
 type
-  TController = class(TControllerDB)
+  TController = class(TControllerVCLBase)
+  private
+    function GetJobList: TJobList;
+    procedure SetJobList(aValue: TJobList);
   protected
     procedure InitDB; override;
   public
     constructor Create; override;
+    property JobList: TJobList read GetJobList write SetJobList;
   published
+    procedure AddJob;
     procedure PullJobList;
     procedure Test;
     procedure ViewMainClosed;
   end;
 
-var
-  DBEngine: TDBEngine;
-
 implementation
 
 uses
   API_DB_SQLite,
-  eJob,
+  eCommon,
   System.SysUtils,
+  vJob,
   vMain;
 
-procedure TController.ViewMainClosed;
-var
-  JobList: TJobList;
+function TController.GetJobList: TJobList;
 begin
-  JobList := FDataObj.Items['JobList'] as TJobList;
+  Result := FDataObj.Items['JobList'] as TJobList;
+end;
+
+procedure TController.SetJobList(aValue: TJobList);
+begin
+  FDataObj.AddOrSetValue('JobList', aValue);
+end;
+
+procedure TController.AddJob;
+var
+  Job: TJob;
+begin
+  Job := TJob.Create;
+
+  CallView(TViewJob, True);
+
+  Job.Caption := 'New Job';
+  Job.ZeroLink := 'dfdsssssssss33333333';
+
+  JobList.Add(Job);
+  ViewMain.RenderJob(Job);
+end;
+
+procedure TController.ViewMainClosed;
+begin
   JobList.Free;
 end;
 
@@ -46,11 +71,8 @@ begin
 end;
 
 procedure TController.PullJobList;
-var
-  JobList: TJobList;
 begin
   JobList := TJobList.Create([], ['ID']);
-  FDataObj.AddOrSetValue('JobList', JobList);
 
   ViewMain.RenderJobList(JobList);
 end;

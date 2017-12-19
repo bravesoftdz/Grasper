@@ -13,7 +13,8 @@ uses
   API_MVC_DB in '..\..\..\Libs\Delphi\API_MVC_DB.pas',
   API_ORM in '..\..\..\Libs\Delphi\API_ORM.pas',
   eJob in 'eJob.pas',
-  eCommon in 'eCommon.pas';
+  eCommon in 'eCommon.pas',
+  vJob in 'vJob.pas' {ViewJob};
 
 {$R *.res}
 

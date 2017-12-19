@@ -5,20 +5,30 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
   Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, API_MVC_VCL, Vcl.Menus, VirtualTrees,
-  eJob;
+  eJob, Vcl.ToolWin, Vcl.ComCtrls, Vcl.ActnMan, Vcl.ActnCtrls,
+  Vcl.PlatformDefaultStyleActnCtrls, System.Actions, Vcl.ActnList,
+  System.ImageList, Vcl.ImgList, Vcl.ActnColorMaps;
 
 type
   TViewMain = class(TViewVCLBase)
-    mmMenu: TMainMenu;
     vstJobs: TVirtualStringTree;
+    ActionManager: TActionManager;
+    ActionToolBar: TActionToolBar;
+    acAddJob: TAction;
+    ilActionIcons: TImageList;
+    acEditJob: TAction;
+    acRemoveJob: TAction;
+    scmColorMap: TStandardColorMap;
     procedure FormCreate(Sender: TObject);
     procedure vstJobsGetText(Sender: TBaseVirtualTree; Node: PVirtualNode;
       Column: TColumnIndex; TextType: TVSTTextType; var CellText: string);
+    procedure acAddJobExecute(Sender: TObject);
   private
     { Private declarations }
     procedure InitView; override;
   public
     { Public declarations }
+    procedure RenderJob(aJob: TJob);
     procedure RenderJobList(aJobList: TJobList);
   end;
 
@@ -32,13 +42,19 @@ implementation
 uses
   cController;
 
+procedure TViewMain.RenderJob(aJob: TJob);
+var
+  VirtualNode: PVirtualNode;
+begin
+  VirtualNode := vstJobs.AddChild(nil, aJob);
+end;
+
 procedure TViewMain.RenderJobList(aJobList: TJobList);
 var
   Job: TJob;
-  VirtualNode: PVirtualNode;
 begin
   for Job in aJobList do
-    VirtualNode := vstJobs.AddChild(nil, Job);
+    RenderJob(Job);
 end;
 
 procedure TViewMain.vstJobsGetText(Sender: TBaseVirtualTree; Node: PVirtualNode;
@@ -54,6 +70,12 @@ begin
     0: CellText := Job^.Caption;
     1: CellText := Job^.ZeroLink;
   end;
+end;
+
+procedure TViewMain.acAddJobExecute(Sender: TObject);
+begin
+  inherited;
+  SendMessage('AddJob');
 end;
 
 procedure TViewMain.FormCreate(Sender: TObject);

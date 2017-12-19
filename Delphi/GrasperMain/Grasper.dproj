@@ -114,6 +114,10 @@
         <DCCReference Include="..\..\..\Libs\Delphi\API_ORM.pas"/>
         <DCCReference Include="eJob.pas"/>
         <DCCReference Include="eCommon.pas"/>
+        <DCCReference Include="vJob.pas">
+            <Form>ViewJob</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

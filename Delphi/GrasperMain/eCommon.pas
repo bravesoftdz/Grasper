@@ -3,8 +3,8 @@ unit eCommon;
 interface
 
 uses
-  API_ORM,
-  cController;
+  API_DB,
+  API_ORM;
 
 type
   TCommonEntity = class abstract(TEntityFeatID)
@@ -16,6 +16,9 @@ type
   public
     constructor Create(aFilterArr, aOrderArr: TArray<string>);
   end;
+
+var
+  DBEngine: TDBEngine;
 
 implementation
 
