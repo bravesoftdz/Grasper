@@ -53,6 +53,7 @@ begin
   Job.Caption := 'New Job';
   Job.ZeroLink := 'dfdsssssssss33333333';
 
+  Job.Store;
   JobList.Add(Job);
   ViewMain.RenderJob(Job);
 end;
