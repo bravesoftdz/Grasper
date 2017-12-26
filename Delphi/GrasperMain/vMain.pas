@@ -23,13 +23,16 @@ type
     procedure vstJobsGetText(Sender: TBaseVirtualTree; Node: PVirtualNode;
       Column: TColumnIndex; TextType: TVSTTextType; var CellText: string);
     procedure acAddJobExecute(Sender: TObject);
+    procedure acEditJobExecute(Sender: TObject);
   private
     { Private declarations }
+    function GetJob: TJob;
     procedure InitView; override;
   public
     { Public declarations }
     procedure RenderJob(aJob: TJob);
     procedure RenderJobList(aJobList: TJobList);
+    property SelectedJob: TJob read GetJob;
   end;
 
 var
@@ -41,6 +44,20 @@ implementation
 
 uses
   cController;
+
+function TViewMain.GetJob: TJob;
+var
+  Job: PJob;
+  VirtualNode: PVirtualNode;
+begin
+  VirtualNode := vstJobs.FocusedNode;
+
+  if VirtualNode <> nil then
+    begin
+      Job := vstJobs.GetNodeData(VirtualNode);
+      Result := Job^;
+    end;
+end;
 
 procedure TViewMain.RenderJob(aJob: TJob);
 var
@@ -76,6 +93,12 @@ procedure TViewMain.acAddJobExecute(Sender: TObject);
 begin
   inherited;
   SendMessage('AddJob');
+end;
+
+procedure TViewMain.acEditJobExecute(Sender: TObject);
+begin
+  inherited;
+  SendMessage('EditJob');
 end;
 
 procedure TViewMain.FormCreate(Sender: TObject);

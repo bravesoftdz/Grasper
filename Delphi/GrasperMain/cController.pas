@@ -18,6 +18,7 @@ type
     property JobList: TJobList read GetJobList write SetJobList;
   published
     procedure AddJob;
+    procedure EditJob;
     procedure PullJobList;
     procedure Test;
     procedure ViewMainClosed;
@@ -31,6 +32,16 @@ uses
   System.SysUtils,
   vJob,
   vMain;
+
+procedure TController.EditJob;
+var
+  Job: TJob;
+begin
+  Job := ViewMain.SelectedJob;
+
+  Job.Caption := 'We have modifited this title';
+  Job.ZeroLink
+end;
 
 function TController.GetJobList: TJobList;
 begin
@@ -51,7 +62,7 @@ begin
   CallView(TViewJob, True);
 
   Job.Caption := 'New Job';
-  Job.ZeroLink := 'dfdsssssssss33333333';
+  Job.ZeroLink := 'https://support.softclub.by/browse/NTDEV-6660';
 
   Job.Store;
   JobList.Add(Job);
