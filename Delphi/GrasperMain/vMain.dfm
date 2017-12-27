@@ -106,13 +106,14 @@ inherited ViewMain: TViewMain
       Caption = 'Remove Job'
       Hint = 'Remove Job'
       ImageIndex = 2
+      OnExecute = acRemoveJobExecute
     end
   end
   object ilActionIcons: TImageList
     Left = 488
     Top = 136
     Bitmap = {
-      494C010103000800280010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010103000800300010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       000000000000000000000000000000000000FFFFFF00FFFFFF00FEFEFE00FCFC
       FC00FBFBFB00FCFCFC00FEFEFE00FFFFFF00FFFFFF00C1C1C1006A6A6A004D4D
@@ -258,5 +259,11 @@ inherited ViewMain: TViewMain
     MenuColor = clMenu
     Left = 408
     Top = 80
+  end
+  object lbrs1: TLbRSA
+    PrimeTestIterations = 20
+    KeySize = aks512
+    Left = 72
+    Top = 120
   end
 end

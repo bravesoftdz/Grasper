@@ -5,10 +5,15 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
-  API_MVC_VCL;
+  API_MVC_VCL, Vcl.ExtCtrls, uCEFWindowParent, uCEFChromiumWindow;
 
 type
   TViewJob = class(TViewVCLBase)
+    pnl1: TPanel;
+    pnl2: TPanel;
+    chrmwndw1: TChromiumWindow;
+    procedure chrmwndw1AfterCreated(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
   private
     { Private declarations }
     procedure InitView; override;
@@ -22,6 +27,18 @@ var
 implementation
 
 {$R *.dfm}
+
+procedure TViewJob.chrmwndw1AfterCreated(Sender: TObject);
+begin
+  inherited;
+  chrmwndw1.LoadURL('https://www.briskbard.com/index.php?lang=en&pageid=cef');
+end;
+
+procedure TViewJob.FormCreate(Sender: TObject);
+begin
+  inherited;
+  chrmwndw1.CreateBrowser;
+end;
 
 procedure TViewJob.InitView;
 begin

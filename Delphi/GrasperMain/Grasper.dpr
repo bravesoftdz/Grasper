@@ -14,17 +14,37 @@ uses
   API_ORM in '..\..\..\Libs\Delphi\API_ORM.pas',
   eJob in 'eJob.pas',
   eCommon in 'eCommon.pas',
-  vJob in 'vJob.pas' {ViewJob};
+  vJob in 'vJob.pas' {ViewJob},
+  WinApi.Windows,
+  uCEFApplication;
 
 {$R *.res}
+
+{$SetPEFlags IMAGE_FILE_LARGE_ADDRESS_AWARE}
 
 begin
 {$IFDEF DEBUG}
   ReportMemoryLeaksOnShutdown := True;
 {$ENDIF DEBUG}
 
-  Application.Initialize;
-  Application.MainFormOnTaskbar := True;
-  Application.CreateForm(TViewMain, ViewMain);
-  Application.Run;
+  GlobalCEFApp := TCefApplication.Create;
+
+  //GlobalCEFApp.FrameworkDirPath     := 'cef';
+  //GlobalCEFApp.ResourcesDirPath     := 'cef';
+  //GlobalCEFApp.LocalesDirPath       := 'cef\locales';
+  GlobalCEFApp.EnableGPU            := True;      // Enable hardware acceleration
+  GlobalCEFApp.DisableGPUCache      := True;      // Disable the creation of a 'GPUCache' directory in the hard drive.
+  GlobalCEFApp.cache                := 'cache';
+  GlobalCEFApp.cookies              := 'cookies';
+  GlobalCEFApp.UserDataPath         := 'UserData';
+
+  if GlobalCEFApp.StartMainProcess then
+    begin
+      Application.Initialize;
+      Application.MainFormOnTaskbar := True;
+      Application.CreateForm(TViewMain, ViewMain);
+      Application.Run;
+    end;
+
+  GlobalCEFApp.Free;
 end.

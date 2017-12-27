@@ -20,6 +20,7 @@ type
     procedure AddJob;
     procedure EditJob;
     procedure PullJobList;
+    procedure RemoveJob;
     procedure Test;
     procedure ViewMainClosed;
   end;
@@ -31,16 +32,41 @@ uses
   eCommon,
   System.SysUtils,
   vJob,
-  vMain;
+  vMain,
 
-procedure TController.EditJob;
+  LbAsym;
+
+procedure TController.RemoveJob;
 var
   Job: TJob;
 begin
   Job := ViewMain.SelectedJob;
 
+  Job.Delete;
+end;
+
+procedure TController.EditJob;
+var
+  Job: TJob;
+  temp: string;
+begin
+  Job := ViewMain.SelectedJob;
+
+  ViewMain.lbrs1.KeySize := aks128;
+
+  ViewMain.lbrs1.GenerateKeyPair;
+
+  temp := ViewMain.lbrs1.PrivateKey.Passphrase;
+
+  temp := 'We have modifited this title';
+  temp := ViewMain.lbrs1.EncryptString(temp);
+
+  temp := ViewMain.lbrs1.DecryptString(temp);
+
   Job.Caption := 'We have modifited this title';
-  Job.ZeroLink
+  Job.ZeroLink := 'https://support.softclub.by/secure/Dashboard.jspa';
+
+  //Job.Store;
 end;
 
 function TController.GetJobList: TJobList;
@@ -61,12 +87,14 @@ begin
 
   CallView(TViewJob, True);
 
-  Job.Caption := 'New Job';
-  Job.ZeroLink := 'https://support.softclub.by/browse/NTDEV-6660';
+  Job.Free;
 
-  Job.Store;
-  JobList.Add(Job);
-  ViewMain.RenderJob(Job);
+  //Job.Caption := 'New Job';
+  //Job.ZeroLink := 'https://support.softclub.by/browse/NTDEV-6660';
+
+  //Job.Store;
+  //JobList.Add(Job);
+  //ViewMain.RenderJob(Job);
 end;
 
 procedure TController.ViewMainClosed;
