@@ -16,7 +16,8 @@ uses
   eCommon in 'eCommon.pas',
   vJob in 'vJob.pas' {ViewJob},
   WinApi.Windows,
-  uCEFApplication;
+  uCEFApplication,
+  API_Crypt in '..\..\..\Libs\Delphi\API_Crypt.pas';
 
 {$R *.res}
 
@@ -43,7 +44,7 @@ begin
       Application.Initialize;
       Application.MainFormOnTaskbar := True;
       Application.CreateForm(TViewMain, ViewMain);
-      Application.Run;
+  Application.Run;
     end;
 
   GlobalCEFApp.Free;

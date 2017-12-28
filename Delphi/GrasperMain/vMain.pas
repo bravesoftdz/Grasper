@@ -7,8 +7,7 @@ uses
   Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, API_MVC_VCL, Vcl.Menus, VirtualTrees,
   eJob, Vcl.ToolWin, Vcl.ComCtrls, Vcl.ActnMan, Vcl.ActnCtrls,
   Vcl.PlatformDefaultStyleActnCtrls, System.Actions, Vcl.ActnList,
-  System.ImageList, Vcl.ImgList, Vcl.ActnColorMaps, LbCipher, LbClass, LbAsym,
-  LbRSA;
+  System.ImageList, Vcl.ImgList, Vcl.ActnColorMaps;
 
 type
   TViewMain = class(TViewVCLBase)
@@ -20,7 +19,6 @@ type
     acEditJob: TAction;
     acRemoveJob: TAction;
     scmColorMap: TStandardColorMap;
-    lbrs1: TLbRSA;
     procedure FormCreate(Sender: TObject);
     procedure vstJobsGetText(Sender: TBaseVirtualTree; Node: PVirtualNode;
       Column: TColumnIndex; TextType: TVSTTextType; var CellText: string);

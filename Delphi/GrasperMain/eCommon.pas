@@ -3,6 +3,7 @@ unit eCommon;
 interface
 
 uses
+  API_Crypt,
   API_DB,
   API_ORM;
 
@@ -18,17 +19,20 @@ type
   end;
 
 var
+  CryptEngine: TCryptEngine;
   DBEngine: TDBEngine;
 
 implementation
 
 constructor TCommonEntityList<T>.Create(aFilterArr, aOrderArr: TArray<string>);
 begin
+  FCryptEngine := CryptEngine;
   inherited Create(DBEngine, aFilterArr, aOrderArr);
 end;
 
 constructor TCommonEntity.Create(aID: integer = 0);
 begin
+  FCryptEngine := CryptEngine;
   inherited Create(DBEngine, aID);
 end;
 
