@@ -4,7 +4,8 @@ interface
 
 uses
   API_MVC_VCL,
-  eJob;
+  eJob,
+  LbCipher;
 
 type
   TController = class(TControllerVCLBase)
@@ -25,6 +26,9 @@ type
     procedure ViewMainClosed;
   end;
 
+const
+  CryptKey: TKey128 = (168, 195, 109, 253, 15, 207, 211, 55, 254, 74, 229, 230, 16, 174, 49, 201);
+
 implementation
 
 uses
@@ -32,6 +36,7 @@ uses
   API_DB_SQLite,
   eCommon,
   System.SysUtils,
+  Vcl.Controls,
   vJob,
   vMain;
 
@@ -50,10 +55,13 @@ var
 begin
   Job := ViewMain.SelectedJob;
 
-  Job.Caption := 'We have modifited this title';
-  Job.ZeroLink := 'https://support.softclub.by/secure/Dashboard.jspa';
+  CreateView(TViewJob);
+  ViewJob.BindEntity(Job);
 
-  Job.Store;
+  if ViewJob.ShowModal = mrOk then
+    Job.Store
+  else
+    Job.Revert;
 end;
 
 function TController.GetJobList: TJobList;
@@ -72,16 +80,17 @@ var
 begin
   Job := TJob.Create;
 
-  CallView(TViewJob, True);
+  CreateView(TViewJob);
+  ViewJob.BindEntity(Job);
 
-  //Job.Free;
-
-  Job.Caption := 'New Job';
-  Job.ZeroLink := 'https://www.google.by/search?q=array+%5B0..15%5D+of+Byte&ei=rthEWp70JeXJ6ASFzquwAw&start=10&sa=N&biw=1345&bih=647';
-
-  Job.Store;
-  JobList.Add(Job);
-  ViewMain.RenderJob(Job);
+  if ViewJob.ShowModal = mrOk then
+    begin
+      Job.Store;
+      JobList.Add(Job);
+      ViewMain.RenderJob(Job);
+    end
+  else
+    Job.Free;
 end;
 
 procedure TController.ViewMainClosed;
@@ -115,11 +124,8 @@ begin
   FConnectParams.DataBase := GetCurrentDir + '\DB\local.db';
   FDBEngineClass := TSQLiteEngine;
 
-  FCryptParams.PublicModulus := 'DD655AF932CECA8D9B72213DD99FE571';
-  FCryptParams.PublicExponent := 'A930';
-  FCryptParams.PrivateModulus := 'DD655AF932CECA8D9B72213DD99FE571';
-  FCryptParams.PrivateExponent := '116D6F4E7095CA3D4FDC205CAF498658';
-  FCryptEngineClass := TCryptRSA;
+  FCryptParams.SynchKey := CryptKey;
+  FCryptEngineClass := TCryptBlowfish;
 end;
 
 end.

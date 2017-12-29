@@ -17,7 +17,8 @@ uses
   vJob in 'vJob.pas' {ViewJob},
   WinApi.Windows,
   uCEFApplication,
-  API_Crypt in '..\..\..\Libs\Delphi\API_Crypt.pas';
+  API_Crypt in '..\..\..\Libs\Delphi\API_Crypt.pas',
+  API_ORM_VCLBind in '..\..\..\Libs\Delphi\API_ORM_VCLBind.pas';
 
 {$R *.res}
 

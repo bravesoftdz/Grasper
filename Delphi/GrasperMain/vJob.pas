@@ -5,13 +5,17 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
-  API_MVC_VCL, Vcl.ExtCtrls, uCEFWindowParent, uCEFChromiumWindow;
+  API_MVC_VCL, Vcl.ExtCtrls, uCEFWindowParent, uCEFChromiumWindow, Vcl.StdCtrls;
 
 type
   TViewJob = class(TViewVCLBase)
     pnl1: TPanel;
-    pnl2: TPanel;
+    pnlFields: TPanel;
     chrmwndw1: TChromiumWindow;
+    bcCaption: TLabeledEdit;
+    bcZeroLink: TLabeledEdit;
+    btnOk: TButton;
+    btnCancel: TButton;
     procedure chrmwndw1AfterCreated(Sender: TObject);
     procedure FormCreate(Sender: TObject);
   private
