@@ -5,19 +5,31 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
-  API_MVC_VCL, Vcl.ExtCtrls, uCEFWindowParent, uCEFChromiumWindow, Vcl.StdCtrls;
+  API_MVC_VCL, Vcl.ExtCtrls, uCEFWindowParent, uCEFChromiumWindow, Vcl.StdCtrls,
+  Vcl.Buttons, System.Actions, Vcl.ActnList, Vcl.PlatformDefaultStyleActnCtrls,
+  Vcl.ActnMan, System.ImageList, Vcl.ImgList, Vcl.ToolWin, Vcl.ActnCtrls, uCEFChromium,
+  uCEFInterfaces;
 
 type
   TViewJob = class(TViewVCLBase)
-    pnl1: TPanel;
+    pnlNav: TPanel;
     pnlFields: TPanel;
-    chrmwndw1: TChromiumWindow;
     bcCaption: TLabeledEdit;
     bcZeroLink: TLabeledEdit;
     btnOk: TButton;
     btnCancel: TButton;
-    procedure chrmwndw1AfterCreated(Sender: TObject);
+    edtURL: TEdit;
+    lblURL: TLabel;
+    ActionManager: TActionManager;
+    acBrowse: TAction;
+    ilActionIcons: TImageList;
+    acttb1: TActionToolBar;
+    cfWindowParent: TCEFWindowParent;
+    chrmBrowser: TChromium;
     procedure FormCreate(Sender: TObject);
+    procedure acBrowseExecute(Sender: TObject);
+    procedure chrmBrowserAfterCreated(Sender: TObject;
+      const browser: ICefBrowser);
   private
     { Private declarations }
     procedure InitView; override;
@@ -32,16 +44,24 @@ implementation
 
 {$R *.dfm}
 
-procedure TViewJob.chrmwndw1AfterCreated(Sender: TObject);
+procedure TViewJob.acBrowseExecute(Sender: TObject);
 begin
   inherited;
-  chrmwndw1.LoadURL('https://www.briskbard.com/index.php?lang=en&pageid=cef');
+  chrmBrowser.LoadURL(edtURL.Text);
+end;
+
+procedure TViewJob.chrmBrowserAfterCreated(Sender: TObject;
+  const browser: ICefBrowser);
+begin
+  inherited;
+  chrmBrowser.LoadURL('https://www.briskbard.com/index.php?lang=en&pageid=cef');
+  //browser.MainFrame.LoadURL(bcZeroLink.Text);
 end;
 
 procedure TViewJob.FormCreate(Sender: TObject);
 begin
   inherited;
-  chrmwndw1.CreateBrowser;
+  chrmBrowser.CreateBrowser(cfWindowParent, '');
 end;
 
 procedure TViewJob.InitView;

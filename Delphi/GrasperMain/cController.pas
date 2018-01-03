@@ -79,6 +79,7 @@ var
   Job: TJob;
 begin
   Job := TJob.Create;
+  Job.ZeroLink := 'https://www.google.com/';
 
   CreateView(TViewJob);
   ViewJob.BindEntity(Job);
