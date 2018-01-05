@@ -15,7 +15,7 @@ type
 
   TCommonEntityList<T: TEntityAbstract> = class abstract(TEntityList<T>)
   public
-    constructor Create(aFilterArr, aOrderArr: TArray<string>);
+    constructor Create(aFilterArr, aOrderArr: TArray<string>); overload;
   end;
 
 var

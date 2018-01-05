@@ -7,7 +7,7 @@ uses
   Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, API_MVC_VCL, Vcl.Menus, VirtualTrees,
   eJob, Vcl.ToolWin, Vcl.ComCtrls, Vcl.ActnMan, Vcl.ActnCtrls,
   Vcl.PlatformDefaultStyleActnCtrls, System.Actions, Vcl.ActnList,
-  System.ImageList, Vcl.ImgList, Vcl.ActnColorMaps;
+  System.ImageList, Vcl.ImgList, Vcl.ActnColorMaps, Vcl.StdCtrls;
 
 type
   TViewMain = class(TViewVCLBase)
@@ -19,12 +19,14 @@ type
     acEditJob: TAction;
     acRemoveJob: TAction;
     scmColorMap: TStandardColorMap;
+    btn1: TButton;
     procedure FormCreate(Sender: TObject);
     procedure vstJobsGetText(Sender: TBaseVirtualTree; Node: PVirtualNode;
       Column: TColumnIndex; TextType: TVSTTextType; var CellText: string);
     procedure acAddJobExecute(Sender: TObject);
     procedure acEditJobExecute(Sender: TObject);
     procedure acRemoveJobExecute(Sender: TObject);
+    procedure btn1Click(Sender: TObject);
   private
     { Private declarations }
     function GetJob: TJob;
@@ -106,6 +108,12 @@ procedure TViewMain.acRemoveJobExecute(Sender: TObject);
 begin
   inherited;
   SendMessage('RemoveJob');
+end;
+
+procedure TViewMain.btn1Click(Sender: TObject);
+begin
+  inherited;
+  SendMessage('Test');
 end;
 
 procedure TViewMain.FormCreate(Sender: TObject);
