@@ -46,7 +46,11 @@ var
 begin
   Job := ViewMain.SelectedJob;
 
-  Job.Delete;
+  if ViewMain.RemoveSelectedJob then
+    begin
+      Job.Delete;
+      JobList.Remove(Job);
+    end;
 end;
 
 procedure TController.EditJob;
@@ -118,17 +122,8 @@ end;
 procedure TController.Test;
 var
  Job: TJob;
- Level: TLevel;
 begin
   Job := TJob.Create(20);
-
-  Level := TLevel.Create;
-
-  Level.Level := 10;
-  Job.Levels.Add(Level);
-  Job.Levels.Store;
-
-  //Job.StoreAll;
 
   Job.Free;
 end;

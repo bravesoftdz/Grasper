@@ -33,6 +33,7 @@ inherited ViewJob: TViewJob
       Height = 21
       Anchors = [akLeft, akTop, akRight]
       TabOrder = 0
+      OnKeyDown = edtURLKeyDown
     end
     object acttb1: TActionToolBar
       Left = 632
@@ -118,6 +119,10 @@ inherited ViewJob: TViewJob
     Height = 393
     Align = alClient
     TabOrder = 2
+    ExplicitLeft = 80
+    ExplicitTop = 176
+    ExplicitWidth = 100
+    ExplicitHeight = 41
   end
   object ActionManager: TActionManager
     ActionBars = <
@@ -142,8 +147,8 @@ inherited ViewJob: TViewJob
         ActionBar = acttb1
       end>
     Images = ilActionIcons
-    Left = 208
-    Top = 73
+    Left = 225
+    Top = 72
     StyleName = 'Platform Default'
     object acBrowse: TAction
       Caption = 'acBrowse'
@@ -159,7 +164,7 @@ inherited ViewJob: TViewJob
     Left = 296
     Top = 72
     Bitmap = {
-      494C0101010008000C0018001800FFFFFFFF2100FFFFFFFFFFFFFFFF424D3600
+      494C010101000800140018001800FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000600000001800000001002000000000000024
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -460,11 +465,13 @@ inherited ViewJob: TViewJob
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
-      00000000000000000000000000000000}
+      0000000000000000000000000000000000000000000000000000000000000000
+      000000000000}
   end
   object chrmBrowser: TChromium
+    OnLoadStart = chrmBrowserLoadStart
     OnAfterCreated = chrmBrowserAfterCreated
-    Left = 40
-    Top = 72
+    Left = 134
+    Top = 71
   end
 end

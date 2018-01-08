@@ -18,6 +18,9 @@ type
     constructor Create(aFilterArr, aOrderArr: TArray<string>); overload;
   end;
 
+const
+  BLANK_PAGE = 'about:blank';
+
 var
   CryptEngine: TCryptEngine;
   DBEngine: TDBEngine;

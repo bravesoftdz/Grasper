@@ -24,6 +24,7 @@ inherited ViewMain: TViewMain
     TreeOptions.MiscOptions = [toAcceptOLEDrop, toFullRepaintOnResize, toGridExtensions, toInitOnSave, toToggleOnDblClick, toWheelPanning, toEditOnClick]
     TreeOptions.PaintOptions = [toShowButtons, toShowDropmark, toShowHorzGridLines, toShowRoot, toShowTreeLines, toShowVertGridLines, toThemeAware, toUseBlendedImages]
     TreeOptions.SelectionOptions = [toFullRowSelect]
+    OnFocusChanged = vstJobsFocusChanged
     OnGetText = vstJobsGetText
     Columns = <
       item
@@ -60,15 +61,6 @@ inherited ViewMain: TViewMain
     ParentShowHint = False
     ShowHint = True
     Spacing = 0
-  end
-  object btn1: TButton
-    Left = 456
-    Top = 248
-    Width = 75
-    Height = 25
-    Caption = 'btn1'
-    TabOrder = 2
-    OnClick = btn1Click
   end
   object ActionManager: TActionManager
     ActionBars = <
@@ -122,7 +114,7 @@ inherited ViewMain: TViewMain
     Left = 488
     Top = 136
     Bitmap = {
-      494C0101030008003C0010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010103000800440010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000001000000001002000000000000010
       000000000000000000000000000000000000FFFFFF00FFFFFF00FEFEFE00FCFC
       FC00FBFBFB00FCFCFC00FEFEFE00FFFFFF00FFFFFF00C1C1C1006A6A6A004D4D

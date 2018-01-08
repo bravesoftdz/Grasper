@@ -45,7 +45,7 @@ begin
       Application.Initialize;
       Application.MainFormOnTaskbar := True;
       Application.CreateForm(TViewMain, ViewMain);
-  Application.Run;
+      Application.Run;
     end;
 
   GlobalCEFApp.Free;

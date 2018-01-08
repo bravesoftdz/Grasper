@@ -8,7 +8,7 @@ uses
   API_MVC_VCL, Vcl.ExtCtrls, uCEFWindowParent, uCEFChromiumWindow, Vcl.StdCtrls,
   Vcl.Buttons, System.Actions, Vcl.ActnList, Vcl.PlatformDefaultStyleActnCtrls,
   Vcl.ActnMan, System.ImageList, Vcl.ImgList, Vcl.ToolWin, Vcl.ActnCtrls, uCEFChromium,
-  uCEFInterfaces;
+  uCEFInterfaces, uCEFConstants;
 
 type
   TViewJob = class(TViewVCLBase)
@@ -30,8 +30,12 @@ type
     procedure acBrowseExecute(Sender: TObject);
     procedure chrmBrowserAfterCreated(Sender: TObject;
       const browser: ICefBrowser);
+    procedure chrmBrowserLoadStart(Sender: TObject; const browser: ICefBrowser;
+      const frame: ICefFrame; transitionType: Cardinal);
+    procedure edtURLKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   private
     { Private declarations }
+    procedure AfterBrowserCreate(var aMessage : TMessage); message CEF_AFTERCREATED;
     procedure InitView; override;
   public
     { Public declarations }
@@ -44,9 +48,18 @@ implementation
 
 {$R *.dfm}
 
+uses
+  eCommon;
+
+procedure TViewJob.AfterBrowserCreate(var aMessage : TMessage);
+begin
+  chrmBrowser.LoadURL(bcZeroLink.Text);
+end;
+
 procedure TViewJob.acBrowseExecute(Sender: TObject);
 begin
   inherited;
+
   chrmBrowser.LoadURL(edtURL.Text);
 end;
 
@@ -54,13 +67,37 @@ procedure TViewJob.chrmBrowserAfterCreated(Sender: TObject;
   const browser: ICefBrowser);
 begin
   inherited;
-  chrmBrowser.LoadURL('https://www.briskbard.com/index.php?lang=en&pageid=cef');
-  //browser.MainFrame.LoadURL(bcZeroLink.Text);
+
+  PostMessage(Handle, CEF_AFTERCREATED, 0, 0);
+end;
+
+procedure TViewJob.chrmBrowserLoadStart(Sender: TObject;
+  const browser: ICefBrowser; const frame: ICefFrame; transitionType: Cardinal);
+begin
+  inherited;
+
+  if frame.IsMain and
+     (frame.Url <> BLANK_PAGE)
+  then
+    begin
+      edtURL.Text := frame.Url;
+      bcZeroLink.Text := frame.Url;
+    end;
+end;
+
+procedure TViewJob.edtURLKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  inherited;
+
+  if Key = VK_RETURN then
+    acBrowseExecute(nil);
 end;
 
 procedure TViewJob.FormCreate(Sender: TObject);
 begin
   inherited;
+
   chrmBrowser.CreateBrowser(cfWindowParent, '');
 end;
 

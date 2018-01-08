@@ -19,20 +19,23 @@ type
     acEditJob: TAction;
     acRemoveJob: TAction;
     scmColorMap: TStandardColorMap;
-    btn1: TButton;
     procedure FormCreate(Sender: TObject);
     procedure vstJobsGetText(Sender: TBaseVirtualTree; Node: PVirtualNode;
       Column: TColumnIndex; TextType: TVSTTextType; var CellText: string);
     procedure acAddJobExecute(Sender: TObject);
     procedure acEditJobExecute(Sender: TObject);
     procedure acRemoveJobExecute(Sender: TObject);
-    procedure btn1Click(Sender: TObject);
+    procedure vstJobsFocusChanged(Sender: TBaseVirtualTree; Node: PVirtualNode;
+      Column: TColumnIndex);
   private
     { Private declarations }
     function GetJob: TJob;
+    procedure DisableEditActions;
+    procedure EnableEditActions;
     procedure InitView; override;
   public
     { Public declarations }
+    function RemoveSelectedJob: Boolean;
     procedure RenderJob(aJob: TJob);
     procedure RenderJobList(aJobList: TJobList);
     property SelectedJob: TJob read GetJob;
@@ -47,6 +50,33 @@ implementation
 
 uses
   cController;
+
+function TViewMain.RemoveSelectedJob: Boolean;
+var
+  VirtualNode: PVirtualNode;
+begin
+  if Application.MessageBox('Ara You Sure?', 'Delete Job', MB_OKCANCEL) = 1 then
+    begin
+      VirtualNode := vstJobs.FocusedNode;
+      vstJobs.DeleteNode(VirtualNode);
+
+      Result := True;
+    end
+  else
+    Result := False;
+end;
+
+procedure TViewMain.DisableEditActions;
+begin
+  acEditJob.Enabled := False;
+  acRemoveJob.Enabled := False;
+end;
+
+procedure TViewMain.EnableEditActions;
+begin
+  acEditJob.Enabled := True;
+  acRemoveJob.Enabled := True;
+end;
 
 function TViewMain.GetJob: TJob;
 var
@@ -75,6 +105,17 @@ var
 begin
   for Job in aJobList do
     RenderJob(Job);
+end;
+
+procedure TViewMain.vstJobsFocusChanged(Sender: TBaseVirtualTree;
+  Node: PVirtualNode; Column: TColumnIndex);
+begin
+  inherited;
+
+  if Sender.FocusedNode <> nil then
+    EnableEditActions
+  else
+    DisableEditActions;
 end;
 
 procedure TViewMain.vstJobsGetText(Sender: TBaseVirtualTree; Node: PVirtualNode;
@@ -110,16 +151,11 @@ begin
   SendMessage('RemoveJob');
 end;
 
-procedure TViewMain.btn1Click(Sender: TObject);
-begin
-  inherited;
-  SendMessage('Test');
-end;
-
 procedure TViewMain.FormCreate(Sender: TObject);
 begin
   inherited;
 
+  DisableEditActions;
   vstJobs.NodeDataSize := SizeOf(TJob);
   SendMessage('PullJobList');
 end;
