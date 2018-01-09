@@ -19,6 +19,10 @@ type
     acEditJob: TAction;
     acRemoveJob: TAction;
     scmColorMap: TStandardColorMap;
+    acStartJob: TAction;
+    acStopJob: TAction;
+    acEditJobRules: TAction;
+    btn1: TButton;
     procedure FormCreate(Sender: TObject);
     procedure vstJobsGetText(Sender: TBaseVirtualTree; Node: PVirtualNode;
       Column: TColumnIndex; TextType: TVSTTextType; var CellText: string);
@@ -27,6 +31,10 @@ type
     procedure acRemoveJobExecute(Sender: TObject);
     procedure vstJobsFocusChanged(Sender: TBaseVirtualTree; Node: PVirtualNode;
       Column: TColumnIndex);
+    procedure acStartJobExecute(Sender: TObject);
+    procedure acStopJobExecute(Sender: TObject);
+    procedure acEditJobRulesExecute(Sender: TObject);
+    procedure btn1Click(Sender: TObject);
   private
     { Private declarations }
     function GetJob: TJob;
@@ -55,7 +63,7 @@ function TViewMain.RemoveSelectedJob: Boolean;
 var
   VirtualNode: PVirtualNode;
 begin
-  if Application.MessageBox('Ara You Sure?', 'Delete Job', MB_OKCANCEL) = 1 then
+  if Application.MessageBox('Are You Sure?', 'Delete Job', MB_OKCANCEL) = 1 then
     begin
       VirtualNode := vstJobs.FocusedNode;
       vstJobs.DeleteNode(VirtualNode);
@@ -70,12 +78,22 @@ procedure TViewMain.DisableEditActions;
 begin
   acEditJob.Enabled := False;
   acRemoveJob.Enabled := False;
+
+  acStartJob.Enabled := False;
+  acStopJob.Enabled := False;
+
+  acEditJobRules.Enabled := False;
 end;
 
 procedure TViewMain.EnableEditActions;
 begin
   acEditJob.Enabled := True;
   acRemoveJob.Enabled := True;
+
+  acStartJob.Enabled := True;
+  acStopJob.Enabled := True;
+
+  acEditJobRules.Enabled := True;
 end;
 
 function TViewMain.GetJob: TJob;
@@ -145,10 +163,37 @@ begin
   SendMessage('EditJob');
 end;
 
+procedure TViewMain.acEditJobRulesExecute(Sender: TObject);
+begin
+  inherited;
+
+  SendMessage('EditJobRules');
+end;
+
 procedure TViewMain.acRemoveJobExecute(Sender: TObject);
 begin
   inherited;
   SendMessage('RemoveJob');
+end;
+
+procedure TViewMain.acStartJobExecute(Sender: TObject);
+begin
+  inherited;
+
+  SendMessage('StartJob');
+end;
+
+procedure TViewMain.acStopJobExecute(Sender: TObject);
+begin
+  inherited;
+  //
+end;
+
+procedure TViewMain.btn1Click(Sender: TObject);
+begin
+  inherited;
+
+  SendMessage('Test');
 end;
 
 procedure TViewMain.FormCreate(Sender: TObject);

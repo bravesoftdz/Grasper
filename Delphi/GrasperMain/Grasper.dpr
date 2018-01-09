@@ -14,11 +14,15 @@ uses
   API_ORM in '..\..\..\Libs\Delphi\API_ORM.pas',
   eJob in 'eJob.pas',
   eCommon in 'eCommon.pas',
-  vJob in 'vJob.pas' {ViewJob},
   WinApi.Windows,
   uCEFApplication,
   API_Crypt in '..\..\..\Libs\Delphi\API_Crypt.pas',
-  API_ORM_VCLBind in '..\..\..\Libs\Delphi\API_ORM_VCLBind.pas';
+  API_ORM_VCLBind in '..\..\..\Libs\Delphi\API_ORM_VCLBind.pas',
+  mParser in 'mParser.pas',
+  vBrowser in 'vBrowser.pas' {ViewBrowser},
+  vJob in 'vJob.pas' {ViewJob},
+  vRules in 'vRules.pas' {ViewRules},
+  eLevel in 'eLevel.pas';
 
 {$R *.res}
 
@@ -45,7 +49,7 @@ begin
       Application.Initialize;
       Application.MainFormOnTaskbar := True;
       Application.CreateForm(TViewMain, ViewMain);
-      Application.Run;
+  Application.Run;
     end;
 
   GlobalCEFApp.Free;

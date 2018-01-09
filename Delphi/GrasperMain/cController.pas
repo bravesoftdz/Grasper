@@ -20,8 +20,10 @@ type
   published
     procedure AddJob;
     procedure EditJob;
+    procedure EditJobRules;
     procedure PullJobList;
     procedure RemoveJob;
+    procedure StartJob;
     procedure Test;
     procedure ViewMainClosed;
   end;
@@ -35,10 +37,25 @@ uses
   API_Crypt,
   API_DB_SQLite,
   eCommon,
+  eLevel,
+  mParser,
   System.SysUtils,
   Vcl.Controls,
   vJob,
-  vMain;
+  vMain,
+  vRules;
+
+procedure TController.EditJobRules;
+begin
+  CreateView<TViewRules>;
+
+  ViewRules.Show;
+end;
+
+procedure TController.StartJob;
+begin
+  CallModel<TModel>;
+end;
 
 procedure TController.RemoveJob;
 var
@@ -59,7 +76,7 @@ var
 begin
   Job := ViewMain.SelectedJob;
 
-  CreateView(TViewJob);
+  CreateView<TViewJob>;
   ViewJob.BindEntity(Job);
 
   if ViewJob.ShowModal = mrOk then
@@ -85,7 +102,7 @@ begin
   Job := TJob.Create;
   Job.ZeroLink := 'https://www.google.com/';
 
-  CreateView(TViewJob);
+  CreateView<TViewJob>;
   ViewJob.BindEntity(Job);
 
   if ViewJob.ShowModal = mrOk then
@@ -122,8 +139,17 @@ end;
 procedure TController.Test;
 var
  Job: TJob;
+ Level: TJobLevel;
 begin
-  Job := TJob.Create(20);
+  Job := TJob.Create(41);
+
+  Level := TJobLevel.Create;
+
+  Level.Level := 3;
+  Level.BaseLink := 'abcdf...';
+
+  Job.Levels.Add(Level);
+  Job.StoreAll;
 
   Job.Free;
 end;

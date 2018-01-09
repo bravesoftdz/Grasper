@@ -1,13 +1,55 @@
 inherited ViewJob: TViewJob
   Caption = 'Grasper! Job'
-  ClientHeight = 434
-  ClientWidth = 672
-  OnCreate = FormCreate
-  ExplicitWidth = 688
-  ExplicitHeight = 472
+  ClientHeight = 442
+  ExplicitHeight = 480
   PixelsPerInch = 96
   TextHeight = 13
-  object pnlNav: TPanel
+  inherited splBrws2Cntrl: TSplitter
+    Top = 41
+    Height = 401
+  end
+  inherited cfWindowParent: TCEFWindowParent
+    Top = 41
+    Height = 401
+    ExplicitTop = 112
+    ExplicitHeight = 322
+  end
+  inherited pnlControls: TPanel
+    Top = 41
+    Height = 401
+    ExplicitTop = 152
+    ExplicitHeight = 282
+    inherited btnOk: TButton
+      Top = 367
+    end
+    inherited btnCancel: TButton
+      Top = 367
+    end
+    object bcCaption: TLabeledEdit
+      Left = 6
+      Top = 21
+      Width = 211
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      EditLabel.Width = 37
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Caption'
+      TabOrder = 2
+    end
+    object bcZeroLink: TLabeledEdit
+      Left = 6
+      Top = 64
+      Width = 211
+      Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      EditLabel.Width = 43
+      EditLabel.Height = 13
+      EditLabel.Caption = 'Zero Link'
+      Enabled = False
+      TabOrder = 3
+    end
+  end
+  object pnlNav: TPanel [3]
     Left = 0
     Top = 0
     Width = 672
@@ -15,7 +57,7 @@ inherited ViewJob: TViewJob
     Align = alTop
     Caption = 'pnlNav'
     ShowCaption = False
-    TabOrder = 0
+    TabOrder = 2
     DesignSize = (
       672
       41)
@@ -58,113 +100,18 @@ inherited ViewJob: TViewJob
       Spacing = 0
     end
   end
-  object pnlFields: TPanel
-    Left = 448
-    Top = 41
-    Width = 224
-    Height = 393
-    Align = alRight
-    Caption = 'pnlFields'
-    ShowCaption = False
-    TabOrder = 1
-    DesignSize = (
-      224
-      393)
-    object bcCaption: TLabeledEdit
-      Left = 6
-      Top = 24
-      Width = 211
-      Height = 21
-      EditLabel.Width = 37
-      EditLabel.Height = 13
-      EditLabel.Caption = 'Caption'
-      TabOrder = 0
-    end
-    object bcZeroLink: TLabeledEdit
-      Left = 6
-      Top = 64
-      Width = 211
-      Height = 21
-      EditLabel.Width = 43
-      EditLabel.Height = 13
-      EditLabel.Caption = 'Zero Link'
-      Enabled = False
-      TabOrder = 1
-    end
-    object btnOk: TButton
-      Left = 16
-      Top = 360
-      Width = 75
-      Height = 25
-      Anchors = [akLeft, akBottom]
-      Caption = 'OK'
-      ModalResult = 1
-      TabOrder = 2
-    end
-    object btnCancel: TButton
-      Left = 136
-      Top = 360
-      Width = 75
-      Height = 25
-      Anchors = [akLeft, akBottom]
-      Caption = 'Cancel'
-      ModalResult = 2
-      TabOrder = 3
-    end
-  end
-  object cfWindowParent: TCEFWindowParent
-    Left = 0
-    Top = 41
-    Width = 448
-    Height = 393
-    Align = alClient
-    TabOrder = 2
-    ExplicitLeft = 80
-    ExplicitTop = 176
-    ExplicitWidth = 100
-    ExplicitHeight = 41
-  end
-  object ActionManager: TActionManager
-    ActionBars = <
-      item
-      end
-      item
-        Items.CaptionOptions = coNone
-        Items = <>
-      end
-      item
-        Items.CaptionOptions = coNone
-        Items = <>
-      end
-      item
-        Items.CaptionOptions = coNone
-        Items = <
-          item
-            Action = acBrowse
-            Caption = '&acBrowse'
-            ImageIndex = 0
-          end>
-        ActionBar = acttb1
-      end>
-    Images = ilActionIcons
-    Left = 225
-    Top = 72
-    StyleName = 'Platform Default'
-    object acBrowse: TAction
-      Caption = 'acBrowse'
-      Hint = ' Go to page'
-      ImageIndex = 0
-      OnExecute = acBrowseExecute
-    end
+  inherited chrmBrowser: TChromium
+    OnLoadStart = chrmBrowserLoadStart
+    Top = 63
   end
   object ilActionIcons: TImageList
     ColorDepth = cd32Bit
     Height = 24
     Width = 24
-    Left = 296
-    Top = 72
+    Left = 384
+    Top = 64
     Bitmap = {
-      494C010101000800140018001800FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
+      494C0101010008001C0018001800FFFFFFFF2110FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000600000001800000001002000000000000024
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -468,10 +415,37 @@ inherited ViewJob: TViewJob
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000}
   end
-  object chrmBrowser: TChromium
-    OnLoadStart = chrmBrowserLoadStart
-    OnAfterCreated = chrmBrowserAfterCreated
-    Left = 134
-    Top = 71
+  object ActionManager: TActionManager
+    ActionBars = <
+      item
+      end
+      item
+        Items.CaptionOptions = coNone
+        Items = <>
+      end
+      item
+        Items.CaptionOptions = coNone
+        Items = <>
+      end
+      item
+        Items.CaptionOptions = coNone
+        Items = <
+          item
+            Action = acBrowser
+            Caption = '&acBrowse'
+            ImageIndex = 0
+          end>
+        ActionBar = acttb1
+      end>
+    Images = ilActionIcons
+    Left = 313
+    Top = 64
+    StyleName = 'Platform Default'
+    object acBrowser: TAction
+      Caption = 'acBrowse'
+      Hint = ' Go to page'
+      ImageIndex = 0
+      OnExecute = acBrowserExecute
+    end
   end
 end
