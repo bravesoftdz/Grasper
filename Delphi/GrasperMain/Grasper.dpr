@@ -22,7 +22,8 @@ uses
   vBrowser in 'vBrowser.pas' {ViewBrowser},
   vJob in 'vJob.pas' {ViewJob},
   vRules in 'vRules.pas' {ViewRules},
-  eLevel in 'eLevel.pas';
+  eLevel in 'eLevel.pas',
+  eRule in 'eRule.pas';
 
 {$R *.res}
 

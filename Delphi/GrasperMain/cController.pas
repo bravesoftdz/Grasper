@@ -38,6 +38,7 @@ uses
   API_DB_SQLite,
   eCommon,
   eLevel,
+  eRule,
   mParser,
   System.SysUtils,
   Vcl.Controls,
@@ -138,20 +139,17 @@ end;
 
 procedure TController.Test;
 var
- Job: TJob;
- Level: TJobLevel;
+  Level: TJobLevel;
 begin
-  Job := TJob.Create(41);
+  Level := TJobLevel.Create(6);
 
-  Level := TJobLevel.Create;
+  Level.BodyRule := TJobRule.Create;
 
-  Level.Level := 3;
-  Level.BaseLink := 'abcdf...';
+  Level.BodyRule.Notes := 'gfhgf654654';
 
-  Job.Levels.Add(Level);
-  Job.StoreAll;
+  Level.StoreAll;
 
-  Job.Free;
+  Level.Free;
 end;
 
 procedure TController.Init;
