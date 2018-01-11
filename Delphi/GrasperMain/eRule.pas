@@ -4,15 +4,18 @@ interface
 
 uses
   API_ORM,
-  eCommon;
+  eCommon,
+  eRuleLink;
 
 type
   TJobRule = class(TCommonEntity)
   private
+    FLink: TRuleLink;
     FNotes: string;
   public
     class function GetStructure: TSructure; override;
   published
+    property Link: TRuleLink read FLink write FLink;
     property Notes: string read FNotes write FNotes;
   end;
 

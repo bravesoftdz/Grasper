@@ -23,7 +23,8 @@ uses
   vJob in 'vJob.pas' {ViewJob},
   vRules in 'vRules.pas' {ViewRules},
   eLevel in 'eLevel.pas',
-  eRule in 'eRule.pas';
+  eRule in 'eRule.pas',
+  eRuleLink in 'eRuleLink.pas';
 
 {$R *.res}
 

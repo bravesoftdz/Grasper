@@ -39,6 +39,7 @@ uses
   eCommon,
   eLevel,
   eRule,
+  eRuleLink,
   mParser,
   System.SysUtils,
   Vcl.Controls,
@@ -140,13 +141,14 @@ end;
 procedure TController.Test;
 var
   Level: TJobLevel;
+  Rule: TJobRule;
 begin
   Level := TJobLevel.Create(6);
 
-  Level.BodyRule := TJobRule.Create;
+  Rule := TJobRule.Create;
+  Rule.Notes := 'dsadas';
 
-  Level.BodyRule.Notes := 'gfhgf654654';
-
+  Level.BodyRule := Rule;
   Level.StoreAll;
 
   Level.Free;
