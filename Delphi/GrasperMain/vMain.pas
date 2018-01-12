@@ -22,7 +22,6 @@ type
     acStartJob: TAction;
     acStopJob: TAction;
     acEditJobRules: TAction;
-    btn1: TButton;
     procedure FormCreate(Sender: TObject);
     procedure vstJobsGetText(Sender: TBaseVirtualTree; Node: PVirtualNode;
       Column: TColumnIndex; TextType: TVSTTextType; var CellText: string);
@@ -34,7 +33,6 @@ type
     procedure acStartJobExecute(Sender: TObject);
     procedure acStopJobExecute(Sender: TObject);
     procedure acEditJobRulesExecute(Sender: TObject);
-    procedure btn1Click(Sender: TObject);
   private
     { Private declarations }
     function GetJob: TJob;
@@ -187,13 +185,6 @@ procedure TViewMain.acStopJobExecute(Sender: TObject);
 begin
   inherited;
   //
-end;
-
-procedure TViewMain.btn1Click(Sender: TObject);
-begin
-  inherited;
-
-  SendMessage('Test');
 end;
 
 procedure TViewMain.FormCreate(Sender: TObject);

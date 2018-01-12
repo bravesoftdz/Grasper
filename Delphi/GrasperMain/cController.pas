@@ -48,10 +48,28 @@ uses
   vRules;
 
 procedure TController.EditJobRules;
+var
+  Job: TJob;
+  JobLevel: TJobLevel;
 begin
-  CreateView<TViewRules>;
+  Job := ViewMain.SelectedJob;
 
-  ViewRules.Show;
+  if Job.Levels.Count = 0 then
+    begin
+      JobLevel := TJobLevel.Create;
+      JobLevel.BaseLink := Job.ZeroLink;
+      JobLevel.Level := 1;
+
+      Job.Levels.Add(JobLevel);
+    end;
+
+  CreateView<TViewRules>;
+  ViewRules.RenderJobLevels(Job.Levels);
+
+  if ViewRules.ShowModal = mrOk then
+      Job.StoreAll
+  else
+      Job.Revert;
 end;
 
 procedure TController.StartJob;
@@ -141,14 +159,17 @@ end;
 procedure TController.Test;
 var
   Level: TJobLevel;
-  Rule: TJobRule;
+  RuleLink: TRuleLink;
 begin
   Level := TJobLevel.Create(6);
 
-  Rule := TJobRule.Create;
-  Rule.Notes := 'dsadas';
+  Level.BodyRule.Notes := 'sdf34re';
 
-  Level.BodyRule := Rule;
+  RuleLink := TRuleLink.Create;
+  RuleLink.Level := 99;
+
+  Level.BodyRule.Link := RuleLink;
+
   Level.StoreAll;
 
   Level.Free;
